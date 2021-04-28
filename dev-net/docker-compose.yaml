@@ -30,7 +30,7 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=example
       - MONGO_INITDB_DATABASE=did-db
       - MONGO_INITDB_USERNAME=tester
-      - MONGO_INITDB_PASSWORD=test-password
+      - MONGO_INITDB_PASSWORD=tester-password
 
     ports:
       - 27017:27017

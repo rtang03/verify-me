@@ -1,4 +1,3 @@
-import { userRoute } from './routes';
 
 require('dotenv').config();
 import http from 'http';
@@ -17,6 +16,7 @@ import {
   TypeOrmUserSchema as UserSchema,
 } from '../models';
 import { nextauthOptions } from '../utils';
+import { userRoute } from './routes';
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
