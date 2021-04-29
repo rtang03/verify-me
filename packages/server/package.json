@@ -5,6 +5,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "dev": "npm run build && node dist/app",
     "clean": "rimraf dist",
     "build": "yarn clean && tsc",
     "prebuild": "rimraf dist",

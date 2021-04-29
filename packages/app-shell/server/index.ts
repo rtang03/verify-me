@@ -3,6 +3,7 @@ import http from 'http';
 import util from 'util';
 import { Accounts, Users } from '@verify/server';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
 import errorHandler from 'errorhandler';
 import express from 'express';
 import morgan from 'morgan';
@@ -49,7 +50,7 @@ app
     server.use(express.urlencoded({ extended: true }));
     server.use(cookieParser());
     server.use(morgan('dev'));
-    server.use(errorHandler());
+    server.use(cors());
 
     server.use('/api/protected', userRoute(userRepo, accountRepo));
 
@@ -66,6 +67,8 @@ app
     });
 
     server.get('*', (req, res) => handle(req, res));
+
+    server.use(errorHandler());
 
     http.createServer(server).listen(port, () => {
       console.log(`server running at http://localhost:${port}`);

@@ -1,16 +1,20 @@
-import type { PaginatedDIDDocument } from '@verify/server';
+import type { GetPaginatedDidDocument } from '@verify/server';
 import Status from 'http-status';
 import type { NextApiHandler } from 'next';
+import { catchHandlerErrors, OOPS } from '../../utils';
 
-const handler: NextApiHandler = (req, res) => {
-  const data: PaginatedDIDDocument = {
-    total: 1,
-    items: [{ id: '123', description: 'hello' }],
-    cursor: 0,
-    hasMore: false,
-  };
+const handler: NextApiHandler = async (req, res) => {
+  const cursor = req?.query?.cursor ?? 0;
+  const pagesize = req?.query?.pagesize ?? 10;
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BACKEND}/dids?cursor=${cursor}&pagesize=${pagesize}`
+  );
 
-  res.status(Status.OK).send({ status: 'OK', data });
+  if (response.status === Status.OK) {
+    // TODO: replace it with TypeGuard checking
+    const json: GetPaginatedDidDocument = await response.json();
+    res.status(Status.OK).send(json);
+  } else res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: OOPS });
 };
 
-export default handler;
+export default catchHandlerErrors(handler);

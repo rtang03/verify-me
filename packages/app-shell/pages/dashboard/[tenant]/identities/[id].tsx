@@ -10,13 +10,15 @@ import { useRouter } from 'next/router';
 import React, { Fragment, useEffect, useState } from 'react';
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
-  const { query } = useRouter();
+  const router = useRouter();
   const [did, setDid] = useState<DidDocument>();
   let loading = false;
 
+  console.log(router.pathname);
+
   useEffect(() => {
     loading = true;
-    fetch(`/api/dids/${query.id}`)
+    fetch(`/api/dids/${router.query.id}`)
       .then((r) => r.json())
       .then((json) => {
         loading = false;

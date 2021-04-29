@@ -26,7 +26,6 @@ export const createHttpServer: (option: {
   app.use(express.urlencoded({ extended: true }));
   app.use(morgan('dev'));
   app.use(helmet());
-  app.use(express.static(path.join(__dirname, 'public')));
 
   app.get('/', (_, res) => res.status(Status.OK).send({ data: 'hello' }));
 
