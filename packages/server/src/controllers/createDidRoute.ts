@@ -5,9 +5,12 @@ import { DidDocument, VerificationMethod } from '../entities/DidDocument';
 import type { CommonResponse, Paginated } from '../types';
 import {
   createRestRoute,
+  INVALID_PAYLOAD,
   isCreateDidDocumentPayload,
   isDidDocument,
   isDidDocumentArray,
+  NOT_FOUND,
+  UNKNOWN_ERROR,
 } from '../utils';
 
 export const createDidRoute: (mongo: MongoEntityManager) => Router = (mongo) =>
@@ -24,7 +27,7 @@ export const createDidRoute: (mongo: MongoEntityManager) => Router = (mongo) =>
         };
 
         res.status(Status.OK).send(response);
-      } else res.status(Status.OK).send({ status: 'ERROR', message: 'fail to retrieve document' });
+      } else res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: UNKNOWN_ERROR });
     },
     GET: async (req, res) => {
       const id = req.params.id;
@@ -32,7 +35,7 @@ export const createDidRoute: (mongo: MongoEntityManager) => Router = (mongo) =>
 
       if (isDidDocument(data)) {
         res.status(Status.OK).send({ status: 'OK', data });
-      } else res.status(Status.OK).send({ status: 'ERROR', message: 'fail to retrieve document' });
+      } else res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND', message: NOT_FOUND });
     },
     POST: async (req, res) => {
       const payload: unknown = req?.body;
@@ -44,14 +47,15 @@ export const createDidRoute: (mongo: MongoEntityManager) => Router = (mongo) =>
         didDocument.verificationMethod = [verifiication];
         const data = await mongo.save<DidDocument>(didDocument);
 
-        res.status(Status.OK).send({ status: 'OK', data });
-      } else
-        res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: 'payload not recognized' });
+        res.status(Status.CREATED).send({ status: 'OK', data });
+      } else res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: INVALID_PAYLOAD });
     },
     DELETE: async (req, res) => {
       const id = req.params.id;
       const result = await mongo.deleteOne(DidDocument, { id });
       const data = result?.result;
-      res.status(Status.OK).send({ status: 'OK', data });
+
+      if (data?.ok) res.status(Status.OK).send({ status: 'OK', data });
+      else res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND', message: NOT_FOUND });
     },
   });

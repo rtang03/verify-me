@@ -1,5 +1,6 @@
 import { Request, Response, Router } from 'express';
 import Status from 'http-status';
+import { SOMETHING_WRONG } from './constants';
 
 type Action = {
   GET_ALL: (req: Request, res: Response, skip: number, take: number) => Promise<any>;
@@ -19,7 +20,7 @@ export const createRestRoute = ({ GET, GET_ALL, POST, DELETE }: Action) => {
       await fn(req, res);
     } catch (e) {
       console.error(e);
-      res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: 'something bad happens' });
+      res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: SOMETHING_WRONG });
     }
   };
 

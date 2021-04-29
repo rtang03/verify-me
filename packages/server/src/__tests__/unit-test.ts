@@ -56,6 +56,13 @@ describe('unit test', () => {
         expect(isDidDocument(body.data)).toBeTruthy();
       }));
 
+  it('should fail to GET /dids/:id', async () =>
+    request(app)
+      .get(`/dids/1234567`)
+      .expect(({ body }: { body: CommonResponse<unknown> }) =>
+        expect(body?.status).toEqual('NOT_FOUND')
+      ));
+
   it('should GET one /dids/:id', async () =>
     request(app)
       .get(`/dids/${did}`)

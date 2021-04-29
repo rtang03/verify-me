@@ -1,6 +1,8 @@
+import path from 'path';
 import cookieParser from 'cookie-parser';
 import express, { Express } from 'express';
 import helmet from 'helmet';
+import Status from 'http-status';
 import morgan from 'morgan';
 import { ConnectionOptions, createConnection, MongoEntityManager } from 'typeorm';
 import { createDidRoute } from '../controllers';
@@ -22,12 +24,14 @@ export const createHttpServer: (option: {
   app.use(express.json());
   app.use(cookieParser());
   app.use(express.urlencoded({ extended: true }));
-  app.use(morgan('combined'));
+  app.use(morgan('dev'));
   app.use(helmet());
+  app.use(express.static(path.join(__dirname, 'public')));
 
-  app.get('/', (_, res) => {
-    res.status(200).send({ data: 'hello' });
-  });
+  app.get('/', (_, res) => res.status(Status.OK).send({ data: 'hello' }));
+
+  // TODO
+  // app.get('/.well-known/did-configuration', (_, res) => res.status(Status.OK).send());
 
   app.use('/dids', createDidRoute(mongo));
 
