@@ -1,5 +1,5 @@
-import { Account, User } from '../models';
+import { Accounts, Users } from '@verify/server';
 
-export type UserInfo = Pick<User, 'name' | 'email' | 'image' | 'id'> & {
-  accounts: Pick<Account, 'id' | 'provider_id' | 'provider_account_id' | 'compound_id'>[];
+export type UserInfo = Pick<Users, 'name' | 'email' | 'image' | '_id'> & {
+  accounts: Pick<Accounts, '_id' | 'providerId' | 'providerAccountId' | 'compoundId'>[];
 };

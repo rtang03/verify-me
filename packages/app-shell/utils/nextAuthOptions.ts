@@ -1,8 +1,8 @@
 import Adapters from 'next-auth/adapters';
 import Providers from 'next-auth/providers';
-import { models } from '../models';
+import type { ConnectionOptions } from 'typeorm';
 
-export const nextauthOptions = {
+export const nextauthOptions: any = (connectionOptions: ConnectionOptions) => ({
   theme: 'light' as any,
   // https://next-auth.js.org/configuration/providers
   providers: [
@@ -29,10 +29,10 @@ export const nextauthOptions = {
     // Use JSON Web Tokens for session instead of database sessions.
     // This option can be used with or without a database for users/accounts.
     // Note: `jwt` is automatically set to `true` if no database is specified.
-    jwt: false,
+    jwt: true,
 
     // Seconds - How long until an idle session expires and is no longer valid.
-    // maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60, // 30 days
 
     // Seconds - Throttle how frequently to write to database to extend a session.
     // Use it to limit write operations. Set to 0 to always update the database.
@@ -84,15 +84,15 @@ export const nextauthOptions = {
   // Enable debug messages in the console if you are having problems
   debug: false,
 
-  adapter: Adapters.TypeORM.Adapter(
-    {
-      type: 'postgres',
-      host: process.env.DATABASE_HOST,
-      port: 5432,
-      username: process.env.DATABASE_USER,
-      password: process.env.DATABASE_PASSWORD,
-      database: process.env.DATABASE_NAME,
-    },
-    { models }
-  ),
-};
+  // adapter: Adapters.TypeORM.Adapter({
+  //   type: 'mongodb',
+  //   host: '0.0.0.0',
+  //   port: 27017,
+  //   username: 'tester',
+  //   password: 'tester-password',
+  //   database: 'did-db',
+  //   useUnifiedTopology: true,
+  // }),
+
+  adapter: Adapters.TypeORM.Adapter(connectionOptions),
+});

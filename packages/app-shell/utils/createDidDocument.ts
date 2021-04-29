@@ -1,5 +1,5 @@
+import type { DidDocument } from '@verify/server';
 import type { VerificationMethod, ServiceEndpoint } from 'did-resolver';
-import type { DidDocument } from '../types';
 import { addressToDid } from './createKeyPair';
 
 // @see https://w3c-ccg.github.io/ld-proofs/

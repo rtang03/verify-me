@@ -1,4 +1,5 @@
 import Typography from '@material-ui/core/Typography';
+import type { DidDocument } from '@verify/server';
 import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
 import type { NextPage, NextPageContext } from 'next';
@@ -7,7 +8,6 @@ import { getSession } from 'next-auth/client';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import React, { Fragment, useEffect, useState } from 'react';
-import type { DidDocument } from '../../../../types';
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const { query } = useRouter();

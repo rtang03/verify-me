@@ -1,6 +1,6 @@
+import type { PaginatedDIDDocument } from '@verify/server';
 import Status from 'http-status';
 import type { NextApiHandler } from 'next';
-import type { PaginatedDIDDocument } from '../../types';
 
 const handler: NextApiHandler = (req, res) => {
   const data: PaginatedDIDDocument = {

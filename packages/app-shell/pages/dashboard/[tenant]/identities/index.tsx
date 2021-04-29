@@ -10,6 +10,7 @@ import ListItemText from '@material-ui/core/ListItemText';
 import Typography from '@material-ui/core/Typography';
 import PersonOutlineIcon from '@material-ui/icons/PersonOutline';
 import SettingsIcon from '@material-ui/icons/Settings';
+import type { PaginatedDIDDocument } from '@verify/server';
 import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
 import type { NextPage, NextPageContext } from 'next';
@@ -17,7 +18,6 @@ import type { Session } from 'next-auth';
 import { getSession } from 'next-auth/client';
 import Link from 'next/link';
 import React, { Fragment, useState, useEffect } from 'react';
-import type { PaginatedDIDDocument } from '../../../../types';
 import { useStyles } from '../../../../utils';
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {

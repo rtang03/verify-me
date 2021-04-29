@@ -1,5 +1,4 @@
 import { Column, Entity, ObjectID, ObjectIdColumn } from 'typeorm';
-import { addressToDid } from '../utils';
 
 export class VerificationMethod {
   @Column()
