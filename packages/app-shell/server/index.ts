@@ -4,7 +4,6 @@ import util from 'util';
 import { Accounts, Users } from '@verify/server';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import errorHandler from 'errorhandler';
 import express from 'express';
 import morgan from 'morgan';
 import next from 'next';
@@ -50,7 +49,7 @@ app
     server.use(express.urlencoded({ extended: true }));
     server.use(cookieParser());
     server.use(morgan('dev'));
-    server.use(cors());
+    // server.use(cors());
 
     server.use('/api/protected', userRoute(userRepo, accountRepo));
 
@@ -66,9 +65,7 @@ app
       NextAuth(req as any, res as any, nextauthOptions(connectionOptions));
     });
 
-    server.get('*', (req, res) => handle(req, res));
-
-    server.use(errorHandler());
+    server.use((req, res) => app.getRequestHandler()(req, res));
 
     http.createServer(server).listen(port, () => {
       console.log(`server running at http://localhost:${port}`);

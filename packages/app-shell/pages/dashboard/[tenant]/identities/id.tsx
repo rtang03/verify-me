@@ -7,6 +7,7 @@ import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import InputLabel from '@material-ui/core/InputLabel';
 import OutlinedInput from '@material-ui/core/OutlinedInput';
+import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme } from '@material-ui/core/styles';
 import FileCopyIcon from '@material-ui/icons/FileCopy';
@@ -129,13 +130,15 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                   value={values.privateKey}
                   startAdornment={
                     <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle copying private key"
-                        onClick={handleClickCopyPrivKey}
-                        onMouseDown={handleMouseDownPrivKey}
-                        edge="start">
-                        {values.copyPrivateKey ? <FileCopyIcon /> : <FileCopyOutlineIcon />}
-                      </IconButton>
+                      <Tooltip title={values.copyPrivateKey ? 'Copied' : 'Click to copy'}>
+                        <IconButton
+                          aria-label="toggle copying private key"
+                          onClick={handleClickCopyPrivKey}
+                          onMouseDown={handleMouseDownPrivKey}
+                          edge="start">
+                          {values.copyPrivateKey ? <FileCopyIcon /> : <FileCopyOutlineIcon />}
+                        </IconButton>
+                      </Tooltip>
                     </InputAdornment>
                   }
                   labelWidth={100}
@@ -157,7 +160,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                   try {
                     const response = await fetch('/api/dids', {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                      headers: { 'Content-type': 'application/json' },
                       body: JSON.stringify({
                         description,
                         id: values.did,
@@ -231,7 +234,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                         <a>
                           <Typography variant="caption">
                             {values?.result?.status === 'OK'
-                              ? 'Remember to save the private key before leaving'
+                              ? 'If private key is saved, you can click me to leave'
                               : 'Something bad happen; try again'}
                           </Typography>
                         </a>
@@ -255,7 +258,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
               )}
             </div>
           )}
-          <Divider />
+          <Divider variant="inset" />
         </>
       ) : (
         <AccessDenied />
