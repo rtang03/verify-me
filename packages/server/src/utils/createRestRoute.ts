@@ -12,7 +12,7 @@ type Action = {
 export const createRestRoute = ({ GET, GET_ALL, POST, DELETE }: Action) => {
   const router = Router();
 
-  const catchHandlerErrors = (fn: (req: Request, res: Response) => Promise<void>) => async (
+  const catchErrors = (fn: (req: Request, res: Response) => Promise<void>) => async (
     req: Request,
     res: Response
   ) => {
@@ -26,7 +26,7 @@ export const createRestRoute = ({ GET, GET_ALL, POST, DELETE }: Action) => {
 
   router.get(
     '/',
-    catchHandlerErrors(async (req, res) => {
+    catchErrors(async (req, res) => {
       let skip = 0;
       let take = 10;
 
@@ -48,17 +48,17 @@ export const createRestRoute = ({ GET, GET_ALL, POST, DELETE }: Action) => {
 
   router.get(
     '/:id',
-    catchHandlerErrors(async (req, res) => GET(req, res))
+    catchErrors(async (req, res) => GET(req, res))
   );
 
   router.post(
     '/',
-    catchHandlerErrors(async (req, res) => POST(req, res))
+    catchErrors(async (req, res) => POST(req, res))
   );
 
   router.delete(
     '/:id',
-    catchHandlerErrors(async (req, res) => DELETE(req, res))
+    catchErrors(async (req, res) => DELETE(req, res))
   );
 
   router.all('/', (req, res) => {

@@ -19,17 +19,14 @@ const doFetch = async (res: NextApiResponse, url: string, options?: RequestInit)
 
   if (status === Status.OK || status === Status.CREATED) {
     const json = await response.json();
-    res.status(Status.OK).send(json);
+    res.status(status).send(json);
   } else res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: OOPS });
 };
 
-const handler: (url: string) => NextApiHandler = (url) => async (req, res) => {
-  const method = req?.method as string;
-  const id = req.query?.id;
-
-  await (
+const handler: (url: string) => NextApiHandler = (url) => async (req, res) =>
+  ((
     {
-      ['GET' as string]: async () =>
+      ['GET' as string]: async (id: string | string[] | undefined) =>
         id
           ? doFetch(res, `${url}/${id}`, { headers: { authorization: `Bearer kljkljkl;j;` } })
           : doFetch(
@@ -44,26 +41,25 @@ const handler: (url: string) => NextApiHandler = (url) => async (req, res) => {
           headers: { 'Content-Type': 'application/json', authorization: `Bearer jklj;kljkl` },
           body: JSON.stringify(req.body),
         }),
-      PUT: async () =>
-        doFetch(res, url, {
+      PUT: async (id: string | string[] | undefined) =>
+        doFetch(res, `${url}/${id}`, {
           method: 'PUT',
           mode: 'cors',
           headers: { 'Content-Type': 'application/json', authorization: `Bearer kljkljkl;j;` },
           body: JSON.stringify(req.body),
         }),
-      DELETE: async () =>
-        doFetch(res, url, {
+      DELETE: async (id: string | string[] | undefined) =>
+        doFetch(res, `${url}/${id}`, {
           method: 'DELETE',
           mode: 'cors',
           headers: { authorization: `Bearer kljkljkl;j;` },
         }),
-    }[method] ||
+    }[req?.method as string] ||
     (() => {
       res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
-      res.status(Status.METHOD_NOT_ALLOWED).end(`Method ${method} Not Allowed`);
+      res.status(Status.METHOD_NOT_ALLOWED).end('Method Not Allowed');
     })
-  )();
-};
+  )(req.query?.id));
 
 /**
  * Generic Handler for REST methods

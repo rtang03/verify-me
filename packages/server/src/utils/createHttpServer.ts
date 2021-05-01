@@ -6,6 +6,7 @@ import Status from 'http-status';
 import morgan from 'morgan';
 import { ConnectionOptions, createConnection, MongoEntityManager } from 'typeorm';
 import { createDidRoute } from '../controllers';
+import { didConfig } from '../public/did-configuration';
 
 export const createHttpServer: (option: {
   connectionOptions: ConnectionOptions;
@@ -31,8 +32,9 @@ export const createHttpServer: (option: {
 
   app.get('/', (_, res) => res.status(Status.OK).send({ data: 'hello' }));
 
-  // TODO
-  // app.get('/.well-known/did-configuration', (_, res) => res.status(Status.OK).send());
+  // https://learn.mattr.global/api-ref#operation/wellKnownDidConfig
+  // WARNING: Not know when it should be used
+  app.get('/.well-known/did-configuration', (_, res) => res.status(Status.OK).json(didConfig));
 
   app.use('/dids', createDidRoute(mongo));
 
