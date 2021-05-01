@@ -10,6 +10,7 @@ import { getSession } from 'next-auth/client';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
+import JSONTree from 'react-json-tree';
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const router = useRouter();
@@ -36,7 +37,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
             </a>
           </Link>
           {loading ? <LinearProgress /> : <Divider />}
-          <pre>{JSON.stringify(did, null, 2)}</pre>
+          <JSONTree theme="bright" data={did} shouldExpandNode={() =>true} />
         </>
       ) : (
         <AccessDenied />

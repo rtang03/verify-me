@@ -23,6 +23,7 @@ import { Session } from 'next-auth';
 import { getSession } from 'next-auth/client';
 import Link from 'next/link';
 import React, { useState } from 'react';
+import JSONTree from 'react-json-tree';
 import * as yup from 'yup';
 import { createKeyPair } from '../../../../utils';
 
@@ -107,13 +108,10 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
           <Divider />
           {!values.saveMode ? (
             values.did ? (
-              <pre>
-                {JSON.stringify(
-                  pick(values, 'did', 'publicKey', 'privateKey', 'didDocument'),
-                  null,
-                  2
-                )}
-              </pre>
+              <JSONTree
+                theme="bright"
+                data={pick(values, 'did', 'publicKey', 'privateKey', 'didDocument')}
+              />
             ) : (
               <p>Click 👆 to generate key pair, and DID Document</p>
             )
@@ -157,6 +155,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                 validationSchema={validation}
                 onSubmit={async ({ description }, { setSubmitting, setStatus, submitForm }) => {
                   setSubmitting(true);
+                  // TODO: Refactoring below lengthy code
                   try {
                     const response = await fetch('/api/dids', {
                       method: 'POST',
@@ -242,18 +241,18 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                     </Link>
                   </p>
                   {values?.result?.status === 'OK' ? (
-                    <pre>{JSON.stringify(pick(values, 'did', 'privateKey'), null, 2)}</pre>
+                    <JSONTree theme="bright" data={pick(values, 'did', 'privateKey')} />
                   ) : (
                     <div />
                   )}
                   <Divider />
                   <Typography variant="caption">Status</Typography>
-                  <pre>{JSON.stringify(values?.result, null, 2)}</pre>
+                  <JSONTree theme="bright" data={values?.result} />
                 </>
               ) : (
                 <>
                   <Typography variant="h6">Preview DID Document</Typography>
-                  <pre>{JSON.stringify(values.didDocument, null, 2)}</pre>
+                  <JSONTree theme="bright" data={values.didDocument} />
                 </>
               )}
             </div>

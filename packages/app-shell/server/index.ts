@@ -1,9 +1,8 @@
 require('dotenv').config();
 import http from 'http';
 import util from 'util';
-import { Accounts, Users } from '@verify/server';
+import { Accounts, Sessions, Users } from '@verify/server';
 import cookieParser from 'cookie-parser';
-import cors from 'cors';
 import express from 'express';
 import morgan from 'morgan';
 import next from 'next';
@@ -26,7 +25,7 @@ const connectionOptions: ConnectionOptions = {
   database: process.env.DATABASE,
   synchronize: true,
   logging: true,
-  entities: [Accounts, Users],
+  entities: [Accounts, Sessions, Users],
   useUnifiedTopology: true,
 };
 

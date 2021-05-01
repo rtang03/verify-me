@@ -9,7 +9,7 @@ export const catchHandlerErrors = (
     await fn(req, res);
   } catch (e) {
     console.error(e);
-    res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: OOPS });
+    res.status(Status.INTERNAL_SERVER_ERROR).send({ status: 'ERROR', message: OOPS });
   }
 };
 
@@ -23,7 +23,7 @@ const doFetch = async (res: NextApiResponse, url: string, options?: RequestInit)
   } else res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: OOPS });
 };
 
-const handler: (url: string) => NextApiHandler<any> = (url) => async (req, res) => {
+const handler: (url: string) => NextApiHandler = (url) => async (req, res) => {
   const method = req?.method as string;
   const id = req.query?.id;
 
@@ -66,12 +66,12 @@ const handler: (url: string) => NextApiHandler<any> = (url) => async (req, res) 
 };
 
 /**
- * Handler for
- * - GET /api/dids
- * - POST /api/dids
- * - GET /api/dids/:id
- * - DELETE /api/dids/:id
- * - DELETE /api/dids/:id
+ * Generic Handler for REST methods
+ * - GET /api/items
+ * - POST /api/items
+ * - GET /api/items/:id
+ * - DELETE /api/items/:id
+ * - PUT /api/items/:id
  * @param url
  */
 export const createRestHandler = (url: string) => catchHandlerErrors(handler(url));

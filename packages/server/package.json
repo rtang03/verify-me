@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "cookie-parser": "^1.4.5",
+    "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "express-openid-connect": "^2.3.1",
@@ -27,6 +28,7 @@
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.10",
     "@types/express": "^4.17.11",
     "@types/helmet": "^4.0.0",
     "@types/supertest": "^2.0.10",

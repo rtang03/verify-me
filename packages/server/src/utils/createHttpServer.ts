@@ -1,5 +1,5 @@
-import path from 'path';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
 import Status from 'http-status';
@@ -9,7 +9,8 @@ import { createDidRoute } from '../controllers';
 
 export const createHttpServer: (option: {
   connectionOptions: ConnectionOptions;
-}) => Promise<Express> = async ({ connectionOptions }) => {
+  baseUrl?: string;
+}) => Promise<Express> = async ({ connectionOptions, baseUrl }) => {
   let mongo: MongoEntityManager;
 
   try {
@@ -26,6 +27,7 @@ export const createHttpServer: (option: {
   app.use(express.urlencoded({ extended: true }));
   app.use(morgan('dev'));
   app.use(helmet());
+  baseUrl && app.use(cors({ origin: baseUrl }));
 
   app.get('/', (_, res) => res.status(Status.OK).send({ data: 'hello' }));
 
