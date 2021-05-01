@@ -29,7 +29,10 @@ interface State {
   openTenant: boolean;
 }
 
-const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
+const Layout: FC<{ title?: string }> = ({
+  children,
+  title = 'No Title',
+}) => {
   const [session, loading] = useSession();
   const classes = useStyles();
   const [val, setVal] = useState<State>({ openAccount: false, openTenant: false });
@@ -238,7 +241,6 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
           <Divider />
         </List>
       </Drawer>
-      {loading ? <LinearProgress /> : <Divider />}
       <main className={classes.content}>
         <div className={classes.toolbar} />
         {children}

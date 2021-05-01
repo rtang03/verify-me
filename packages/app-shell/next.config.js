@@ -12,6 +12,7 @@ module.exports = {
       config.resolve.fallback.module = false;
       config.resolve.fallback.child_process = false;
     }
+    config.ignoreWarnings = [/critical dependency:/i];
     return config;
   },
 };

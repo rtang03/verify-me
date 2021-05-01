@@ -1,8 +1,8 @@
 import Adapters from 'next-auth/adapters';
 import Providers from 'next-auth/providers';
-import { models } from '../models';
+import type { ConnectionOptions } from 'typeorm';
 
-export const nextauthOptions = {
+export const nextauthOptions: any = (connectionOptions: ConnectionOptions) => ({
   theme: 'light' as any,
   // https://next-auth.js.org/configuration/providers
   providers: [
@@ -29,7 +29,9 @@ export const nextauthOptions = {
     // Use JSON Web Tokens for session instead of database sessions.
     // This option can be used with or without a database for users/accounts.
     // Note: `jwt` is automatically set to `true` if no database is specified.
-    jwt: false,
+    // TODO: cannot use false, there is unknown bug, in connecting Mongo's Session collection
+    // Leave it alone; no urgency to fix it.
+    jwt: true,
 
     // Seconds - How long until an idle session expires and is no longer valid.
     // maxAge: 30 * 24 * 60 * 60, // 30 days
@@ -44,14 +46,36 @@ export const nextauthOptions = {
   // option is set - or by default if no database is specified.
   // https://next-auth.js.org/configuration/options#jwt
   jwt: {
-    // A secret to use for key generation (you should set this explicitly)
+    // A secret to use for key generation - you should set this explicitly
+    // Defaults to NextAuth.js secret if not explicitly specified.
+    // This is used to generate the actual signingKey and produces a warning
+    // message if not defined explicitly.
     // secret: 'INp8IvdIyeMcoGAgFGoA61DdBglwwSqnXJZkgz8PSnw',
-    // Set to true to use encryption (default: false)
+    // secret: process.env.SECRET,
+
+    // You can generate a signing key using `jose newkey -s 512 -t oct -a HS512`
+    // This gives you direct knowledge of the key used to sign the token so you can use it
+    // to authenticate indirectly (eg. to a database driver)
+    // signingKey: {"kty":"oct","kid":"Dl893BEV-iVE-x9EC52TDmlJUgGm9oZ99_ZL025Hc5Q","alg":"HS512","k":"K7QqRmJOKRK2qcCKV_pi9PSBv3XP0fpTu30TP8xn4w01xR3ZMZM38yL2DnTVPVw6e4yhdh0jtoah-i4c_pZagA"},
+
+    // If you chose something other than the default algorithm for the signingKey (HS512)
+    // you also need to configure the algorithm
+    // verificationOptions: {
+    //    algorithms: ['HS256']
+    // },
+
+    // Set to true to use encryption. Defaults to false (signing only).
     // encryption: true,
+    // encryptionKey: "",
+    // decryptionKey = encryptionKey,
+    // decryptionOptions = {
+    //    algorithms: ['A256GCM']
+    // },
+
     // You can define your own encode/decode functions for signing and encryption
     // if you want to override the default behaviour.
-    // encode: async ({ secret, token, maxAge }) => {},
-    // decode: async ({ secret, token, maxAge }) => {},
+    // async encode({ secret, token, maxAge }) {},
+    // async decode({ secret, token, maxAge }) {},
   },
 
   // You can define custom pages to override the built-in ones. These will be regular Next.js pages
@@ -84,15 +108,15 @@ export const nextauthOptions = {
   // Enable debug messages in the console if you are having problems
   debug: false,
 
-  adapter: Adapters.TypeORM.Adapter(
-    {
-      type: 'postgres',
-      host: process.env.DATABASE_HOST,
-      port: 5432,
-      username: process.env.DATABASE_USER,
-      password: process.env.DATABASE_PASSWORD,
-      database: process.env.DATABASE_NAME,
-    },
-    { models }
-  ),
-};
+  // adapter: Adapters.TypeORM.Adapter({
+  //   type: 'mongodb',
+  //   host: '0.0.0.0',
+  //   port: 27017,
+  //   username: 'tester',
+  //   password: 'tester-password',
+  //   database: 'did-db',
+  //   useUnifiedTopology: true,
+  // }),
+
+  adapter: Adapters.TypeORM.Adapter(connectionOptions),
+});

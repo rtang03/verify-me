@@ -7,6 +7,7 @@ import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import InputLabel from '@material-ui/core/InputLabel';
 import OutlinedInput from '@material-ui/core/OutlinedInput';
+import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme } from '@material-ui/core/styles';
 import FileCopyIcon from '@material-ui/icons/FileCopy';
@@ -22,6 +23,7 @@ import { Session } from 'next-auth';
 import { getSession } from 'next-auth/client';
 import Link from 'next/link';
 import React, { useState } from 'react';
+import JSONTree from 'react-json-tree';
 import * as yup from 'yup';
 import { createKeyPair } from '../../../../utils';
 
@@ -106,13 +108,10 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
           <Divider />
           {!values.saveMode ? (
             values.did ? (
-              <pre>
-                {JSON.stringify(
-                  pick(values, 'did', 'publicKey', 'privateKey', 'didDocument'),
-                  null,
-                  2
-                )}
-              </pre>
+              <JSONTree
+                theme="bright"
+                data={pick(values, 'did', 'publicKey', 'privateKey', 'didDocument')}
+              />
             ) : (
               <p>Click 👆 to generate key pair, and DID Document</p>
             )
@@ -129,13 +128,15 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                   value={values.privateKey}
                   startAdornment={
                     <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle copying private key"
-                        onClick={handleClickCopyPrivKey}
-                        onMouseDown={handleMouseDownPrivKey}
-                        edge="start">
-                        {values.copyPrivateKey ? <FileCopyIcon /> : <FileCopyOutlineIcon />}
-                      </IconButton>
+                      <Tooltip title={values.copyPrivateKey ? 'Copied' : 'Click to copy'}>
+                        <IconButton
+                          aria-label="toggle copying private key"
+                          onClick={handleClickCopyPrivKey}
+                          onMouseDown={handleMouseDownPrivKey}
+                          edge="start">
+                          {values.copyPrivateKey ? <FileCopyIcon /> : <FileCopyOutlineIcon />}
+                        </IconButton>
+                      </Tooltip>
                     </InputAdornment>
                   }
                   labelWidth={100}
@@ -154,10 +155,11 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                 validationSchema={validation}
                 onSubmit={async ({ description }, { setSubmitting, setStatus, submitForm }) => {
                   setSubmitting(true);
+                  // TODO: Refactoring below lengthy code
                   try {
                     const response = await fetch('/api/dids', {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                      headers: { 'Content-type': 'application/json' },
                       body: JSON.stringify({
                         description,
                         id: values.did,
@@ -231,7 +233,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                         <a>
                           <Typography variant="caption">
                             {values?.result?.status === 'OK'
-                              ? 'Remember to save the private key before leaving'
+                              ? 'If private key is saved, you can click me to leave'
                               : 'Something bad happen; try again'}
                           </Typography>
                         </a>
@@ -239,23 +241,23 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                     </Link>
                   </p>
                   {values?.result?.status === 'OK' ? (
-                    <pre>{JSON.stringify(pick(values, 'did', 'privateKey'), null, 2)}</pre>
+                    <JSONTree theme="bright" data={pick(values, 'did', 'privateKey')} />
                   ) : (
                     <div />
                   )}
                   <Divider />
                   <Typography variant="caption">Status</Typography>
-                  <pre>{JSON.stringify(values?.result, null, 2)}</pre>
+                  <JSONTree theme="bright" data={values?.result} />
                 </>
               ) : (
                 <>
                   <Typography variant="h6">Preview DID Document</Typography>
-                  <pre>{JSON.stringify(values.didDocument, null, 2)}</pre>
+                  <JSONTree theme="bright" data={values.didDocument} />
                 </>
               )}
             </div>
           )}
-          <Divider />
+          <Divider variant="inset" />
         </>
       ) : (
         <AccessDenied />

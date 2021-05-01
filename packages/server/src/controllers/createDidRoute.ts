@@ -2,7 +2,7 @@ import { Router } from 'express';
 import Status from 'http-status';
 import { MongoEntityManager } from 'typeorm';
 import { DidDocument, VerificationMethod } from '../entities/DidDocument';
-import type { CommonResponse, Paginated } from '../types';
+import type { GetPaginatedDidDocument } from '../types';
 import {
   createRestRoute,
   INVALID_PAYLOAD,
@@ -21,7 +21,7 @@ export const createDidRoute: (mongo: MongoEntityManager) => Router = (mongo) =>
       const cursor = hasMore ? skip + take : total;
 
       if (isDidDocumentArray(items)) {
-        const response: CommonResponse<Paginated<DidDocument>> = {
+        const response: GetPaginatedDidDocument = {
           status: 'OK',
           data: { total, cursor, hasMore, items },
         };

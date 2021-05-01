@@ -1,20 +1,13 @@
-
 require('dotenv').config();
 import http from 'http';
 import util from 'util';
+import { Accounts, Sessions, Users } from '@verify/server';
 import cookieParser from 'cookie-parser';
-import errorHandler from 'errorhandler';
 import express from 'express';
 import morgan from 'morgan';
 import next from 'next';
 import { default as NextAuth } from 'next-auth';
 import { createConnection, ConnectionOptions, Connection } from 'typeorm';
-import {
-  Account,
-  User,
-  TypoOrmAccountSchema as AccountSchema,
-  TypeOrmUserSchema as UserSchema,
-} from '../models';
 import { nextauthOptions } from '../utils';
 import { userRoute } from './routes';
 
@@ -23,19 +16,17 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 const port = parseInt(process.env.PORT || '3000', 10);
 const authUrl = '/api/auth/';
-const psqlOptions: ConnectionOptions = {
-  name: 'default',
-  type: 'postgres' as any,
-  host: process.env.DATABASE_HOST || 'localhost',
-  port: 5432,
-  username: process.env.DATABASE_USER,
-  password: process.env.DATABASE_PASSWORD,
-  database: process.env.DATABASE_NAME,
-  logging: process.env.TYPEORM_LOGGING === 'true',
-  synchronize: false,
-  dropSchema: false,
-  entities: [UserSchema, AccountSchema],
-  connectTimeoutMS: 10000,
+const connectionOptions: ConnectionOptions = {
+  type: 'mongodb',
+  host: process.env.TYPEORM_HOST,
+  port: parseInt(process.env.TYPEORM_PORT as any, 10),
+  username: process.env.TYPEORM_USERNAME,
+  password: process.env.TYPEORM_PASSWORD,
+  database: process.env.DATABASE,
+  synchronize: true,
+  logging: true,
+  entities: [Accounts, Sessions, Users],
+  useUnifiedTopology: true,
 };
 
 app
@@ -44,20 +35,20 @@ app
     let connection: Connection;
 
     try {
-      connection = await createConnection(psqlOptions);
+      connection = await createConnection(connectionOptions);
     } catch (e) {
       console.error(e);
       throw new Error('fail to connect');
     }
-    const accountRepo = connection.getRepository<Account>('Account');
-    const userRepo = connection.getRepository<User>('User');
+    const accountRepo = connection.getRepository<Accounts>('Accounts');
+    const userRepo = connection.getRepository<Users>('Users');
 
     const server = express();
     server.use(express.json());
     server.use(express.urlencoded({ extended: true }));
     server.use(cookieParser());
     server.use(morgan('dev'));
-    server.use(errorHandler());
+    // server.use(cors());
 
     server.use('/api/protected', userRoute(userRepo, accountRepo));
 
@@ -70,10 +61,10 @@ app
         .slice(authUrl.length) // make relative to baseUrl
         .replace(/\?.*/, '') // remove query part, use only path part
         .split('/'); // as array of strings
-      NextAuth(req as any, res as any, nextauthOptions);
+      NextAuth(req as any, res as any, nextauthOptions(connectionOptions));
     });
 
-    server.get('*', (req, res) => handle(req, res));
+    server.use((req, res) => app.getRequestHandler()(req, res));
 
     http.createServer(server).listen(port, () => {
       console.log(`server running at http://localhost:${port}`);

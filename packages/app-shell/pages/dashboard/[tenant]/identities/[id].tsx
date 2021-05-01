@@ -1,4 +1,7 @@
+import Divider from '@material-ui/core/Divider';
+import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
+import type { DidDocument } from '@verify/server';
 import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
 import type { NextPage, NextPageContext } from 'next';
@@ -6,27 +9,26 @@ import type { Session } from 'next-auth';
 import { getSession } from 'next-auth/client';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import React, { Fragment, useEffect, useState } from 'react';
-import type { DidDocument } from '../../../../types';
+import React, { useEffect, useState } from 'react';
+import JSONTree from 'react-json-tree';
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
-  const { query } = useRouter();
+  const router = useRouter();
   const [did, setDid] = useState<DidDocument>();
-  let loading = false;
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loading = true;
-    fetch(`/api/dids/${query.id}`)
+    setLoading(true);
+    fetch(`/api/dids/${router.query.id}`)
       .then((r) => r.json())
       .then((json) => {
-        loading = false;
-        json?.data?.data && setDid(json.data.data);
+        setLoading(false);
+        json?.data && setDid(json.data);
       });
   }, [session]);
 
   return (
-    <Layout title="identity">
-      {loading ? <>Loading</> : <Fragment />}
+    <Layout title="Identity">
       {session ? (
         <>
           <Link href="/dashboard/1/identities">
@@ -34,9 +36,8 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
               <Typography variant="caption">← Back to Identities</Typography>
             </a>
           </Link>
-          <br />
-          <br />
-          <pre>{JSON.stringify(did, null, 2)}</pre>
+          {loading ? <LinearProgress /> : <Divider />}
+          <JSONTree theme="bright" data={did} shouldExpandNode={() =>true} />
         </>
       ) : (
         <AccessDenied />
