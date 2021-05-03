@@ -18,9 +18,8 @@ export const createRestRoute = ({ GET, GET_ALL, POST, DELETE }: Action) => {
   ) => {
     try {
       await fn(req, res);
-    } catch (e) {
-      console.error(e);
-      res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: SOMETHING_WRONG });
+    } catch (error) {
+      res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: error.message });
     }
   };
 

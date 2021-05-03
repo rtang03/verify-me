@@ -3,7 +3,7 @@ import { Column, Entity, ObjectID, ObjectIdColumn } from 'typeorm';
 @Entity()
 export class Sessions {
   @ObjectIdColumn()
-  _id: ObjectID;
+  id: ObjectID;
 
   @Column()
   userId: string;

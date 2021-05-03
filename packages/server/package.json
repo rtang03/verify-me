@@ -11,9 +11,21 @@
     "prebuild": "rimraf dist",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start:prod": "node dist/app",
-    "test": "jest --forceExit --detectOpenHandles unit.test"
+    "test": "jest --forceExit --detectOpenHandles did.unit-test",
+    "test:veramo": "jest --forceExit --detectOpenHandles veramo.unit-test",
+    "test:identitifer": "jest --forceExit --detectOpenHandles identifier.unit-test"
   },
   "dependencies": {
+    "@veramo/core": "^1.2.0",
+    "@veramo/credential-w3c": "^1.2.0",
+    "@veramo/data-store": "^1.2.0",
+    "@veramo/did-manager": "^1.2.0",
+    "@veramo/did-provider-key": "^1.2.0",
+    "@veramo/did-provider-web": "^1.2.0",
+    "@veramo/did-resolver": "^1.2.0",
+    "@veramo/key-manager": "^1.2.0",
+    "@veramo/kms-local": "^1.2.0",
+    "web-did-resolver": "^2.0.4",
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
