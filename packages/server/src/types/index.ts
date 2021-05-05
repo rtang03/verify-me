@@ -2,7 +2,6 @@ import type { CommonResponse } from './commonResponse';
 import type { DidDocument } from './didDocument';
 import type { Paginated } from './paginated';
 
-export * from './createDidDocumentPayload';
 export * from './commonResponse';
 export * from './paginated';
 export * from './didDocument';

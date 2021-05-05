@@ -1,19 +1,18 @@
+import { AgentRouter, ApiSchemaRouter, RequestWithAgentRouter } from '@veramo/remote-server';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
-import Status from 'http-status';
 import morgan from 'morgan';
 import { ConnectionOptions, createConnection } from 'typeorm';
-import { createIdentifierRoute } from '../controllers';
-import { didConfig } from '../public/did-configuration';
-import { setupVeramo, TAgent } from './setupVeramo';
+import { setupVeramo, TTAgent } from './setupVeramo';
+import { WebDidDocRouter } from './webDidRouter';
 
 export const createHttpServer2: (option: {
   connectionOptions: ConnectionOptions;
   baseUrl?: string;
 }) => Promise<Express> = async ({ connectionOptions, baseUrl }) => {
-  let agent: TAgent;
+  let agent: TTAgent;
 
   try {
     agent = setupVeramo(createConnection(connectionOptions));
@@ -21,6 +20,11 @@ export const createHttpServer2: (option: {
     console.error(e);
     process.exit(1);
   }
+  const exposedMethods = agent.availableMethods();
+  const agentRouter = AgentRouter({ exposedMethods });
+  const schemaRouter = ApiSchemaRouter({ exposedMethods, basePath: '/open-api.json' });
+  const requestWithAgentRouter = RequestWithAgentRouter({ agent });
+  const didDocRouter = WebDidDocRouter();
   const app = express();
 
   app.use(express.json());
@@ -30,13 +34,12 @@ export const createHttpServer2: (option: {
   app.use(helmet());
   baseUrl && app.use(cors({ origin: baseUrl }));
 
-  app.get('/', (_, res) => res.status(Status.OK).send({ data: 'hello' }));
+  app.use(requestWithAgentRouter);
+  app.use('/agent', agentRouter);
+  app.use('/open-api.json', schemaRouter);
+  app.use(didDocRouter);
 
+  // Todo
   // https://learn.mattr.global/api-ref#operation/wellKnownDidConfig
-  // WARNING: Not know when it should be used
-  app.get('/.well-known/did-configuration', (_, res) => res.status(Status.OK).json(didConfig));
-
-  app.use('/identifiers', createIdentifierRoute(agent));
-
   return app;
 };

@@ -1,6 +1,5 @@
 import { Request, Response, Router } from 'express';
 import Status from 'http-status';
-import { SOMETHING_WRONG } from './constants';
 
 type Action = {
   GET_ALL: (req: Request, res: Response, skip: number, take: number) => Promise<any>;
