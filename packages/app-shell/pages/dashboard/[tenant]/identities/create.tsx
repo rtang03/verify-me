@@ -14,8 +14,7 @@ import FileCopyIcon from '@material-ui/icons/FileCopy';
 import FileCopyOutlineIcon from '@material-ui/icons/FileCopyOutlined';
 import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
-import { Form, Formik } from 'formik';
-import { Field } from 'formik';
+import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
 import pick from 'lodash/pick';
 import type { NextPage, NextPageContext } from 'next';
@@ -153,7 +152,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                 initialValues={{ description: '' }}
                 validateOnChange={true}
                 validationSchema={validation}
-                onSubmit={async ({ description }, { setSubmitting, setStatus, submitForm }) => {
+                onSubmit={async ({ description }, { setSubmitting }) => {
                   setSubmitting(true);
                   // TODO: Refactoring below lengthy code
                   try {

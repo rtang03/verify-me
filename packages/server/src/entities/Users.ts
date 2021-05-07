@@ -1,22 +1,25 @@
-import { Column, Entity, ObjectID, ObjectIdColumn } from 'typeorm';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class Users {
-  @ObjectIdColumn()
-  _id: ObjectID;
+  @PrimaryColumn()
+  id: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   name: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   email: string;
+
+  @Column({ type: 'timestamp with time zone' })
+  email_verified: string;
 
   @Column()
   image: string;
 
-  @Column()
-  createdAt: string;
+  @Column({ type: 'timestamp with time zone', nullable: false })
+  created_at: string;
 
-  @Column()
-  updatedAt: string;
+  @Column({ type: 'timestamp with time zone', nullable: false })
+  updated_at: string;
 }

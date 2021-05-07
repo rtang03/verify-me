@@ -4,14 +4,14 @@ import PhonelinkIcon from '@material-ui/icons/Phonelink';
 
 export const sideBar: { text: string; icon: any, link: string }[] = [
   {
-    text: 'Application',
-    icon: <PhonelinkIcon />,
-    link: '/dashboard/1/apps'
-  },
-  {
-    text: 'Identity',
+    text: 'Identitifers',
     icon: <AccountBoxIcon />,
     link: '/dashboard/1/identities'
+  },
+  {
+    text: 'Users',
+    icon: <PhonelinkIcon />,
+    link: '/dashboard/1/users'
   },
   {
     text: 'Credentials',

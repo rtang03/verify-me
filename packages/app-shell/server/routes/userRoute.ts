@@ -16,17 +16,17 @@ export const userRoute = (userRepo: Repository<Users>, accountRepo: Repository<A
     if (!session) return res.status(Status.OK).send({ content: 'protected' });
 
     const user = await userRepo.findOne({ where: { email: session?.user?.email } });
-    if (user?._id) {
-      const { _id, email, name, image } = user;
-      const accounts = await accountRepo.find({ where: { userId: _id } });
+    if (user?.id) {
+      const { id, email, name, image } = user;
+      const accounts = await accountRepo.find({ where: { user_id: id } });
       if (accounts) {
         userInfo = {
-          _id,
+          id,
           email,
           name,
           image,
           accounts: accounts.map((account) =>
-            pick(account, '_id', 'providerId', 'providerAccountId', 'compoundId')
+            pick(account, 'id', 'provider_id', 'provider_account_id', 'compound_id')
           ),
         };
         return res.status(Status.OK).send({ content: userInfo });

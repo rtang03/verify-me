@@ -13,20 +13,18 @@ import { userRoute } from './routes';
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
-const handle = app.getRequestHandler();
 const port = parseInt(process.env.PORT || '3000', 10);
 const authUrl = '/api/auth/';
 const connectionOptions: ConnectionOptions = {
-  type: 'mongodb',
-  host: process.env.TYPEORM_HOST,
-  port: parseInt(process.env.TYPEORM_PORT as any, 10),
-  username: process.env.TYPEORM_USERNAME,
-  password: process.env.TYPEORM_PASSWORD,
-  database: process.env.DATABASE,
-  synchronize: true,
+  type: 'postgres',
+  host: 'localhost',
+  port: 5432,
+  username: 'postgres',
+  password: 'docker',
+  database: 'auth_db',
+  synchronize: false,
   logging: true,
   entities: [Accounts, Sessions, Users],
-  useUnifiedTopology: true,
 };
 
 app
@@ -61,7 +59,20 @@ app
         .slice(authUrl.length) // make relative to baseUrl
         .replace(/\?.*/, '') // remove query part, use only path part
         .split('/'); // as array of strings
-      NextAuth(req as any, res as any, nextauthOptions(connectionOptions));
+      NextAuth(
+        req as any,
+        res as any,
+        nextauthOptions({
+          type: 'postgres',
+          host: 'localhost',
+          port: 5432,
+          username: 'postgres',
+          password: 'docker',
+          database: 'auth_db',
+          synchronize: false,
+          logging: true,
+        })
+      );
     });
 
     server.use((req, res) => app.getRequestHandler()(req, res));

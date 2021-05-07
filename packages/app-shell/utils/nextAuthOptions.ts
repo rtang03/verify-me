@@ -108,15 +108,5 @@ export const nextauthOptions: any = (connectionOptions: ConnectionOptions) => ({
   // Enable debug messages in the console if you are having problems
   debug: false,
 
-  // adapter: Adapters.TypeORM.Adapter({
-  //   type: 'mongodb',
-  //   host: '0.0.0.0',
-  //   port: 27017,
-  //   username: 'tester',
-  //   password: 'tester-password',
-  //   database: 'did-db',
-  //   useUnifiedTopology: true,
-  // }),
-
   adapter: Adapters.TypeORM.Adapter(connectionOptions),
 });

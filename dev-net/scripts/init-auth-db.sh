@@ -38,7 +38,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
       email          VARCHAR(255),
       email_verified TIMESTAMPTZ,
       image          TEXT,
-      phone_num      VARCHAR(25),
       created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (id)

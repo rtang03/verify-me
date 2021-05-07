@@ -1,25 +1,25 @@
-import { Column, Entity, ObjectID, ObjectIdColumn } from 'typeorm';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class Sessions {
-  @ObjectIdColumn()
-  id: ObjectID;
+  @PrimaryColumn()
+  id: number;
 
-  @Column()
-  userId: string;
+  @Column({ type: 'int', nullable: false })
+  user_id: string;
 
-  @Column()
+  @Column({ type: 'timestamp with time zone', nullable: false })
   expires: string;
 
-  @Column()
-  sessionToken: string;
+  @Column({ type: 'varchar', length: 255, nullable: false })
+  session_token: string;
 
-  @Column()
-  accessToken: string;
+  @Column({ type: 'varchar', length: 255, nullable: false })
+  access_token: string;
 
-  @Column()
-  createdAt: string;
+  @Column({ type: 'timestamp with time zone', nullable: false })
+  created_at: string;
 
-  @Column()
-  updatedAt: string;
+  @Column({ type: 'timestamp with time zone', nullable: false })
+  updated_at: string;
 }

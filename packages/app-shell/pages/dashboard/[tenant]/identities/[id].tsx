@@ -1,7 +1,6 @@
 import Divider from '@material-ui/core/Divider';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
-import type { DidDocument } from '@verify/server';
 import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
 import type { NextPage, NextPageContext } from 'next';
@@ -14,7 +13,7 @@ import JSONTree from 'react-json-tree';
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const router = useRouter();
-  const [did, setDid] = useState<DidDocument>();
+  const [did, setDid] = useState();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

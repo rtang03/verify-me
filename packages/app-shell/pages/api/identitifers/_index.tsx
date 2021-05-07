@@ -20,14 +20,14 @@ import type { Session } from 'next-auth';
 import { getSession } from 'next-auth/client';
 import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
-import { useStyles } from '../../../../utils';
+// import { useStyles } from '../../../../utils';
 
 const PAGESIZE = 5;
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const [paginated, setPaginated] = useState<PaginatedDIDDocument>();
   const [loading, setLoading] = useState(false);
-  const classes = useStyles();
+  // const classes = useStyles();
   const pageCount = paginated?.total && Math.ceil(paginated.total / PAGESIZE);
   const total = paginated?.total && paginated.total;
   const fetcher = (cursor: number) => {
@@ -52,7 +52,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
           <Typography variant="caption">Setup decentralized identity. Learn more </Typography>
           <br />
           <br />
-          <Link href="/dashboard/1/identities/id">
+          <Link href="/dashboard/1/identities/create">
             <Button size="small" variant="contained">
               + CREATE IDENTITY
             </Button>

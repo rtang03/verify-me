@@ -2,8 +2,8 @@ import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
 import type { NextPage, NextPageContext } from 'next';
 import type { Session } from 'next-auth';
-import { getSession } from 'next-auth/client';
 import React, { useState, useEffect } from 'react';
+import { requireAuth } from '../../../components';
 import type { UserInfo } from '../../../types';
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
@@ -22,8 +22,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   );
 };
 
-export const getServerSideProps = async (context: NextPageContext) => ({
-  props: { session: await getSession(context) },
-});
+export const getServerSideProps = requireAuth;
 
 export default Page;
