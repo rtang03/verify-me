@@ -24,7 +24,7 @@ import Link from 'next/link';
 import React, { useState } from 'react';
 import JSONTree from 'react-json-tree';
 import * as yup from 'yup';
-import { createKeyPair } from '../../../../utils';
+import { createKeyPair } from 'utils';
 
 interface State {
   did: string;

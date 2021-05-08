@@ -1,35 +1,29 @@
+import Button from '@material-ui/core/Button';
 import Divider from '@material-ui/core/Divider';
+import IconButton from '@material-ui/core/IconButton';
 import LinearProgress from '@material-ui/core/LinearProgress';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
+import ListItemText from '@material-ui/core/ListItemText';
 import Typography from '@material-ui/core/Typography';
+import SettingsIcon from '@material-ui/icons/Settings';
+import type { IIdentifier } from '@veramo/core';
+import { Paginated } from '@verify/server';
+import { requireAuth } from 'components';
 import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import React, { Fragment, useState, useEffect } from 'react';
-import JSONTree from 'react-json-tree';
-import { requireAuth } from '../../../../components';
 import Link from 'next/link';
-import Button from '@material-ui/core/Button';
-
-interface State {
-  dids: any[];
-  loading: boolean;
-  result: any;
-}
-
-const webDidUrl = process.env.NEXT_PUBLIC_BACKEND?.split(':')[1].replace('//', '');
+import React, { useEffect } from 'react';
+import { useFetcher } from 'utils';
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
-  const [val, setVal] = useState({ dids: [], loading: false, result: null });
-  const fetcher = (url: string, option?: RequestInit) => {
-    setVal({ ...val, loading: true });
-    return fetch(url, option)
-      .then((r) => r.json())
-      .then((json) => json?.data && setVal((value) => ({ ...value, dids: json.data })));
-  };
+  const { val, fetcher } = useFetcher<Paginated<IIdentifier>>();
 
   useEffect(() => {
-    fetcher(`/api/users`).finally(() => setVal((value) => ({ ...value, loading: false })));
+    fetcher(`/api/users`).finally(() => true);
   }, [session]);
 
   return (
@@ -44,20 +38,33 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
           <br />
           <Link href="/dashboard/1/users/create">
             <Button size="small" variant="contained">
-              + CREATE USER IDENTIFIER
+              + CREATE IDENTIFIER
             </Button>
           </Link>
           {val.loading ? <LinearProgress /> : <Divider />}
-          {val.dids?.length && (
+          {val.data?.items?.length ? (
             <>
               <Typography variant="h6">Did-Documents</Typography>
-              <Typography variant="caption">total: {val.dids.length}</Typography>
-              {val.dids.map((didDoc, index) => (
-                <Fragment key={index}>
-                  <JSONTree theme="bright" data={didDoc} hideRoot={true} />
-                </Fragment>
-              ))}
+              <Typography variant="caption">total: {val.data.total}</Typography>
+              <List dense>
+                {val.data.items.map((item, index) => (
+                  <ListItem key={index}>
+                    <Link href={`/dashboard/1/users/${item.alias}`}>
+                      <a>
+                        <ListItemText primary={item.alias} secondary={item.did} />
+                      </a>
+                    </Link>
+                    <ListItemSecondaryAction>
+                      <IconButton edge="end" aria-label="settings">
+                        <SettingsIcon />
+                      </IconButton>
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                ))}
+              </List>
             </>
+          ) : (
+            <p>No record</p>
           )}
         </>
       )}

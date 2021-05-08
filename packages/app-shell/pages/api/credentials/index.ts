@@ -5,7 +5,7 @@ import { OOPS } from '../../../utils';
 const handler: NextApiHandler = async (req, res) => {
   if (req.method === 'GET') {
     const domain = process.env.NEXT_PUBLIC_BACKEND?.split(':')[1].replace('//', '');
-    const url = `${process.env.NEXT_PUBLIC_BACKEND}/identifiers/did:web:${domain}/users`;
+    const url = `${process.env.NEXT_PUBLIC_BACKEND}/issuers/did:web:${domain}/credentials`;
     const response = await fetch(url, { headers: { authorization: `Bearer jklj;kljkl` } });
     const status = response.status;
 
@@ -14,9 +14,7 @@ const handler: NextApiHandler = async (req, res) => {
       return res.status(Status.OK).send({ status: 'OK', data: result?.data });
     } else {
       console.error(`fail to fetch ${url}, status: ${status}`);
-      return res
-        .status(Status.OK)
-        .send({ status: 'ERROR', message: OOPS, error: await response.text() });
+      return res.status(Status.OK).send({ status: 'ERROR', message: OOPS });
     }
   }
   res.status(Status.METHOD_NOT_ALLOWED).send({ status: 'ERROR', message: OOPS });

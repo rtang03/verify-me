@@ -11,6 +11,8 @@ import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
 import JSONTree from 'react-json-tree';
 
+// THIS IS TO REMOVED
+
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const router = useRouter();
   const [did, setDid] = useState();

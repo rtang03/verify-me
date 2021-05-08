@@ -1,5 +1,7 @@
 require('dotenv').config({ path: './.env.test' });
 import { Entities } from '@veramo/data-store';
+import { blake2bHex } from 'blakejs';
+import omit from 'lodash/omit';
 import { ConnectionOptions, createConnection } from 'typeorm';
 import { isIdentitifer, setupVeramo, TTAgent } from '../utils';
 
@@ -21,34 +23,34 @@ afterAll(
   async () => new Promise<void>((ok) => setTimeout(() => ok(), 2000))
 );
 
-describe('Identitier unit test', () => {
-  it('should create identity', async () => {
-    const identifier = await agent.didManagerGetOrCreate({ alias: web });
-    expect(isIdentitifer(identifier)).toBeTruthy();
-  });
-
-  it('should add', async () => {
-    const result = await agent.didManagerAddService({
-      did: `did:web:${web}`,
-      service: {
-        id: `did:web:${web}#linked-domain`,
-        serviceEndpoint: 'https://bar.example.com',
-        type: 'LinkedDomains',
-      },
-    });
-    expect(result).toEqual({ success: true });
-  });
-
-  it('should get identity', async () => {
-    const identifier = await agent.didManagerGetByAlias({ alias: web, provider: 'did:web' });
-    expect(isIdentitifer(identifier)).toBeTruthy();
-  });
-
-  it('should delete identity', async () => {
-    const result = await agent.didManagerDelete({ did: `did:web:${web}` });
-    expect(result).toBeTruthy();
-  });
-});
+// describe('Identitier unit test', () => {
+//   it('should create identity', async () => {
+//     const identifier = await agent.didManagerGetOrCreate({ alias: web });
+//     expect(isIdentitifer(identifier)).toBeTruthy();
+//   });
+//
+//   it('should add', async () => {
+//     const result = await agent.didManagerAddService({
+//       did: `did:web:${web}`,
+//       service: {
+//         id: `did:web:${web}#linked-domain`,
+//         serviceEndpoint: 'https://bar.example.com',
+//         type: 'LinkedDomains',
+//       },
+//     });
+//     expect(result).toEqual({ success: true });
+//   });
+//
+//   it('should get identity', async () => {
+//     const identifier = await agent.didManagerGetByAlias({ alias: web, provider: 'did:web' });
+//     expect(isIdentitifer(identifier)).toBeTruthy();
+//   });
+//
+//   it('should delete identity', async () => {
+//     const result = await agent.didManagerDelete({ did: `did:web:${web}` });
+//     expect(result).toBeTruthy();
+//   });
+// });
 
 // const vc = {
 //   credentialSubject: { tutorial: 42, status: 'completed', id: 'did:web:alice' },
@@ -64,7 +66,7 @@ describe('Identitier unit test', () => {
 // };
 describe('Credential unit test', () => {
   it('should create credential', async () => {
-    const user = await agent.didManagerGetOrCreate({ alias: 'alice' });
+    const user = await agent.didManagerGetOrCreate({ alias: 'example.com:users:alice' });
     const credential = await agent.createVerifiableCredential({
       credential: {
         issuer: { id: 'did:web:example.com' },
@@ -78,5 +80,12 @@ describe('Credential unit test', () => {
       save: true,
     });
     console.log(credential);
+    const credentialHash = blake2bHex(JSON.stringify(credential));
+    console.log(credentialHash);
+    const claims = omit(credential.credentialSubject, 'id');
+    Object.entries(claims).forEach(([key]) => {
+      const claimHash = blake2bHex(JSON.stringify(credential) + key);
+      console.log(claimHash);
+    });
   });
 });

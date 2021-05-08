@@ -1,10 +1,12 @@
+import { Credential, Identifier } from '@veramo/data-store';
 import { AgentRouter, ApiSchemaRouter, RequestWithAgentRouter } from '@veramo/remote-server';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { ConnectionOptions, createConnection } from 'typeorm';
+import { Connection, ConnectionOptions, createConnection, getRepository } from 'typeorm';
+import { createIdentifierRoute, createIssuerRoute } from '../controllers';
 import { setupVeramo, TTAgent } from './setupVeramo';
 import { WebDidDocRouter } from './webDidRouter';
 
@@ -13,9 +15,12 @@ export const createHttpServer2: (option: {
   baseUrl?: string;
 }) => Promise<Express> = async ({ connectionOptions, baseUrl }) => {
   let agent: TTAgent;
+  let connection: Promise<Connection>;
 
   try {
-    agent = setupVeramo(createConnection(connectionOptions));
+    connection = createConnection(connectionOptions);
+    await connection;
+    agent = setupVeramo(connection);
   } catch (e) {
     console.error(e);
     process.exit(1);
@@ -25,6 +30,8 @@ export const createHttpServer2: (option: {
   const schemaRouter = ApiSchemaRouter({ exposedMethods, basePath: '/open-api.json' });
   const requestWithAgentRouter = RequestWithAgentRouter({ agent });
   const didDocRouter = WebDidDocRouter();
+  const credentialRepo = getRepository(Credential);
+  const identifierRepo = getRepository(Identifier);
   const app = express();
 
   app.use(express.json());
@@ -35,11 +42,22 @@ export const createHttpServer2: (option: {
   baseUrl && app.use(cors({ origin: baseUrl }));
 
   app.use(requestWithAgentRouter);
+  // all agent methods
   app.use('/agent', agentRouter);
+  // api schema
   app.use('/open-api.json', schemaRouter);
+  // e.g. /.well-known/did.json
   app.use(didDocRouter);
 
-  // Todo
-  // https://learn.mattr.global/api-ref#operation/wellKnownDidConfig
+  // /issuers/did:web:example.com/credentials
+  app.use('/issuers', createIssuerRoute(credentialRepo));
+
+  // /identifiers/did:web:example.com/users
+  app.use('/identifiers', createIdentifierRoute(identifierRepo));
+
+  // app.use('/tenants');
+  // app.use('/accounts');
+  // app.use('/users');
+
   return app;
 };

@@ -4,6 +4,8 @@ import Divider from '@material-ui/core/Divider';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme } from '@material-ui/core/styles';
+import type { IIdentifier } from '@veramo/core';
+import { requireAuth } from 'components';
 import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
 import { Form, Field, Formik } from 'formik';
@@ -11,16 +13,10 @@ import { TextField } from 'formik-material-ui';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React from 'react';
 import JSONTree from 'react-json-tree';
+import { useFetcher } from 'utils';
 import * as yup from 'yup';
-import { requireAuth } from '../../../../components';
-
-interface State {
-  data: any;
-  loading: boolean;
-  error: any;
-}
 
 const validation = yup.object({
   username: yup
@@ -43,7 +39,7 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
-  const [val, setVal] = useState<State>({ data: null, loading: false, error: null });
+  const { val, fetcher } = useFetcher<IIdentifier>();
 
   return (
     <Layout title="User">
@@ -68,16 +64,11 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
             validationSchema={validation}
             onSubmit={async ({ username }, { setSubmitting }) => {
               setSubmitting(true);
-              setVal((state) => ({ ...state, loading: true }));
-              const response = await fetch('/api/users/create', {
+              await fetcher('/api/users/create', {
                 method: 'POST',
                 headers: { 'Content-type': 'application/json' },
                 body: JSON.stringify({ username }),
-              });
-              const json = await response.json();
-              if (json.status === 'OK')
-                setVal((state) => ({ ...state, data: json?.data, loading: false }));
-              else setVal((state) => ({ ...state, error: json?.error, loading: false }));
+              }).finally(() => setSubmitting(false));
             }}>
             {({ values, isSubmitting, errors }) => (
               <Form>
@@ -101,7 +92,9 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                     color="primary"
                     size="small"
                     type="submit"
-                    disabled={isSubmitting || !!errors?.username || !values?.username || val?.data}>
+                    disabled={
+                      isSubmitting || !!errors?.username || !values?.username || !!val?.data
+                    }>
                     Submit
                   </Button>
                 </p>

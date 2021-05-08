@@ -11,9 +11,8 @@
     "prebuild": "rimraf dist",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start:prod": "node dist/app",
-    "test": "jest --forceExit --detectOpenHandles did.unit-test",
     "test:veramo": "jest --forceExit --detectOpenHandles veramo.unit-test",
-    "test:identitifer": "jest --forceExit --detectOpenHandles identifier.unit-test"
+    "test:issuer": "jest --forceExit --detectOpenHandles issuer.unit-test"
   },
   "dependencies": {
     "@veramo/core": "^1.2.0",

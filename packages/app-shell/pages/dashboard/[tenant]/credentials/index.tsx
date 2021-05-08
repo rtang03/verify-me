@@ -1,17 +1,58 @@
+import Divider from '@material-ui/core/Divider';
+import LinearProgress from '@material-ui/core/LinearProgress';
+import Typography from '@material-ui/core/Typography';
+import type { Paginated } from '@verify/server';
+import { requireAuth } from 'components';
 import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
-import type { NextPage, NextPageContext } from 'next';
-import { getSession } from 'next-auth/client';
-import React, { useState, useEffect } from 'react';
+import pick from 'lodash/pick';
+import type { NextPage } from 'next';
+import type { Session } from 'next-auth';
+import React, { useEffect, Fragment } from 'react';
+import JSONTree from 'react-json-tree';
+import { useFetcher } from 'utils';
 
-const Page: NextPage<any> = ({ session }) => {
+type Credential = {
+  hash: string;
+  body: any;
+};
+
+const Page: NextPage<{ session: Session }> = ({ session }) => {
+  const { val, fetcher } = useFetcher<Paginated<Credential>>();
+
+  useEffect(() => {
+    fetcher('/api/credentials').finally(() => true);
+  }, [session]);
+
   return (
-    <Layout title="Credentials"> {session ? <pre>Credentials</pre> : <AccessDenied />}</Layout>
+    <Layout title="Credentials">
+      {session && (
+        <>
+          <Typography variant="h5">Credentials</Typography>
+          <Typography variant="caption">Create verifiable credentials. Learn more</Typography>
+          <br />
+          <br />
+          {val.loading ? <LinearProgress /> : <Divider />}
+          {val?.data?.items?.length ? (
+            <>
+              <Typography variant="h6">Verifiable credentials</Typography>
+              <Typography variant="caption">total: {val.data.total}</Typography>
+              {val.data.items.map((item, index) => (
+                <Fragment key={index}>
+                  <JSONTree theme="bright" data={pick(item, 'body').body} />
+                </Fragment>
+              ))}
+            </>
+          ) : (
+            <p>No record</p>
+          )}
+        </>
+      )}
+      {!session && <AccessDenied />}
+    </Layout>
   );
 };
 
-export const getServerSideProps = async (context: NextPageContext) => ({
-  props: { session: await getSession(context) },
-});
+export const getServerSideProps = requireAuth;
 
 export default Page;
