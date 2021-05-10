@@ -1,3 +1,4 @@
+import Button from '@material-ui/core/Button';
 import Divider from '@material-ui/core/Divider';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
@@ -8,6 +9,7 @@ import Layout from 'components/Layout';
 import pick from 'lodash/pick';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
+import Link from 'next/link';
 import React, { useEffect, Fragment } from 'react';
 import JSONTree from 'react-json-tree';
 import { useFetcher } from 'utils';
@@ -32,6 +34,11 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
           <Typography variant="caption">Create verifiable credentials. Learn more</Typography>
           <br />
           <br />
+          <Link href="/dashboard/1/credentials/issue">
+            <Button size="small" variant="contained">
+              + Issue Credential
+            </Button>
+          </Link>
           {val.loading ? <LinearProgress /> : <Divider />}
           {val?.data?.items?.length ? (
             <>
