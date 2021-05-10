@@ -1,5 +1,10 @@
 import { Credential, Identifier } from '@veramo/data-store';
-import { AgentRouter, ApiSchemaRouter, RequestWithAgentRouter } from '@veramo/remote-server';
+import {
+  AgentRouter,
+  ApiSchemaRouter,
+  RequestWithAgentRouter,
+  MessagingRouter,
+} from '@veramo/remote-server';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express } from 'express';
@@ -30,6 +35,7 @@ export const createHttpServer2: (option: {
   const schemaRouter = ApiSchemaRouter({ exposedMethods, basePath: '/open-api.json' });
   const requestWithAgentRouter = RequestWithAgentRouter({ agent });
   const didDocRouter = WebDidDocRouter();
+  const messageRouter = MessagingRouter({ metaData: { type: 'DIDComm' } });
   const credentialRepo = getRepository(Credential);
   const identifierRepo = getRepository(Identifier);
   const app = express();
@@ -37,7 +43,7 @@ export const createHttpServer2: (option: {
   app.use(express.json());
   app.use(cookieParser());
   app.use(express.urlencoded({ extended: true }));
-  app.use(morgan('dev'));
+  app.use(morgan('combined'));
   app.use(helmet());
   baseUrl && app.use(cors({ origin: baseUrl }));
 
@@ -48,6 +54,8 @@ export const createHttpServer2: (option: {
   app.use('/open-api.json', schemaRouter);
   // e.g. /.well-known/did.json
   app.use(didDocRouter);
+
+  app.use(messageRouter);
 
   // /issuers/did:web:example.com/credentials
   app.use('/issuers', createIssuerRoute(credentialRepo));

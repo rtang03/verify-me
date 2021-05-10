@@ -2394,6 +2394,17 @@
     debug "^4.1.1"
     typeorm "0.2.32"
 
+"@veramo/did-comm@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@veramo/did-comm/-/did-comm-1.2.0.tgz#cc479ab028b70d4b5579f7e1a99b9d05becbaf86"
+  integrity sha512-qJDPtazRyIGSZMdyn2b4z5Wd9zBJ+NEhUt5LAH8bjVa5YbYHh6RZ+x0ZpFAV8JGBpkw+bbFpZUgh8Yrdnr7vVA==
+  dependencies:
+    "@veramo/core" "^1.2.0"
+    "@veramo/message-handler" "^1.2.0"
+    cross-fetch "^3.1.4"
+    debug "^4.1.1"
+    uuid "^8.3.0"
+
 "@veramo/did-jwt@^1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@veramo/did-jwt/-/did-jwt-1.2.0.tgz#74ee932d5c02f53c4292d9ce4429e9213152115b"
@@ -2491,6 +2502,20 @@
     passport "^0.4.1"
     passport-http-bearer "^1.0.1"
     url-parse "^1.5.1"
+
+"@veramo/selective-disclosure@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@veramo/selective-disclosure/-/selective-disclosure-1.2.0.tgz#a273e32d76d72b5717dcd5c593702fe4dbd86ae3"
+  integrity sha512-YjfcQQKtcvubkpDLS8xGvhr+Q6lXlmyZq2LmukQ2afqmOM5puKlOWr08PHVBoTGRBUV5qncsJsWfgBl3JS0hGg==
+  dependencies:
+    "@veramo/core" "^1.2.0"
+    "@veramo/credential-w3c" "^1.2.0"
+    "@veramo/data-store" "^1.2.0"
+    "@veramo/did-jwt" "^1.2.0"
+    "@veramo/message-handler" "^1.2.0"
+    blakejs "^1.1.0"
+    debug "^4.1.1"
+    did-jwt "5.2.0"
 
 JSONStream@^1.0.4:
   version "1.3.5"

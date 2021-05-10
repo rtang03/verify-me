@@ -12,9 +12,10 @@ const handler: NextApiHandler = async (req, res) => {
   if (method === 'POST') {
     const { issuer, subject, credentialType, claims } = req.body;
 
-    if (issuer !== `did:web:${domain}`) {
-      return res.status(Status.OK).send({ status: 'ERROR', message: 'Invalid issuer' });
-    }
+    // Todo: evaluate later, if it should restrict issuer to example.com
+    // if (issuer !== `did:web:${domain}`) {
+    //   return res.status(Status.OK).send({ status: 'ERROR', message: 'Invalid issuer' });
+    // }
 
     // @see https://veramo.io/docs/api/credential-w3c.icreateverifiablecredentialargs
     const payload = {

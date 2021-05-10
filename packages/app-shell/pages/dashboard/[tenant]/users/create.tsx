@@ -8,8 +8,8 @@ import type { IIdentifier } from '@veramo/core';
 import { requireAuth } from 'components';
 import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
+import LowerCaseTextField from 'components/LowerCaseTextField';
 import { Form, Field, Formik } from 'formik';
-import { TextField } from 'formik-material-ui';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
@@ -18,12 +18,13 @@ import JSONTree from 'react-json-tree';
 import { useFetcher } from 'utils';
 import * as yup from 'yup';
 
+const domain = process.env.NEXT_PUBLIC_BACKEND?.split(':')[1].replace('//', '');
 const validation = yup.object({
   username: yup
     .string()
     .min(3, 'Must be at least 3 characters')
     .max(20, 'Must be less  than 20 characters')
-    .required('Username is required')
+    .required('Alias is required')
     .matches(/^[a-zA-Z0-9]+$/, 'Cannot contain special characters or spaces'),
 });
 const useStyles = makeStyles((theme: Theme) =>
@@ -53,9 +54,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
           <br />
           <br />
           <Typography variant="h5">Create User Identifier</Typography>
-          <Typography variant="caption" color="secondary">
-            Did-document for user
-          </Typography>
+          <br />
           <br />
           {val.loading ? <LinearProgress /> : <Divider />}
           <Formik
@@ -70,16 +69,23 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                 body: JSON.stringify({ username }),
               }).finally(() => setSubmitting(false));
             }}>
-            {({ values, isSubmitting, errors }) => (
+            {({ values: { username }, isSubmitting, errors }) => (
               <Form>
+                <p>Your web-did = {username ? `did:web:${domain}:users:${username}` : '[N/A]'}</p>
+                <br />
+                <div>
+                  <Typography variant="caption" color="secondary">
+                    Note: only lower case and _ underscore is allowed. Special characters disabled.
+                  </Typography>
+                </div>
                 <Field
                   disabled={val.data}
                   className={classes.textField}
-                  label="User name"
+                  label="Alias for User Identiifier"
                   size="small"
-                  component={TextField}
+                  component={LowerCaseTextField}
                   name={'username'}
-                  placeholder={'username'}
+                  placeholder={'a short memorable name'}
                   variant="outlined"
                   margin="normal"
                   fullwidth="true"
@@ -92,9 +98,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                     color="primary"
                     size="small"
                     type="submit"
-                    disabled={
-                      isSubmitting || !!errors?.username || !values?.username || !!val?.data
-                    }>
+                    disabled={isSubmitting || !!errors?.username || !username || !!val?.data}>
                     Submit
                   </Button>
                 </p>

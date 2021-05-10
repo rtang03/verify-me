@@ -1,5 +1,6 @@
 import AccountBoxIcon from '@material-ui/icons/AccountBox';
 import FolderSharedIcon from '@material-ui/icons/FolderShared';
+import MailIcon from '@material-ui/icons/Mail';
 import PhonelinkIcon from '@material-ui/icons/Phonelink';
 
 export const sideBar: { text: string; icon: any; link: string }[] = [
@@ -16,6 +17,11 @@ export const sideBar: { text: string; icon: any; link: string }[] = [
   {
     text: 'Credentials',
     icon: <PhonelinkIcon />,
+    link: '/dashboard/1/credentials',
+  },
+  {
+    text: 'Inbox',
+    icon: <MailIcon />,
     link: '/dashboard/1/credentials',
   },
 ];

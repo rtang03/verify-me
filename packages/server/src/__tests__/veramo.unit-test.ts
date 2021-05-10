@@ -89,3 +89,68 @@ describe('Credential unit test', () => {
     });
   });
 });
+
+// http://9b97989fb059.ngrok.io/agent/sendMessageDIDCommAlpha1
+// {
+//   "data": {
+//     "from": "did:web:9b97989fb059.ngrok.io",
+//     "to": "did:web:9b97989fb059.ngrok.io:users:apple",
+//     "type": "jwt",
+//     "body": "eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJjcmVkZW50aWFsU3ViamVjdCI6eyJraW5kIjoiZnJ1aXQifSwiQGNvbnRleHQiOlsiaHR0cHM6Ly93d3cudzMub3JnLzIwMTgvY3JlZGVudGlhbHMvdjEiXSwidHlwZSI6WyJWZXJpZmlhYmxlQ3JlZGVudGlhbCIsIlByb2ZpbGUiXX0sInN1YiI6ImRpZDp3ZWI6OWI5Nzk4OWZiMDU5Lm5ncm9rLmlvOnVzZXJzOmFwcGxlIiwibmJmIjoxNjIwNjUyOTQ5LCJpc3MiOiJkaWQ6d2ViOjliOTc5ODlmYjA1OS5uZ3Jvay5pbyJ9.qHkkTLMM9xcu-y1lduKLGFl8JXq6Ufq68JbwX2FcbBE1V2GM3u1XeVu8AW7WW66KxkMxjiTzQtTzrmmFAPqutA"
+// },
+//   "save": true,
+//   "url": "https://9b97989fb059.ngrok.io"
+// }
+// const sendVC = {
+//   raw:
+//     'eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJjcmVkZW50aWFsU3ViamVjdCI6eyJraW5kIjoiZnJ1aXQifSwiQGNvbnRleHQiOlsiaHR0cHM6Ly93d3cudzMub3JnLzIwMTgvY3JlZGVudGlhbHMvdjEiXSwidHlwZSI6WyJWZXJpZmlhYmxlQ3JlZGVudGlhbCIsIlByb2ZpbGUiXX0sInN1YiI6ImRpZDp3ZWI6OWI5Nzk4OWZiMDU5Lm5ncm9rLmlvOnVzZXJzOmFwcGxlIiwibmJmIjoxNjIwNjUyOTQ5LCJpc3MiOiJkaWQ6d2ViOjliOTc5ODlmYjA1OS5uZ3Jvay5pbyJ9.qHkkTLMM9xcu-y1lduKLGFl8JXq6Ufq68JbwX2FcbBE1V2GM3u1XeVu8AW7WW66KxkMxjiTzQtTzrmmFAPqutA',
+//   metaData: [
+//     {
+//       type: 'DIDComm-sent',
+//     },
+//     {
+//       type: 'DIDComm',
+//     },
+//     {
+//       type: 'JWT',
+//       value: 'ES256K',
+//     },
+//   ],
+//   id:
+//     '3d2790c2b76c73154ede3b314417ba7b8ca3aa6fb4afbb54c66cc95623caa6982e6d59c6566f8414723a6add5b5078d3222755ed98cfe16012acf60f8fee72c7',
+//   data: {
+//     vc: {
+//       credentialSubject: {
+//         kind: 'fruit',
+//       },
+//       '@context': ['https://www.w3.org/2018/credentials/v1'],
+//       type: ['VerifiableCredential', 'Profile'],
+//     },
+//     sub: 'did:web:9b97989fb059.ngrok.io:users:apple',
+//     nbf: 1620652949,
+//     iss: 'did:web:9b97989fb059.ngrok.io',
+//   },
+//   type: 'w3c.vc',
+//   from: 'did:web:9b97989fb059.ngrok.io',
+//   to: 'did:web:9b97989fb059.ngrok.io:users:apple',
+//   createdAt: '2021-05-10T13:22:29.000Z',
+//   credentials: [
+//     {
+//       credentialSubject: {
+//         kind: 'fruit',
+//         id: 'did:web:9b97989fb059.ngrok.io:users:apple',
+//       },
+//       issuer: {
+//         id: 'did:web:9b97989fb059.ngrok.io',
+//       },
+//       type: ['VerifiableCredential', 'Profile'],
+//       '@context': ['https://www.w3.org/2018/credentials/v1'],
+//       issuanceDate: '2021-05-10T13:22:29.000Z',
+//       proof: {
+//         type: 'JwtProof2020',
+//         jwt:
+//           'eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QifQ.eyJ2YyI6eyJjcmVkZW50aWFsU3ViamVjdCI6eyJraW5kIjoiZnJ1aXQifSwiQGNvbnRleHQiOlsiaHR0cHM6Ly93d3cudzMub3JnLzIwMTgvY3JlZGVudGlhbHMvdjEiXSwidHlwZSI6WyJWZXJpZmlhYmxlQ3JlZGVudGlhbCIsIlByb2ZpbGUiXX0sInN1YiI6ImRpZDp3ZWI6OWI5Nzk4OWZiMDU5Lm5ncm9rLmlvOnVzZXJzOmFwcGxlIiwibmJmIjoxNjIwNjUyOTQ5LCJpc3MiOiJkaWQ6d2ViOjliOTc5ODlmYjA1OS5uZ3Jvay5pbyJ9.qHkkTLMM9xcu-y1lduKLGFl8JXq6Ufq68JbwX2FcbBE1V2GM3u1XeVu8AW7WW66KxkMxjiTzQtTzrmmFAPqutA',
+//       },
+//     },
+//   ],
+// };

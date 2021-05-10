@@ -44,7 +44,7 @@ const useStyles = makeStyles((theme: Theme) =>
       display: 'flex',
       flexWrap: 'wrap',
     },
-    textField: { width: '40ch' },
+    textField: { width: '45ch' },
     claimTextField: { width: '30ch' },
     submit: { margin: theme.spacing(3, 0, 2) },
   })
@@ -123,6 +123,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                     margin="normal"
                     fullwidth="true"
                     autoFocus={true}
+                    disabled={result?.data}
                   />
                 </div>
                 <div>
@@ -136,6 +137,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                     variant="outlined"
                     margin="normal"
                     fullwidth="true"
+                    disabled={result?.data}
                   />
                 </div>
                 <div>
@@ -149,6 +151,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                     variant="outlined"
                     margin="normal"
                     fullwidth="true"
+                    disabled={result?.data}
                   />
                 </div>
                 <p>
