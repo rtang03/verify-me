@@ -1,5 +1,3 @@
-import type { IIdentifier } from '@veramo/core';
-import type { Paginated } from '@verify/server';
 import Status from 'http-status';
 import type { NextApiHandler } from 'next';
 import { OOPS } from '../../../utils';
@@ -12,7 +10,7 @@ const handler: NextApiHandler = async (req, res) => {
     const status = response.status;
 
     if (status === Status.OK) {
-      const result: { data: Paginated<IIdentifier> } = await response.json();
+      const result = await response.json();
       return res.status(Status.OK).send({ status: 'OK', data: result?.data });
     } else {
       console.error(`fail to fetch ${url}, status: ${status}`);

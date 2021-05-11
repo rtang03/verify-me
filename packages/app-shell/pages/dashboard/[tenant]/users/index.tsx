@@ -30,7 +30,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
     <Layout title="Users">
       {session && (
         <>
-          <Typography variant="h5">Users Identitifers</Typography>
+          <Typography variant="h4">Users Identitifers</Typography>
           <Typography variant="caption">
             Setup decentralized identity for users. Learn more
           </Typography>
@@ -44,21 +44,29 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
           {val.loading ? <LinearProgress /> : <Divider />}
           {val.data?.items?.length ? (
             <>
-              <Typography variant="h6">Did-Documents</Typography>
+              <Typography variant="h5">Did-Documents</Typography>
               <Typography variant="caption">total: {val.data.total}</Typography>
               <List dense>
                 {val.data.items.map((item, index) => (
                   <ListItem key={index}>
-                    <Link href={`/dashboard/1/users/${item.alias}`}>
-                      <a>
+                    {item.did.includes('users:') ? (
+                      <>
+                        <Link href={`/dashboard/1/users/${item.alias}`}>
+                          <a>
+                            <ListItemText primary={item.alias} secondary={item.did} />
+                          </a>
+                        </Link>
+                        <ListItemSecondaryAction>
+                          <IconButton edge="end" aria-label="settings">
+                            <SettingsIcon />
+                          </IconButton>
+                        </ListItemSecondaryAction>
+                      </>
+                    ) : (
+                      <>
                         <ListItemText primary={item.alias} secondary={item.did} />
-                      </a>
-                    </Link>
-                    <ListItemSecondaryAction>
-                      <IconButton edge="end" aria-label="settings">
-                        <SettingsIcon />
-                      </IconButton>
-                    </ListItemSecondaryAction>
+                      </>
+                    )}
                   </ListItem>
                 ))}
               </List>

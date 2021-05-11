@@ -3,10 +3,11 @@ import Divider from '@material-ui/core/Divider';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
 import type { Paginated } from '@verify/server';
+import type { UniqueVerifiableCredential } from '@verify/server';
 import { requireAuth } from 'components';
 import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
-import pick from 'lodash/pick';
+import omit from 'lodash/omit';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
@@ -14,13 +15,8 @@ import React, { useEffect, Fragment } from 'react';
 import JSONTree from 'react-json-tree';
 import { useFetcher } from 'utils';
 
-type Credential = {
-  hash: string;
-  body: any;
-};
-
 const Page: NextPage<{ session: Session }> = ({ session }) => {
-  const { val, fetcher } = useFetcher<Paginated<Credential>>();
+  const { val, fetcher } = useFetcher<Paginated<UniqueVerifiableCredential>>();
 
   useEffect(() => {
     fetcher('/api/credentials').finally(() => true);
@@ -30,7 +26,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
     <Layout title="Credentials">
       {session && (
         <>
-          <Typography variant="h5">Credentials</Typography>
+          <Typography variant="h4">Credentials</Typography>
           <Typography variant="caption">Create verifiable credentials. Learn more</Typography>
           <br />
           <br />
@@ -42,11 +38,16 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
           {val.loading ? <LinearProgress /> : <Divider />}
           {val?.data?.items?.length ? (
             <>
-              <Typography variant="h6">Verifiable credentials</Typography>
+              <br />
+              <Typography variant="h5">Verifiable credentials</Typography>
               <Typography variant="caption">total: {val.data.total}</Typography>
-              {val.data.items.map((item, index) => (
+              {val.data.items.map(({ verifiableCredential, hash }, index) => (
                 <Fragment key={index}>
-                  <JSONTree theme="bright" data={pick(item, 'body').body} />
+                  <JSONTree
+                    theme="bright"
+                    data={omit(verifiableCredential, 'proof', '@context', 'type')}
+                    hideRoot={true}
+                  />
                 </Fragment>
               ))}
             </>

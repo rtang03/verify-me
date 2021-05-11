@@ -8,7 +8,7 @@ import {
   IMessageHandler,
 } from '@veramo/core';
 import { CredentialIssuer, ICredentialIssuer, W3cMessageHandler } from '@veramo/credential-w3c';
-import { KeyStore, DIDStore, IDataStoreORM, DataStore } from '@veramo/data-store';
+import { KeyStore, DIDStore, IDataStoreORM, DataStore, DataStoreORM } from '@veramo/data-store';
 import { DIDComm, DIDCommMessageHandler, IDIDComm } from '@veramo/did-comm';
 import { JwtMessageHandler } from '@veramo/did-jwt';
 import { DIDManager } from '@veramo/did-manager';
@@ -70,5 +70,6 @@ export const setupVeramo = (connection: Promise<Connection>) =>
       new DIDComm(),
       new DataStore(connection),
       new CredentialIssuer(),
+      new DataStoreORM(connection),
     ],
   });
