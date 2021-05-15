@@ -17,7 +17,7 @@ import { DIDResolverPlugin } from '@veramo/did-resolver';
 import { KeyManager } from '@veramo/key-manager';
 import { KeyManagementSystem } from '@veramo/kms-local';
 import { MessageHandler } from '@veramo/message-handler';
-import { SdrMessageHandler } from '@veramo/selective-disclosure';
+import { SdrMessageHandler, SelectiveDisclosure } from '@veramo/selective-disclosure';
 import { Resolver } from 'did-resolver';
 import { Connection } from 'typeorm';
 import { getResolver as webDidResolver } from 'web-did-resolver';
@@ -71,5 +71,6 @@ export const setupVeramo = (connection: Promise<Connection>) =>
       new DataStore(connection),
       new CredentialIssuer(),
       new DataStoreORM(connection),
+      new SelectiveDisclosure(),
     ],
   });

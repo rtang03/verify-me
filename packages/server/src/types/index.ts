@@ -9,6 +9,7 @@ import type {
   UniqueVerifiableCredential,
 } from '@veramo/data-store';
 import type { ISendMessageDIDCommAlpha1Args } from '@veramo/did-comm';
+import type { ICredentialRequestInput, Issuer } from '@veramo/selective-disclosure';
 import type { CommonResponse } from './commonResponse';
 import type { DidDocument } from './didDocument';
 import type { Paginated } from './paginated';
@@ -31,4 +32,10 @@ export type DataStoreORMGetVerifiableCredentialsCountArgs = FindArgs<TCredential
 export type DataStoreORMGetVerifiablePresentationsArgs = FindArgs<TPresentationColumns>;
 export type DataStoreORMGetVerifiablePresentationsCountArgs = FindArgs<TPresentationColumns>;
 
-export { UniqueVerifiableCredential, ISendMessageDIDCommAlpha1Args, IMessage };
+export {
+  UniqueVerifiableCredential,
+  ISendMessageDIDCommAlpha1Args,
+  IMessage,
+  ICredentialRequestInput,
+  Issuer,
+};

@@ -29,9 +29,7 @@ const handler: NextApiHandler = async (req, res) => {
 
     // Query Count
     const countUrl = `${process.env.NEXT_PUBLIC_BACKEND}/agent/dataStoreORMGetVerifiableCredentialsCount`;
-    const args2: DataStoreORMGetVerifiableCredentialsCountArgs = {
-      where: [{ column: 'type', op: 'In', value: ['VerifiableCredential'] }],
-    };
+    const args2: DataStoreORMGetVerifiableCredentialsCountArgs = {};
     const countResponse = await fetch(countUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', authorization: `Bearer jklj;kljkl` },
@@ -39,6 +37,7 @@ const handler: NextApiHandler = async (req, res) => {
     });
 
     const status = response.status;
+
     if (status === Status.OK) {
       const items: UniqueVerifiableCredential[] = await response.json();
       const total = await countResponse.json();

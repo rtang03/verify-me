@@ -9,7 +9,7 @@ import ListItemText from '@material-ui/core/ListItemText';
 import Typography from '@material-ui/core/Typography';
 import SettingsIcon from '@material-ui/icons/Settings';
 import type { IIdentifier } from '@veramo/core';
-import { Paginated } from '@verify/server';
+import type { Paginated } from '@verify/server';
 import { requireAuth } from 'components';
 import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';

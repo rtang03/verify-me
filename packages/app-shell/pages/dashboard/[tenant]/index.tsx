@@ -1,9 +1,9 @@
+import { requireAuth } from 'components';
 import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
-import type { NextPage, NextPageContext } from 'next';
+import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState, useEffect } from 'react';
-import { requireAuth } from '../../../components';
 import type { UserInfo } from '../../../types';
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {

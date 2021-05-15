@@ -188,7 +188,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                   variant="outlined"
                   margin="normal"
                   value={claimType}
-                  onChange={(e: any) => setClaimType(e.target.value)}
+                  onChange={({ target }) => setClaimType(target.value)}
                 />{' '}
                 <MuiTextField
                   className={classes.claimTextField}
@@ -198,7 +198,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                   variant="outlined"
                   margin="normal"
                   value={claimValue}
-                  onChange={(e: any) => setClaimValue(e.target.value)}
+                  onChange={({ target }) => setClaimValue(target.value)}
                 />{' '}
               </ListItemText>
               <Button

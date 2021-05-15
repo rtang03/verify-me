@@ -26,7 +26,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
     <Layout title="Identifiers">
       {session && (
         <>
-          <Typography variant="h5">Identitifers</Typography>
+          <Typography variant="h4">Issuers</Typography>
           <Typography variant="caption">
             Setup decentralized identity for web. Each tenant can have only one web did-document.
             Learn more{' '}
@@ -47,7 +47,8 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
           )}
           {val.data && (
             <>
-              <Typography variant="h6">Web Did-Document</Typography>
+              <br />
+              <Typography variant="h5">Web Did-Document</Typography>
               <JSONTree theme="bright" data={val.data} hideRoot={true} />
             </>
           )}
