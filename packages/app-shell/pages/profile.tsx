@@ -1,9 +1,9 @@
-
+import AccessDenied from 'components/AccessDenied';
+import Layout from 'components/Layout';
 import type { NextPage } from 'next';
 import { useSession } from 'next-auth/client';
 import React, { Fragment, useState, useEffect } from 'react';
-import AccessDenied from '../components/AccessDenied';
-import Layout from '../components/Layout';
+import JSONTree from 'react-json-tree';
 
 // client sider rendering
 const Page: NextPage<any> = () => {
@@ -13,7 +13,7 @@ const Page: NextPage<any> = () => {
   useEffect(() => {
     fetch('api/protected/userinfo')
       .then((res) => res.json())
-      .then((json) => json?.content && setContent(json.content));
+      .then((json) => json?.data && setContent(json.data));
   }, [session]);
 
   // When rendering client side don't display anything until loading is complete
@@ -28,7 +28,13 @@ const Page: NextPage<any> = () => {
 
   return (
     <Layout title="Profile">
-      {loading ? <Fragment /> : <pre>{JSON.stringify(content, null, 2)}</pre>}
+      {loading ? (
+        <Fragment />
+      ) : (
+        <>
+          <JSONTree data={content} hideRoot={true} />
+        </>
+      )}
     </Layout>
   );
 };

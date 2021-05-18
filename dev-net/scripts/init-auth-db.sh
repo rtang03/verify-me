@@ -3,6 +3,7 @@ set -e
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
   CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+  CREATE SCHEMA IF NOT EXISTS common;
   CREATE TABLE IF NOT EXISTS accounts
     (
       id                   SERIAL,
@@ -14,8 +15,8 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
       refresh_token        TEXT,
       access_token         TEXT,
       access_token_expires TIMESTAMPTZ,
-      created_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      created_at           TIMESTAMPTZ NOT NULL DEFAULT Now(),
+      updated_at           TIMESTAMPTZ NOT NULL DEFAULT Now(),
       PRIMARY KEY (id)
     );
 
@@ -26,8 +27,8 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
       expires       TIMESTAMPTZ NOT NULL,
       session_token VARCHAR(255) NOT NULL,
       access_token  VARCHAR(255) NOT NULL,
-      created_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT Now(),
+      updated_at    TIMESTAMPTZ NOT NULL DEFAULT Now(),
       PRIMARY KEY (id)
     );
 
@@ -38,8 +39,8 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
       email          VARCHAR(255),
       email_verified TIMESTAMPTZ,
       image          TEXT,
-      created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT Now(),
+      updated_at     TIMESTAMPTZ NOT NULL DEFAULT Now(),
       PRIMARY KEY (id)
     );
 
@@ -49,22 +50,25 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
       identifier VARCHAR(255) NOT NULL,
       token      VARCHAR(255) NOT NULL,
       expires    TIMESTAMPTZ NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT Now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT Now(),
       PRIMARY KEY (id)
     );
 
-  CREATE TABLE IF NOT EXISTS tenants
+  CREATE TABLE IF NOT EXISTS tenant
     (
       id SERIAL,
       slug VARCHAR(255) UNIQUE NOT NULL,
-      db_name VARCHAR(100) UNIQUE NOT NULL,
+      name VARCHAR(100),
+      members TEXT,
+      user_id INTEGER NOT NULL,
+      db_name VARCHAR(100) NOT NULL,
       db_host VARCHAR(255),
       db_username VARCHAR(100),
       db_password TEXT,
       db_port INTEGER NOT NULL DEFAULT 5432,
-      created_at TIMESTAMP DEFAULT NOW(),
-      updated_at TIMESTAMP DEFAULT NOW(),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT Now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT Now(),
       PRIMARY KEY (id)
     );
 
@@ -91,4 +95,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
 
   CREATE UNIQUE INDEX token
     ON verification_requests(token);
+
+  CREATE UNIQUE INDEX slug
+    ON tenant(slug);
 EOSQL

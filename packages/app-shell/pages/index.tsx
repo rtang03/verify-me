@@ -5,7 +5,7 @@ import Layout from '../components/Layout';
 const Index: NextPage<null> = () => {
   return (
     <Layout title="Home">
-      Hello
+      Hello, Welcome to DID World!!
     </Layout>
   );
 };

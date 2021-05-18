@@ -5,15 +5,16 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev2": "npm run build && node dist/app2",
-    "dev2:debug": "npm run build && DEBUG=veramo:did-comm:action-handler node dist/app2",
+    "dev": "npm run build && node dist/app",
+    "dev2:debug": "npm run build && DEBUG=veramo:did-comm:action-handler node dist/app",
     "clean": "rimraf dist",
     "build": "yarn clean && tsc",
     "prebuild": "rimraf dist",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start:prod": "node dist/app",
     "test:veramo": "jest --forceExit --detectOpenHandles veramo.unit-test",
-    "test:issuer": "jest --forceExit --detectOpenHandles issuer.unit-test"
+    "test:issuer": "jest --forceExit --detectOpenHandles issuer.unit-test",
+    "test:tenant": "jest --forceExit --detectOpenHandles tenant.unit-test"
   },
   "dependencies": {
     "@veramo/core": "^1.2.0",

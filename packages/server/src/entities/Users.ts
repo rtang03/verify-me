@@ -1,25 +1,26 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Users {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   name: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Index('email', { unique: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   email: string;
 
-  @Column({ type: 'timestamp with time zone' })
+  @Column({ type: 'timestamp with time zone', nullable: true })
   email_verified: string;
 
-  @Column()
+  @Column({ type: 'text', nullable: true })
   image: string;
 
-  @Column({ type: 'timestamp with time zone', nullable: false })
+  @Column({ type: 'timestamp with time zone', nullable: false, default: 'Now()' })
   created_at: string;
 
-  @Column({ type: 'timestamp with time zone', nullable: false })
+  @Column({ type: 'timestamp with time zone', nullable: false, default: 'Now()' })
   updated_at: string;
 }

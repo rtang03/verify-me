@@ -21,35 +21,35 @@ services:
     networks:
       - devnet
 
-  mongo:
-    container_name: mongo
-    image: mongo
-    restart: always
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=example
-      - MONGO_INITDB_DATABASE=did-db
-      - MONGO_INITDB_USERNAME=tester
-      - MONGO_INITDB_PASSWORD=tester-password
-
-    ports:
-      - 27017:27017
-    volumes:
-      # why add this env var, see https://github.com/docker-library/mongo/issues/323
-      - ./home/mongodb:/home/mongodb
-      - ./volume/mongo-data:/data/db
-      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-    networks:
-      - devnet
-
-  mongo-express:
-    container_name: mongo-express
-    image: mongo-express
-    restart: always
-    ports:
-      - 8081:8081
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: example
-    networks:
-      - devnet
+#  mongo:
+#    container_name: mongo
+#    image: mongo
+#    restart: always
+#    environment:
+#      - MONGO_INITDB_ROOT_USERNAME=root
+#      - MONGO_INITDB_ROOT_PASSWORD=example
+#      - MONGO_INITDB_DATABASE=did-db
+#      - MONGO_INITDB_USERNAME=tester
+#      - MONGO_INITDB_PASSWORD=tester-password
+#
+#    ports:
+#      - 27017:27017
+#    volumes:
+#      # why add this env var, see https://github.com/docker-library/mongo/issues/323
+#      - ./home/mongodb:/home/mongodb
+#      - ./volume/mongo-data:/data/db
+#      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+#    networks:
+#      - devnet
+#
+#  mongo-express:
+#    container_name: mongo-express
+#    image: mongo-express
+#    restart: always
+#    ports:
+#      - 8081:8081
+#    environment:
+#      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+#      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+#    networks:
+#      - devnet

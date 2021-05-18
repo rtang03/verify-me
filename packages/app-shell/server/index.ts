@@ -1,7 +1,7 @@
 require('dotenv').config();
 import http from 'http';
 import util from 'util';
-import { Accounts, Sessions, Users } from '@verify/server';
+import { Accounts, Sessions, Tenant, Users } from '@verify/server';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import morgan from 'morgan';
@@ -15,16 +15,21 @@ const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const port = parseInt(process.env.PORT || '3000', 10);
 const authUrl = '/api/auth/';
+const DB_HOST = process.env.TYPEORM_HOST;
+const DB_USERNAME = process.env.TYPEORM_USERNAME;
+const DB_PASSWORD = process.env.TYPEORM_PASSWORD;
+const DB_NAME = process.env.TYPEORM_DATABASE;
+const DB_PORT = parseInt(process.env.TYPEORM_PORT || '5432', 10);
 const connectionOptions: ConnectionOptions = {
   type: 'postgres',
-  host: 'localhost',
-  port: 5432,
-  username: 'postgres',
-  password: 'docker',
-  database: 'auth_db',
+  host: DB_HOST,
+  port: DB_PORT,
+  username: DB_USERNAME,
+  password: DB_PASSWORD,
+  database: DB_NAME,
   synchronize: false,
   logging: true,
-  entities: [Accounts, Sessions, Users],
+  entities: [Accounts, Sessions, Users, Tenant],
 };
 
 app
@@ -40,6 +45,7 @@ app
     }
     const accountRepo = connection.getRepository<Accounts>('Accounts');
     const userRepo = connection.getRepository<Users>('Users');
+    const tenantRepo = connection.getRepository<Tenant>('Tenant');
 
     const server = express();
     server.use(express.json());
@@ -48,7 +54,7 @@ app
     server.use(morgan('dev'));
     // server.use(cors());
 
-    server.use('/api/protected', userRoute(userRepo, accountRepo));
+    server.use('/api/protected', userRoute(userRepo, accountRepo, tenantRepo));
 
     // NOTE: using next-auth in custom Express server
     // @see https://github.com/nextauthjs/next-auth/issues/531
@@ -59,16 +65,17 @@ app
         .slice(authUrl.length) // make relative to baseUrl
         .replace(/\?.*/, '') // remove query part, use only path part
         .split('/'); // as array of strings
+
       NextAuth(
         req as any,
         res as any,
         nextauthOptions({
           type: 'postgres',
-          host: 'localhost',
-          port: 5432,
-          username: 'postgres',
-          password: 'docker',
-          database: 'auth_db',
+          host: DB_HOST,
+          port: DB_PORT,
+          username: DB_USERNAME,
+          password: DB_PASSWORD,
+          database: DB_NAME,
           synchronize: false,
           logging: true,
         })

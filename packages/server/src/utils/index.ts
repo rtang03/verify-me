@@ -3,4 +3,4 @@ export * from './createKeyPair';
 export * from './typeGuards';
 export * from './constants';
 export * from './setupVeramo';
-export * from './createHttpServer2';
+export * from './createHttpServer';

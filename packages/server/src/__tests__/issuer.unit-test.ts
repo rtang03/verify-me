@@ -2,7 +2,7 @@ import { Entities } from '@veramo/data-store';
 import { Express } from 'express';
 import request from 'supertest';
 import type { ConnectionOptions } from 'typeorm';
-import { createHttpServer2, isCredential } from '../utils';
+import { createHttpServer, isCredential } from '../utils';
 
 const connectionOptions: ConnectionOptions = {
   name: 'default',
@@ -22,7 +22,7 @@ let hash: string;
 
 beforeAll(async () => {
   try {
-    app = await createHttpServer2({ connectionOptions });
+    app = await createHttpServer({ connectionOptions });
 
     if (!app) {
       console.error('🚫  app is undefined');

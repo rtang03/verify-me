@@ -6,9 +6,10 @@ type Action = {
   GET: (req: Request, res: Response) => Promise<any>;
   POST: (req: Request, res: Response) => Promise<any>;
   DELETE: (req: Request, res: Response) => Promise<any>;
+  PUT: (req: Request, res: Response) => Promise<any>;
 };
 
-export const createRestRoute = ({ GET, GET_ALL, POST, DELETE }: Action) => {
+export const createRestRoute = ({ GET, GET_ALL, POST, DELETE, PUT }: Action) => {
   const router = Router();
 
   const catchErrors = (fn: (req: Request, res: Response) => Promise<void>) => async (
@@ -57,6 +58,11 @@ export const createRestRoute = ({ GET, GET_ALL, POST, DELETE }: Action) => {
   router.delete(
     '/:id',
     catchErrors(async (req, res) => DELETE(req, res))
+  );
+
+  router.put(
+    '/:id',
+    catchErrors(async (req, res) => PUT(req, res))
   );
 
   router.all('/', (req, res) => {

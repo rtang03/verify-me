@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "nodemon",
+    "app-shell:dev": "nodemon",
     "clean": "rimraf dist && rimraf build",
     "build": "npm run clean && next build && tsc --project ./tsconfig.server.json",
     "start": "NODE_ENV=production node dist/server/index.js",

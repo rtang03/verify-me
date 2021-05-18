@@ -5,7 +5,7 @@ import Status from 'http-status';
 import request from 'supertest';
 import type { ConnectionOptions } from 'typeorm';
 import { CommonResponse, Paginated } from '../types';
-import { createHttpServer2, isIdentitifer } from '../utils';
+import { createHttpServer, isIdentitifer } from '../utils';
 
 const connectionOptions: ConnectionOptions = {
   type: 'postgres',
@@ -24,7 +24,7 @@ let app: Express;
 
 beforeAll(async () => {
   try {
-    app = await createHttpServer2({ connectionOptions });
+    app = await createHttpServer({ connectionOptions });
 
     if (!app) {
       console.error('🚫  app is undefined');
