@@ -16,11 +16,12 @@ import {
   createConnections,
   getConnection,
 } from 'typeorm';
-import { createTenantRoute } from '../controllers';
+import { createAccountRoute, createTenantRoute, createUserRoute } from '../controllers';
 import { Tenant } from '../entities/Tenant';
 import { Users } from '../entities/Users';
 import { setupVeramo, TTAgent } from './setupVeramo';
 import { WebDidDocRouter } from './webDidRouter';
+import { Accounts } from '../entities/Accounts';
 
 export const createHttpServer: (option: {
   connectionOptions?: ConnectionOptions;
@@ -57,6 +58,7 @@ export const createHttpServer: (option: {
   // const messageRouter = MessagingRouter({ metaData: { type: 'DIDComm' } });
   const tenantRepo = getConnection('default').getRepository(Tenant);
   const usersRepo = getConnection('default').getRepository(Users);
+  const accountsRepo = getConnection('default').getRepository(Accounts);
   // const credentialRepo = getRepository(Credential);
   // const identifierRepo = getRepository(Identifier);
   const app = express();
@@ -82,6 +84,8 @@ export const createHttpServer: (option: {
   // app.use(messageRouter);
 
   app.use('/tenants', createTenantRoute(tenantRepo, usersRepo, envVariables));
+  app.use('/users', createUserRoute(usersRepo));
+  app.use('/accounts', createAccountRoute(accountsRepo));
 
   // /issuers/did:web:example.com/credentials
   // app.use('/issuers', createIssuerRoute(credentialRepo));

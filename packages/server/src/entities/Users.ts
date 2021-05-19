@@ -23,4 +23,7 @@ export class Users {
 
   @Column({ type: 'timestamp with time zone', nullable: false, default: 'Now()' })
   updated_at: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  active_tenant: number;
 }

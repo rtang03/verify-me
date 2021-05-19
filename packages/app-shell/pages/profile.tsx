@@ -11,7 +11,7 @@ const Page: NextPage<any> = () => {
   const [content, setContent] = useState();
 
   useEffect(() => {
-    fetch('api/protected/userinfo')
+    fetch('/api/userinfo')
       .then((res) => res.json())
       .then((json) => json?.data && setContent(json.data));
   }, [session]);

@@ -11,8 +11,8 @@ import SettingsIcon from '@material-ui/icons/Settings';
 import type { IIdentifier } from '@veramo/core';
 import type { Paginated } from '@verify/server';
 import { requireAuth } from 'components';
-import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
+import Main from 'components/Main';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
@@ -28,55 +28,49 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 
   return (
     <Layout title="Users">
-      {session && (
-        <>
-          <Typography variant="h4">Users Identitifers</Typography>
-          <Typography variant="caption">
-            Setup decentralized identity for users. Learn more
-          </Typography>
-          <br />
-          <br />
-          <Link href="/dashboard/1/users/create">
-            <Button size="small" variant="contained">
-              + CREATE IDENTIFIER
-            </Button>
-          </Link>
-          {val.loading ? <LinearProgress /> : <Divider />}
-          {val.data?.items?.length ? (
-            <>
-              <Typography variant="h5">Did-Documents</Typography>
-              <Typography variant="caption">total: {val.data.total}</Typography>
-              <List dense>
-                {val.data.items.map((item, index) => (
-                  <ListItem key={index}>
-                    {item.did.includes('users:') ? (
-                      <>
-                        <Link href={`/dashboard/1/users/${item.alias}`}>
-                          <a>
-                            <ListItemText primary={item.alias} secondary={item.did} />
-                          </a>
-                        </Link>
-                        <ListItemSecondaryAction>
-                          <IconButton edge="end" aria-label="settings">
-                            <SettingsIcon />
-                          </IconButton>
-                        </ListItemSecondaryAction>
-                      </>
-                    ) : (
-                      <>
-                        <ListItemText primary={item.alias} secondary={item.did} />
-                      </>
-                    )}
-                  </ListItem>
-                ))}
-              </List>
-            </>
-          ) : (
-            <p>No record</p>
-          )}
-        </>
-      )}
-      {!session && <AccessDenied />}
+      <Main
+        session={session}
+        title="Users Identitifers"
+        subtitle="Setup decentralized identity for users. Learn more">
+        <Link href="/dashboard/1/users/create">
+          <Button size="small" variant="contained">
+            + CREATE IDENTIFIER
+          </Button>
+        </Link>
+        {val.loading ? <LinearProgress /> : <Divider />}
+        {val.data?.items?.length ? (
+          <>
+            <Typography variant="h5">Did-Documents</Typography>
+            <Typography variant="caption">total: {val.data.total}</Typography>
+            <List dense>
+              {val.data.items.map((item, index) => (
+                <ListItem key={index}>
+                  {item.did.includes('users:') ? (
+                    <>
+                      <Link href={`/dashboard/1/users/${item.alias}`}>
+                        <a>
+                          <ListItemText primary={item.alias} secondary={item.did} />
+                        </a>
+                      </Link>
+                      <ListItemSecondaryAction>
+                        <IconButton edge="end" aria-label="settings">
+                          <SettingsIcon />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </>
+                  ) : (
+                    <>
+                      <ListItemText primary={item.alias} secondary={item.did} />
+                    </>
+                  )}
+                </ListItem>
+              ))}
+            </List>
+          </>
+        ) : (
+          <p>No record</p>
+        )}
+      </Main>
     </Layout>
   );
 };

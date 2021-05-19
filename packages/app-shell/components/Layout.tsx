@@ -2,11 +2,11 @@ import AppBar from '@material-ui/core/AppBar';
 import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import ClickAwayListener from '@material-ui/core/ClickAwayListener';
+import Collapse from '@material-ui/core/Collapse';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Divider from '@material-ui/core/Divider';
 import Drawer from '@material-ui/core/Drawer';
 import Grow from '@material-ui/core/Grow';
-import LinearProgress from '@material-ui/core/LinearProgress';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
@@ -17,11 +17,15 @@ import Paper from '@material-ui/core/Paper';
 import Popper from '@material-ui/core/Popper';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
+import ExpandLess from '@material-ui/icons/ExpandLess';
+import ExpandMore from '@material-ui/icons/ExpandMore';
+import type { Paginated, Tenant } from '@verify/server';
+import sortBy from 'lodash/sortBy';
 import { signIn, signOut, useSession } from 'next-auth/client';
 import Head from 'next/head';
 import Link from 'next/link';
 import React, { FC, useEffect, MouseEvent, useState, useRef, KeyboardEvent } from 'react';
-import { useStyles } from '../utils';
+import { useFetcher, useStyles } from '../utils';
 import { sideBar } from './sidebar';
 
 interface State {
@@ -29,10 +33,8 @@ interface State {
   openTenant: boolean;
 }
 
-const Layout: FC<{ title?: string }> = ({
-  children,
-  title = 'No Title',
-}) => {
+const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
+  const { val: tenant, fetcher: tenantFetcher } = useFetcher<Paginated<Tenant>>();
   const [session, loading] = useSession();
   const classes = useStyles();
   const [val, setVal] = useState<State>({ openAccount: false, openTenant: false });
@@ -60,11 +62,38 @@ const Layout: FC<{ title?: string }> = ({
     !anchorRefAccount?.current?.contains(target as HTMLElement) &&
     setVal({ ...val, openAccount: false });
   const prevOpenAccount = useRef(val.openAccount);
+
   useEffect(() => {
     prevOpenAccount.current && !val.openAccount && anchorRefAccount.current?.focus();
     prevOpenAccount.current = val.openAccount;
   }, [val.openAccount]);
   // END OF ACCOUNT
+
+  // ACTIVE TENANT
+  const [activeTenant, setActiveTenant] = useState<{ tenantId: string; slug: string }>();
+  useEffect(() => {
+    if (typeof window !== 'undefined')
+      setActiveTenant({
+        tenantId: localStorage.getItem('tenantId') || 'null',
+        slug: localStorage.getItem('slug') || 'null',
+      });
+    // save the active tenant to localStorage
+    (!activeTenant?.tenantId || activeTenant?.tenantId === 'null') &&
+      session &&
+      tenantFetcher(`/api/tenants`).then(() => {
+        const tenantId = tenant.data?.items?.[0]?.id;
+        const slug = tenant.data?.items?.[0]?.slug;
+        tenantId && localStorage.setItem('tenantId', tenantId);
+        slug && localStorage.setItem('slug', slug);
+        slug && tenantId && setActiveTenant({ tenantId, slug });
+      });
+  }, []);
+  // END OF CHECK ACTIVE TENANT
+
+  // SWITCH TENANT
+  const [openSwitchTenant, setOpenSwitchTenant] = useState(false);
+  const handleSwitchTenant = () => setOpenSwitchTenant(!openSwitchTenant);
+  // END OF SWITCH TENANT
 
   return (
     <div className={classes.root}>
@@ -98,7 +127,9 @@ const Layout: FC<{ title?: string }> = ({
                 aria-controls={val.openTenant ? 'menu-list-grow' : undefined}
                 aria-haspopup="true"
                 onClick={handleToggle('openTenant')}>
-                <a>My Tenant</a>
+                <a>
+                  {activeTenant && activeTenant.slug === 'null' ? 'No tenant' : activeTenant?.slug}
+                </a>
               </Button>
               <Popper
                 open={val.openTenant}
@@ -119,20 +150,47 @@ const Layout: FC<{ title?: string }> = ({
                           id="menu-list-grow"
                           onKeyDown={handleListKeyDown('openTenant')}>
                           <MenuItem onClick={handleCloseTenant}>
-                            <span>Tenant 1</span>
+                            <Typography variant="inherit" color="secondary">
+                              {activeTenant && activeTenant.slug === 'null'
+                                ? 'No tenant'
+                                : activeTenant?.slug}
+                            </Typography>
                           </MenuItem>
-                          <MenuItem onClick={handleCloseTenant}>
-                            <span>Settings</span>
-                          </MenuItem>
-                          <MenuItem onClick={handleCloseTenant}>
-                            <span>Invite a member</span>
-                          </MenuItem>
+                          {/* hide when no active tenant */}
+                          {activeTenant && activeTenant.slug !== 'null' && (
+                            <MenuItem onClick={handleCloseTenant}>
+                              <Link href={`/dashboard/${activeTenant.tenantId}`}>
+                                <a>
+                                  <ListItemText secondary="Settings" />
+                                </a>
+                              </Link>
+                            </MenuItem>
+                          )}
+                          {activeTenant && activeTenant.slug !== 'null' && (
+                            <MenuItem onClick={handleCloseTenant}>
+                              <span>Invite member</span>
+                            </MenuItem>
+                          )}
+                          {activeTenant && activeTenant.slug !== 'null' && (
+                            <MenuItem button onClick={handleSwitchTenant}>
+                              <ListItemText primary="Switch tenant" />
+                              {openSwitchTenant ? <ExpandLess /> : <ExpandMore />}
+                            </MenuItem>
+                          )}
+                          <Collapse in={openSwitchTenant} timeout="auto" unmountOnExit>
+                            <List component="div" disablePadding>
+                              {sortBy(tenant?.data?.items, 'slug').map((item, index) => (
+                                <ListItem key={index} button className={classes.nested}>
+                                  <ListItemText secondary={item.slug} />
+                                </ListItem>
+                              ))}
+                            </List>
+                          </Collapse>
                           <Divider />
                           <MenuItem onClick={handleCloseTenant}>
-                            <span>Create tenant</span>
-                          </MenuItem>
-                          <MenuItem onClick={handleCloseTenant}>
-                            <span>Switch tenant</span>
+                            <Link href="/dashboard/create">
+                              <a>Create tenant</a>
+                            </Link>
                           </MenuItem>
                         </MenuList>
                       </ClickAwayListener>
@@ -220,6 +278,7 @@ const Layout: FC<{ title?: string }> = ({
         </Toolbar>
       </AppBar>
       <Drawer
+        open={false}
         className={classes.drawer}
         variant="permanent"
         classes={{

@@ -53,7 +53,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
           </Link>
           <br />
           <br />
-          <Typography variant="h5">Create User Identifier</Typography>
+          <Typography variant="h4">Create User Identifier</Typography>
           <br />
           <br />
           {val.loading ? <LinearProgress /> : <Divider />}

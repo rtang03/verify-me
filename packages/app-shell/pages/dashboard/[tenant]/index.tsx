@@ -1,23 +1,38 @@
+import type { Paginated, Tenant } from '@verify/server';
 import { requireAuth } from 'components';
-import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
+import Main from 'components/Main';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import React, { useState, useEffect } from 'react';
-import type { UserInfo } from '../../../types';
+import { useRouter } from 'next/router';
+import React, { useEffect } from 'react';
+import { useFetcher } from '../../../utils';
+import LinearProgress from '@material-ui/core/LinearProgress';
+import Divider from '@material-ui/core/Divider';
+import JSONTree from 'react-json-tree';
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
-  const [content, setContent] = useState<UserInfo>();
+  const { val, fetcher } = useFetcher<Paginated<Partial<Tenant>>>();
+  const router = useRouter();
 
   useEffect(() => {
-    fetch('/api/protected/userinfo')
-      .then((res) => res.json())
-      .then((json) => json?.content && setContent(json.content));
+    fetcher(`/api/tenants?id=${router.query.tenant}`).finally(() => true);
   }, [session]);
 
   return (
     <Layout title="Tenant">
-      {session ? <pre>{JSON.stringify(content, null, 2)}</pre> : <AccessDenied />}
+      <Main
+        title={val?.data?.items?.[0].slug || 'Tenant details'}
+        subtitle={val?.data?.items?.[0].id || ''}
+        session={session}
+        parentText="Dashboard"
+        parentUrl="/dashboard">
+        {val.loading ? <LinearProgress /> : <Divider />}
+        <br />
+        {val?.data?.items?.[0] && !val.loading && (
+          <JSONTree data={val.data.items[0]} theme="bright" hideRoot={true} />
+        )}
+      </Main>
     </Layout>
   );
 };

@@ -29,8 +29,9 @@ export const useStyles = makeStyles((theme: Theme) => ({
    * used by Layout/Drawer
    * **/
   appBar: {
-    width: `calc(100% - ${drawerWidth}px)`,
-    marginLeft: drawerWidth,
+    zIndex: theme.zIndex.drawer + 1,
+    // width: `calc(100% - ${drawerWidth}px)`,
+    // marginLeft: drawerWidth,
   },
   drawer: {
     width: drawerWidth,
@@ -47,4 +48,8 @@ export const useStyles = makeStyles((theme: Theme) => ({
     padding: theme.spacing(3),
   },
   /* End of Layout/Drawer */
+  // used by Layout's Tenant dropdown listitem
+  nested: {
+    paddingLeft: theme.spacing(4),
+  },
 }));

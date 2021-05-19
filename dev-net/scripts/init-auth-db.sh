@@ -41,6 +41,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
       image          TEXT,
       created_at     TIMESTAMPTZ NOT NULL DEFAULT Now(),
       updated_at     TIMESTAMPTZ NOT NULL DEFAULT Now(),
+      active_tenant  VARCHAR(255),
       PRIMARY KEY (id)
     );
 
@@ -57,7 +58,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
 
   CREATE TABLE IF NOT EXISTS tenant
     (
-      id SERIAL,
+      id uuid DEFAULT uuid_generate_v4 (),
       slug VARCHAR(255) UNIQUE NOT NULL,
       name VARCHAR(100),
       members TEXT,

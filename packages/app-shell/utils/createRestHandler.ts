@@ -1,5 +1,6 @@
 import Status from 'http-status';
 import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
+import { getSession } from 'next-auth/client';
 import { OOPS } from './constants';
 
 export const catchHandlerErrors = (
@@ -13,8 +14,20 @@ export const catchHandlerErrors = (
   }
 };
 
-const doFetch = async (res: NextApiResponse, url: string, options?: RequestInit) => {
-  const response = await fetch(url, options);
+const doFetch = async (args: {
+  req: NextApiRequest;
+  res: NextApiResponse;
+  url: string;
+  query?: string;
+  options?: RequestInit;
+}) => {
+  const { req, res, url, query, options } = args;
+  const session = (await getSession({ req })) as any;
+  const user_id = session?.user?.id;
+
+  if (!user_id) return res.status(Status.OK).send({ data: 'protected' });
+  const urlWithUserId = query ? `${url}?${query}&user_id=${user_id}` : `${url}?user_id=${user_id}`;
+  const response = await fetch(urlWithUserId, options);
   const status = response.status;
 
   if (status === Status.OK || status === Status.CREATED) {
@@ -28,31 +41,53 @@ const handler: (url: string) => NextApiHandler = (url) => async (req, res) =>
     {
       ['GET' as string]: async (id: string | string[] | undefined) =>
         id
-          ? doFetch(res, `${url}/${id}`, { headers: { authorization: `Bearer kljkljkl;j;` } })
-          : doFetch(
+          ? doFetch({
+              req,
               res,
-              `${url}?cursor=${req?.query?.cursor ?? 0}&pagesize=${req?.query?.pagesize ?? 10}`,
-              { headers: { authorization: `Bearer kljkljkl;j;` } }
-            ),
+              url: `${url}/${id}`,
+              options: { headers: { authorization: `Bearer kljkljkl;j;` } },
+            })
+          : doFetch({
+              req,
+              res,
+              url,
+              query: `skip=${req?.query?.skip ?? 0}&take=${req?.query?.take ?? 10}`,
+              options: { headers: { authorization: `Bearer kljkljkl;j;` } },
+            }),
       POST: async () =>
-        doFetch(res, url, {
-          method: 'POST',
-          mode: 'cors',
-          headers: { 'Content-Type': 'application/json', authorization: `Bearer jklj;kljkl` },
-          body: JSON.stringify(req.body),
+        doFetch({
+          req,
+          res,
+          url,
+          options: {
+            method: 'POST',
+            mode: 'cors',
+            headers: { 'Content-Type': 'application/json', authorization: `Bearer jklj;kljkl` },
+            body: JSON.stringify(req.body),
+          },
         }),
       PUT: async (id: string | string[] | undefined) =>
-        doFetch(res, `${url}/${id}`, {
-          method: 'PUT',
-          mode: 'cors',
-          headers: { 'Content-Type': 'application/json', authorization: `Bearer kljkljkl;j;` },
-          body: JSON.stringify(req.body),
+        doFetch({
+          req,
+          res,
+          url: `${url}/${id}`,
+          options: {
+            method: 'PUT',
+            mode: 'cors',
+            headers: { 'Content-Type': 'application/json', authorization: `Bearer kljkljkl;j;` },
+            body: JSON.stringify(req.body),
+          },
         }),
       DELETE: async (id: string | string[] | undefined) =>
-        doFetch(res, `${url}/${id}`, {
-          method: 'DELETE',
-          mode: 'cors',
-          headers: { authorization: `Bearer kljkljkl;j;` },
+        doFetch({
+          req,
+          res,
+          url: `${url}/${id}`,
+          options: {
+            method: 'DELETE',
+            mode: 'cors',
+            headers: { authorization: `Bearer kljkljkl;j;` },
+          },
         }),
     }[req?.method as string] ||
     (() => {

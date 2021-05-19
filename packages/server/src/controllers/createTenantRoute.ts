@@ -1,5 +1,6 @@
 import Status from 'http-status';
 import intersection from 'lodash/intersection';
+import omit from 'lodash/omit';
 import { Repository } from 'typeorm';
 import { Tenant } from '../entities/Tenant';
 import { Users } from '../entities/Users';
@@ -14,11 +15,14 @@ export const createTenantRoute = (
   createRestRoute({
     GET: async (req, res) => {
       const items = await tenantRepo.findByIds([req.params.id]);
-      const data = {
+      const filtered = items.map((data) =>
+        omit(data, 'db_name', 'db_host', 'db_port', 'db_username', 'db_password')
+      );
+      const data: Paginated<Partial<Tenant>> = {
         total: 1,
         cursor: 1,
         hasMore: false,
-        items,
+        items: filtered,
       };
       if (data) res.status(Status.OK).send({ status: 'OK', data });
       else res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND' });
@@ -32,6 +36,9 @@ export const createTenantRoute = (
       // search with either user_id OR email
       let where: any;
 
+      // TODO: Double check if findOne is correct, while non-unique email in user is allowed.
+      // Currently, two User object may have same email. That is intentionally deisgned.
+      // And, it is potentially design flaw. MUST re-visit later
       if (user_id) {
         where = { where: { user_id } };
       } else if (email) {
@@ -40,11 +47,14 @@ export const createTenantRoute = (
       }
 
       const [items, total] = await tenantRepo.findAndCount({ skip, take, ...where });
+      const filtered = items.map((data) =>
+        omit(data, 'db_name', 'db_host', 'db_port', 'db_username', 'db_password')
+      );
       const hasMore = skip + take < total;
       const cursor = hasMore ? skip + take : total;
-      const response: CommonResponse<Paginated<Tenant>> = {
+      const response: CommonResponse<Paginated<Partial<Tenant>>> = {
         status: 'OK',
-        data: { total, cursor, hasMore, items },
+        data: { total, cursor, hasMore, items: filtered },
       };
       res.status(Status.OK).send(response);
     },
@@ -79,7 +89,10 @@ export const createTenantRoute = (
 
       const data = await tenantRepo.save(tenant);
 
-      res.status(Status.CREATED).send({ status: 'OK', data });
+      res.status(Status.CREATED).send({
+        status: 'OK',
+        data: omit(data, 'db_name', 'db_host', 'db_port', 'db_username', 'db_password'),
+      });
     },
     DELETE: async (req, res) => {
       const data = await tenantRepo.delete(req.params.id);

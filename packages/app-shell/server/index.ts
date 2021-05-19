@@ -9,7 +9,6 @@ import next from 'next';
 import { default as NextAuth } from 'next-auth';
 import { createConnection, ConnectionOptions, Connection } from 'typeorm';
 import { nextauthOptions } from '../utils';
-import { userRoute } from './routes';
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -43,18 +42,11 @@ app
       console.error(e);
       throw new Error('fail to connect');
     }
-    const accountRepo = connection.getRepository<Accounts>('Accounts');
-    const userRepo = connection.getRepository<Users>('Users');
-    const tenantRepo = connection.getRepository<Tenant>('Tenant');
-
     const server = express();
     server.use(express.json());
     server.use(express.urlencoded({ extended: true }));
     server.use(cookieParser());
     server.use(morgan('dev'));
-    // server.use(cors());
-
-    server.use('/api/protected', userRoute(userRepo, accountRepo, tenantRepo));
 
     // NOTE: using next-auth in custom Express server
     // @see https://github.com/nextauthjs/next-auth/issues/531
