@@ -10,6 +10,7 @@ import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
 import React, { useEffect } from 'react';
+import JSONTree from 'react-json-tree';
 import { useFetcher } from '../../utils';
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
@@ -26,7 +27,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         {val.loading ? <LinearProgress /> : <Divider />}
         {val.data?.items?.length && !val.loading && (
           <>
-            <pre>{JSON.stringify(val.data, null, 2)}</pre>
+            <JSONTree data={val.data.items} theme="bright" />
           </>
         )}
         {!val.data?.items?.length && !val.loading && (

@@ -70,24 +70,23 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
   // END OF ACCOUNT
 
   // ACTIVE TENANT
-  const [activeTenant, setActiveTenant] = useState<{ tenantId: string; slug: string }>();
   useEffect(() => {
-    if (typeof window !== 'undefined')
-      setActiveTenant({
-        tenantId: localStorage.getItem('tenantId') || 'null',
-        slug: localStorage.getItem('slug') || 'null',
-      });
-    // save the active tenant to localStorage
-    (!activeTenant?.tenantId || activeTenant?.tenantId === 'null') &&
-      session &&
-      tenantFetcher(`/api/tenants`).then(() => {
-        const tenantId = tenant.data?.items?.[0]?.id;
-        const slug = tenant.data?.items?.[0]?.slug;
-        tenantId && localStorage.setItem('tenantId', tenantId);
-        slug && localStorage.setItem('slug', slug);
-        slug && tenantId && setActiveTenant({ tenantId, slug });
-      });
-  }, []);
+    tenantFetcher(`/api/tenants`).finally(() => true);
+  }, [session]);
+  const getTenantId = () => typeof window !== 'undefined' && localStorage.getItem('tenantId');
+  const getSlug = () => typeof window !== 'undefined' && localStorage.getItem('slug');
+  if (tenant?.data && !tenant.loading) {
+    const tenantId = tenant.data.items?.[0]?.id;
+    const slug = tenant.data.items?.[0]?.slug;
+    !getTenantId() && typeof window !== 'undefined' && localStorage.setItem('tenantId', tenantId);
+    !getSlug() && typeof window !== 'undefined' && localStorage.setItem('slug', slug);
+  }
+  const setActiveTenant = (id: string, slug: string) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('tenantId', id);
+      localStorage.setItem('slug', slug);
+    }
+  };
   // END OF CHECK ACTIVE TENANT
 
   // SWITCH TENANT
@@ -127,9 +126,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                 aria-controls={val.openTenant ? 'menu-list-grow' : undefined}
                 aria-haspopup="true"
                 onClick={handleToggle('openTenant')}>
-                <a>
-                  {activeTenant && activeTenant.slug === 'null' ? 'No tenant' : activeTenant?.slug}
-                </a>
+                <a>{getSlug() || 'No tenant'}</a>
               </Button>
               <Popper
                 open={val.openTenant}
@@ -151,47 +148,53 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                           onKeyDown={handleListKeyDown('openTenant')}>
                           <MenuItem onClick={handleCloseTenant}>
                             <Typography variant="inherit" color="secondary">
-                              {activeTenant && activeTenant.slug === 'null'
-                                ? 'No tenant'
-                                : activeTenant?.slug}
+                              {getSlug() || 'No tenant'}
                             </Typography>
                           </MenuItem>
                           {/* hide when no active tenant */}
-                          {activeTenant && activeTenant.slug !== 'null' && (
-                            <MenuItem onClick={handleCloseTenant}>
-                              <Link href={`/dashboard/${activeTenant.tenantId}`}>
-                                <a>
+                          {getTenantId() && (
+                            <Link href={`/dashboard/${getTenantId()}`}>
+                              <a>
+                                <MenuItem onClick={handleCloseTenant}>
                                   <ListItemText secondary="Settings" />
-                                </a>
-                              </Link>
-                            </MenuItem>
+                                </MenuItem>
+                              </a>
+                            </Link>
                           )}
-                          {activeTenant && activeTenant.slug !== 'null' && (
+                          {getTenantId() && (
                             <MenuItem onClick={handleCloseTenant}>
                               <span>Invite member</span>
                             </MenuItem>
                           )}
-                          {activeTenant && activeTenant.slug !== 'null' && (
-                            <MenuItem button onClick={handleSwitchTenant}>
+                          {getTenantId() && (
+                            <ListItem button onClick={handleSwitchTenant}>
                               <ListItemText primary="Switch tenant" />
                               {openSwitchTenant ? <ExpandLess /> : <ExpandMore />}
-                            </MenuItem>
+                            </ListItem>
                           )}
                           <Collapse in={openSwitchTenant} timeout="auto" unmountOnExit>
                             <List component="div" disablePadding>
                               {sortBy(tenant?.data?.items, 'slug').map((item, index) => (
-                                <ListItem key={index} button className={classes.nested}>
-                                  <ListItemText secondary={item.slug} />
-                                </ListItem>
+                                <Link key={index} href={`/dashboard/${item.id}`}>
+                                  <ListItem
+                                    button
+                                    className={classes.nested}
+                                    onClick={handleCloseTenant}>
+                                    <ListItemText
+                                      secondary={item.slug}
+                                      onClick={() => setActiveTenant(item.id, item.slug)}
+                                    />
+                                  </ListItem>
+                                </Link>
                               ))}
                             </List>
                           </Collapse>
                           <Divider />
-                          <MenuItem onClick={handleCloseTenant}>
-                            <Link href="/dashboard/create">
-                              <a>Create tenant</a>
-                            </Link>
-                          </MenuItem>
+                          <Link href="/dashboard/create">
+                            <a>
+                              <MenuItem onClick={handleCloseTenant}>Create tenant</MenuItem>
+                            </a>
+                          </Link>
                         </MenuList>
                       </ClickAwayListener>
                     </Paper>

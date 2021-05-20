@@ -1,3 +1,5 @@
+import Divider from '@material-ui/core/Divider';
+import LinearProgress from '@material-ui/core/LinearProgress';
 import type { Paginated, Tenant } from '@verify/server';
 import { requireAuth } from 'components';
 import Layout from 'components/Layout';
@@ -6,10 +8,8 @@ import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React, { useEffect } from 'react';
-import { useFetcher } from '../../../utils';
-import LinearProgress from '@material-ui/core/LinearProgress';
-import Divider from '@material-ui/core/Divider';
 import JSONTree from 'react-json-tree';
+import { useFetcher } from '../../../utils';
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const { val, fetcher } = useFetcher<Paginated<Partial<Tenant>>>();
