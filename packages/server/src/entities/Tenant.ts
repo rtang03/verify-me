@@ -12,6 +12,9 @@ export class Tenant {
   @Column({ type: 'varchar', length: 100, nullable: true })
   name: string;
 
+  @Column({ type: 'boolean', nullable: false, default: false })
+  enabled: boolean;
+
   @Column({ type: 'simple-array', nullable: true })
   members: string[];
 

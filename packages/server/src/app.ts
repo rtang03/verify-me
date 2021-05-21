@@ -1,7 +1,6 @@
 require('dotenv').config();
 import http from 'http';
 import util from 'util';
-import { Entities } from '@veramo/data-store';
 import type { ConnectionOptions } from 'typeorm';
 import { Accounts } from './entities/Accounts';
 import { Sessions } from './entities/Sessions';
@@ -18,19 +17,19 @@ const ENV_VAR = {
   DB_PASSWORD: process.env.TYPEORM_PASSWORD,
   DB_NAME: process.env.TYPEORM_DATABASE,
 };
-const connectionOptions: ConnectionOptions = {
-  name: 'default',
-  type: 'postgres',
-  host: ENV_VAR.HOST,
-  port: ENV_VAR.PORT,
-  username: ENV_VAR.DB_USERNAME,
-  password: ENV_VAR.DB_PASSWORD,
-  database: ENV_VAR.DB_NAME,
-  synchronize: false,
-  logging: true,
-  schema: 'public',
-  entities: Entities,
-};
+// const connectionOptions: ConnectionOptions = {
+//   name: 'default',
+//   type: 'postgres',
+//   host: ENV_VAR.HOST,
+//   port: ENV_VAR.PORT,
+//   username: ENV_VAR.DB_USERNAME,
+//   password: ENV_VAR.DB_PASSWORD,
+//   database: ENV_VAR.DB_NAME,
+//   synchronize: false,
+//   logging: true,
+//   schema: 'public',
+//   entities: Entities,
+// };
 
 const commonConnectionOptions: ConnectionOptions[] = [
   {
@@ -68,12 +67,11 @@ const commonConnectionOptions: ConnectionOptions[] = [
 
   try {
     server = await createHttpServer({
-      connectionOptions,
       commonConnectionOptions,
       envVariables: ENV_VAR,
     });
   } catch (error) {
-    console.error(util.format('❌  An error occurred while createAuthServer: %j', error));
+    console.error(util.format('❌  An error occurred while createHttpserver: %j', error));
     process.exit(1);
   }
 

@@ -3,7 +3,6 @@ set -e
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
   CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-  CREATE SCHEMA IF NOT EXISTS common;
   CREATE TABLE IF NOT EXISTS accounts
     (
       id                   SERIAL,
@@ -48,7 +47,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
   CREATE TABLE IF NOT EXISTS verification_requests
     (
       id         SERIAL,
-      identifier VARCHAR(255) NOT NULL,
+      identifier  VARCHAR(255) NOT NULL,
       token      VARCHAR(255) NOT NULL,
       expires    TIMESTAMPTZ NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT Now(),
@@ -61,6 +60,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
       id uuid DEFAULT uuid_generate_v4 (),
       slug VARCHAR(255) UNIQUE NOT NULL,
       name VARCHAR(100),
+      enabled BOOLEAN NOT NULL DEFAULT FALSE,
       members TEXT,
       user_id INTEGER NOT NULL,
       db_name VARCHAR(100) NOT NULL,

@@ -25,8 +25,7 @@ import { signIn, signOut, useSession } from 'next-auth/client';
 import Head from 'next/head';
 import Link from 'next/link';
 import React, { FC, useEffect, MouseEvent, useState, useRef, KeyboardEvent } from 'react';
-import { useCommonResponse, useStyles } from '../utils';
-import Error from './Error';
+import { useFetcher, useStyles } from '../utils';
 import { sideBar } from './sidebar';
 
 interface State {
@@ -35,25 +34,22 @@ interface State {
 }
 
 const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
+  const { val: tenant, fetcher: tenantFetcher } = useFetcher<Paginated<Tenant>>();
   const [session] = useSession();
   const classes = useStyles();
-  const { data: tenant, isError, isLoading } = useCommonResponse<Paginated<Partial<Tenant>>>();
   const [val, setVal] = useState<State>({ openAccount: false, openTenant: false });
   const handleToggle = (state: keyof State) => () => setVal({ ...val, [state]: !val[state] });
   const handleListKeyDown = (state: keyof State) => (event: KeyboardEvent) =>
     event.key === 'Tab' && event.preventDefault() && setVal({ ...val, [state]: false });
 
-  // POPUP MENU for TENANT
   // @see https://material-ui.com/components/drawers/
   // @see https://material-ui.com/components/menus/
+  // POPUP MENU for TENANT
   const anchorRefTenant = useRef<HTMLButtonElement>(null);
-
   const handleCloseTenant = ({ target }: MouseEvent<EventTarget>) =>
     !anchorRefTenant?.current?.contains(target as HTMLElement) &&
     setVal({ ...val, openTenant: false });
-
   const prevOpenTenant = useRef(val.openTenant);
-
   useEffect(() => {
     prevOpenTenant.current && !val.openTenant && anchorRefTenant.current?.focus();
     prevOpenTenant.current = val.openTenant;
@@ -74,23 +70,26 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
   // END OF ACCOUNT
 
   // ACTIVE TENANT
+  useEffect(() => {
+    tenantFetcher(`/api/tenants`).finally(() => true);
+  }, [session]);
   const getTenantId = () =>
     (typeof window !== 'undefined' && localStorage.getItem('tenantId')) || null;
   const getSlug = () => (typeof window !== 'undefined' && localStorage.getItem('slug')) || null;
-  if (tenant && !isLoading) {
-    const tenantId = tenant.items?.[0]?.id;
-    const slug = tenant.items?.[0]?.slug;
+  if (tenant?.data && !tenant.loading) {
+    const tenantId = tenant.data.items?.[0]?.id;
+    const slug = tenant.data.items?.[0]?.slug;
     // check if the localStorage's tenantId & slug is not out-of-dated.
-    const tenants = tenant?.items?.map(({ id }) => ({ id }));
+    const tenants = tenant.data?.items?.map(({ id }) => ({ id }));
     if (tenants?.filter(({ id }) => id === getTenantId()).length === 0) {
       typeof window !== 'undefined' && localStorage.setItem('tenantId', '');
       typeof window !== 'undefined' && localStorage.setItem('slug', '');
     }
     // if none exists, save it to localStorage
     !getTenantId() &&
-      typeof window !== 'undefined' &&
-      tenantId &&
-      localStorage.setItem('tenantId', tenantId);
+    typeof window !== 'undefined' &&
+    tenantId &&
+    localStorage.setItem('tenantId', tenantId);
     !getSlug() && typeof window !== 'undefined' && slug && localStorage.setItem('slug', slug);
   }
   const setActiveTenant = (id: string, slug: string) => {
@@ -184,28 +183,23 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                               {openSwitchTenant ? <ExpandLess /> : <ExpandMore />}
                             </ListItem>
                           )}
-                          {tenant?.items?.length && (
-                            <Collapse in={openSwitchTenant} timeout="auto" unmountOnExit>
-                              <List component="div" disablePadding>
-                                {sortBy(tenant.items, 'slug')?.map((item, index) => (
-                                  <Link key={index} href={`/dashboard/${item.id}`}>
-                                    <ListItem
-                                      button
-                                      className={classes.nested}
-                                      onClick={handleCloseTenant}>
-                                      <ListItemText
-                                        secondary={item.slug}
-                                        onClick={() =>
-                                          setActiveTenant(item.id || '', item.slug || '')
-                                        }
-                                      />
-                                    </ListItem>
-                                  </Link>
-                                ))}
-                              </List>
-                            </Collapse>
-                          )}
-
+                          <Collapse in={openSwitchTenant} timeout="auto" unmountOnExit>
+                            <List component="div" disablePadding>
+                              {sortBy(tenant?.data?.items, 'slug').map((item, index) => (
+                                <Link key={index} href={`/dashboard/${item.id}`}>
+                                  <ListItem
+                                    button
+                                    className={classes.nested}
+                                    onClick={handleCloseTenant}>
+                                    <ListItemText
+                                      secondary={item.slug}
+                                      onClick={() => setActiveTenant(item.id, item.slug)}
+                                    />
+                                  </ListItem>
+                                </Link>
+                              ))}
+                            </List>
+                          </Collapse>
                           <Divider />
                           <Link href="/dashboard/create">
                             <a>
@@ -323,12 +317,6 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
       <main className={classes.content}>
         <div className={classes.toolbar} />
         {children}
-        {isError && !isLoading && (
-          <>
-            <Divider />
-            <Error />
-          </>
-        )}
       </main>
     </div>
   );

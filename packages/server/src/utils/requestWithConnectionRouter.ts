@@ -1,19 +1,18 @@
-import type { Request } from 'express';
-import { Router } from 'express';
+import { Request, Router } from 'express';
 import type { Connection } from 'typeorm';
-import { getConnectionMap } from './connectionManager';
+import { getConnectionPromises } from './connectionManager';
 
 export interface RequestWithConnection extends Request {
-  db_connection?: Connection;
+  db_connection?: Promise<Connection>;
 }
 
 export const requestwithConnectionRouter: () => Router = () => {
   const router = Router();
 
   router.use(async (req: RequestWithConnection, res, next) => {
-    const slug = req.query.slug as string;
+    const tenantId = req.query.tenant_id as string;
 
-    if (slug) req.db_connection ||= getConnectionMap()[slug];
+    if (tenantId) req.db_connection ||= getConnectionPromises()[tenantId];
 
     next();
   });

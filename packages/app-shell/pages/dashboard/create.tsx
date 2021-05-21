@@ -19,7 +19,7 @@ import { requireAuth } from '../../components';
 const validation = yup.object({
   slug: yup
     .string()
-    .min(3, 'Must be at least 3 characters')
+    .min(5, 'Must be at least 5 characters')
     .max(20, 'Must be less  than 20 characters')
     .required('tenant name is required')
     .matches(/^[a-zA-Z0-9]+$/, 'Cannot contain special characters or spaces'),
@@ -70,7 +70,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                 size="small"
                 component={LowerCaseTextField}
                 name={'slug'}
-                placeholder={'default'}
+                placeholder={'issuer'}
                 variant="outlined"
                 margin="normal"
                 fullwidth="true"

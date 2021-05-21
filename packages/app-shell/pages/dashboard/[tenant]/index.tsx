@@ -2,35 +2,35 @@ import Divider from '@material-ui/core/Divider';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import type { Paginated, Tenant } from '@verify/server';
 import { requireAuth } from 'components';
+import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
-import React, { useEffect } from 'react';
+import React from 'react';
 import JSONTree from 'react-json-tree';
-import { useFetcher } from '../../../utils';
+import { useCommonResponse } from 'utils';
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
-  const { val, fetcher } = useFetcher<Paginated<Partial<Tenant>>>();
   const router = useRouter();
-
-  useEffect(() => {
-    fetcher(`/api/tenants?id=${router.query.tenant}`).finally(() => true);
-  }, [session]);
+  const { data, isError, isLoading } = useCommonResponse<Paginated<Partial<Tenant>>>(
+    router.query.tenant as string
+  );
 
   return (
     <Layout title="Tenant">
       <Main
-        title={val?.data?.items?.[0].slug || 'Tenant details'}
-        subtitle={val?.data?.items?.[0].id || ''}
+        title={data?.items?.[0].slug || 'Tenant details'}
+        subtitle={data?.items?.[0].id || ''}
         session={session}
         parentText="Dashboard"
         parentUrl="/dashboard">
-        {val.loading ? <LinearProgress /> : <Divider />}
+        {isLoading ? <LinearProgress /> : <Divider />}
+        {isError && !isLoading && <Error />}
         <br />
-        {val?.data?.items?.[0] && !val.loading && (
-          <JSONTree data={val.data.items[0]} theme="bright" hideRoot={true} />
+        {data?.items?.[0] && !isLoading && (
+          <JSONTree data={data.items[0]} theme="bright" hideRoot={true} />
         )}
       </Main>
     </Layout>

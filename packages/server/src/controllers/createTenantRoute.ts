@@ -64,6 +64,16 @@ export const createTenantRoute = (
       if (!body?.slug)
         return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'missing slug' });
 
+      if (body?.slug === 'public')
+        return res
+          .status(Status.BAD_REQUEST)
+          .send({ status: 'ERROR', error: '"public" is reserved' });
+
+      if (body?.slug === 'default')
+        return res
+          .status(Status.BAD_REQUEST)
+          .send({ status: 'ERROR', error: '"default" is reserved' });
+
       if (!body?.user_id)
         return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'missing user_id' });
 
