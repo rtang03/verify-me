@@ -1,28 +1,44 @@
 import Button from '@material-ui/core/Button';
 import Divider from '@material-ui/core/Divider';
 import LinearProgress from '@material-ui/core/LinearProgress';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemAvatar from '@material-ui/core/ListItemAvatar';
+import ListItemText from '@material-ui/core/ListItemText';
 import Typography from '@material-ui/core/Typography';
+import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
 import Pagination from '@material-ui/lab/Pagination';
 import { requireAuth } from 'components';
+import AvatarMd5 from 'components/AvatarMd5';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
-import React, { useState } from 'react';
-import JSONTree from 'react-json-tree';
+import React, { Fragment, useState } from 'react';
 import Error from '../../components/Error';
 import type { PaginatedTenant } from '../../types';
 import { useCommonResponse } from '../../utils';
 
 const PAGESIZE = 5;
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    root: {
+      width: '100%',
+      maxWidth: '45ch',
+      backgroundColor: theme.palette.background.paper,
+    },
+    inline: { display: 'inline' },
+  })
+);
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
+  const classes = useStyles();
   const [pageIndex, setPageIndex] = useState(0);
   const { data, isError, isLoading } = useCommonResponse<PaginatedTenant>(
     `/api/tenants?cursor=${pageIndex * PAGESIZE}&pagesize=${PAGESIZE}`
   );
-  const handlePageChange = () => (event: React.ChangeEvent<unknown>, pagenumber: number) =>
+  const handlePageChange = (event: React.ChangeEvent<unknown>, pagenumber: number) =>
     setPageIndex((pagenumber - 1) * PAGESIZE);
 
   let count;
@@ -34,14 +50,39 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         {isLoading ? <LinearProgress /> : <Divider />}
         {!!data?.items?.length && !isLoading && (
           <>
-            <Pagination
-              count={count}
-              showFirstButton
-              showLastButton
-              onChange={handlePageChange()}
-            />
+            <Pagination count={count} showFirstButton showLastButton onChange={handlePageChange} />
             <Typography variant="caption">Total: {data?.total || 0}</Typography>
-            <JSONTree data={data.items} theme="bright" />
+            <List className={classes.root}>
+              {data.items.map((item, index) => (
+                <Fragment key={index}>
+                  <Link href={`/dashboard/${item.id}`}>
+                    <a>
+                      <ListItem alignItems="flex-start">
+                        <ListItemAvatar>
+                          <AvatarMd5 subject={item.id || 'idle'} />
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={item.slug}
+                          secondary={
+                            <Fragment>
+                              <Typography
+                                component="span"
+                                variant="caption"
+                                className={classes.inline}
+                                color="textPrimary">
+                                {item.id}
+                              </Typography>
+                              {item.name}
+                            </Fragment>
+                          }
+                        />
+                      </ListItem>
+                    </a>
+                  </Link>
+                  <Divider variant="inset" component="li" />
+                </Fragment>
+              ))}
+            </List>
           </>
         )}
         {isError && !isLoading && <Error />}

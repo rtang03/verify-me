@@ -9,6 +9,7 @@ import Drawer from '@material-ui/core/Drawer';
 import Grow from '@material-ui/core/Grow';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
+import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -17,8 +18,13 @@ import Paper from '@material-ui/core/Paper';
 import Popper from '@material-ui/core/Popper';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import ExpandLess from '@material-ui/icons/ExpandLess';
-import ExpandMore from '@material-ui/icons/ExpandMore';
+import ExitToAppIcon from '@material-ui/icons/ExitToApp';
+import ExpandLessIcon from '@material-ui/icons/ExpandLess';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import UserProfileIcon from '@material-ui/icons/PermContactCalendar';
+import PersonAddIcon from '@material-ui/icons/PersonAdd';
+import QueueIcon from '@material-ui/icons/Queue';
+import SettingsIcon from '@material-ui/icons/Settings';
 import sortBy from 'lodash/sortBy';
 import { signIn, signOut, useSession } from 'next-auth/client';
 import Head from 'next/head';
@@ -26,6 +32,7 @@ import Link from 'next/link';
 import React, { FC, useEffect, MouseEvent, useState, useRef, KeyboardEvent } from 'react';
 import type { PaginatedTenant } from '../types';
 import { useCommonResponse, useStyles } from '../utils';
+import AvatarMd5 from './AvatarMd5';
 import Error from './Error';
 import { sideBar } from './sidebar';
 
@@ -158,30 +165,42 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                           autoFocusItem={val.openTenant}
                           id="menu-list-grow"
                           onKeyDown={handleListKeyDown('openTenant')}>
-                          <MenuItem onClick={handleCloseTenant}>
+                          <ListItem onClick={handleCloseTenant}>
+                            <ListItemAvatar>
+                              <AvatarMd5 subject={getTenantId() || 'idle'} />
+                            </ListItemAvatar>
                             <Typography variant="inherit" color="secondary">
                               {getSlug() || 'No tenant'}
                             </Typography>
-                          </MenuItem>
+                          </ListItem>
+                          <Divider />
                           {/* hide when no active tenant */}
                           {getTenantId() && (
                             <Link href={`/dashboard/${getTenantId()}`}>
                               <a>
-                                <MenuItem onClick={handleCloseTenant}>
+                                <ListItem onClick={handleCloseTenant}>
+                                  <ListItemIcon>
+                                    <SettingsIcon />
+                                  </ListItemIcon>
                                   <ListItemText secondary="Settings" />
-                                </MenuItem>
+                                </ListItem>
                               </a>
                             </Link>
                           )}
                           {getTenantId() && (
-                            <MenuItem onClick={handleCloseTenant}>
-                              <span>Invite member</span>
-                            </MenuItem>
+                            <ListItem onClick={handleCloseTenant}>
+                              <ListItemIcon>
+                                <PersonAddIcon />
+                              </ListItemIcon>
+                              <ListItemText secondary="Invite member" />
+                            </ListItem>
                           )}
                           {getTenantId() && (
                             <ListItem button onClick={handleSwitchTenant}>
-                              <ListItemText primary="Switch tenant" />
-                              {openSwitchTenant ? <ExpandLess /> : <ExpandMore />}
+                              <ListItemIcon>
+                                {openSwitchTenant ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                              </ListItemIcon>
+                              <ListItemText secondary="Switch tenant" />
                             </ListItem>
                           )}
                           {tenant?.items?.length && (
@@ -193,6 +212,9 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                                       button
                                       className={classes.nested}
                                       onClick={handleCloseTenant}>
+                                      <ListItemIcon>
+                                        <AvatarMd5 subject={item.id || 'idle'} size="small" />
+                                      </ListItemIcon>
                                       <ListItemText
                                         secondary={item.slug}
                                         onClick={() =>
@@ -209,7 +231,12 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                           <Divider />
                           <Link href="/dashboard/create">
                             <a>
-                              <MenuItem onClick={handleCloseTenant}>Create tenant</MenuItem>
+                              <ListItem onClick={handleCloseTenant}>
+                                <ListItemIcon>
+                                  <QueueIcon />
+                                </ListItemIcon>
+                                <ListItemText secondary="Create tenant" />
+                              </ListItem>
                             </a>
                           </Link>
                         </MenuList>
@@ -254,27 +281,35 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                           autoFocusItem={val.openAccount}
                           id="menu-list-grow"
                           onKeyDown={handleListKeyDown('openAccount')}>
-                          <MenuItem onClick={handleCloseAccount}>
-                            <span>
-                              {session?.user?.name || 'Anonymous'}
-                              <br />
-                              <Typography variant="caption">{session?.user?.email}</Typography>
-                            </span>
-                          </MenuItem>
-                          <MenuItem onClick={handleCloseAccount}>
-                            <Link href="/profile">Account Settings</Link>
-                          </MenuItem>
-                          <Divider />
-                          <MenuItem onClick={handleCloseAccount}>
+                          <ListItem onClick={handleCloseAccount}>
+                            <ListItemAvatar>
+                              <Avatar src={session?.user?.image || 'idle'} />
+                            </ListItemAvatar>
+                            <ListItemText primary={session?.user?.name || 'Anonymous'} />
+                          </ListItem>
+                          <Link href="/profile">
+                            <a>
+                              <ListItem onClick={handleCloseAccount}>
+                                <ListItemIcon>
+                                  <UserProfileIcon />
+                                </ListItemIcon>
+                                <ListItemText secondary="User Profile" />
+                              </ListItem>
+                            </a>
+                          </Link>
+                          <ListItem onClick={handleCloseAccount}>
+                            <ListItemIcon>
+                              <ExitToAppIcon />
+                            </ListItemIcon>
                             <a
                               href={`/api/auth/signout`}
                               onClick={(e) => {
                                 e.preventDefault();
                                 return signOut();
                               }}>
-                              Sign Out
+                              <ListItemText secondary="Sign out" />
                             </a>
-                          </MenuItem>
+                          </ListItem>
                         </MenuList>
                       </ClickAwayListener>
                     </Paper>
