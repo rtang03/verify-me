@@ -15,7 +15,6 @@ import JSONTree from 'react-json-tree';
 import { useFetcher } from 'utils';
 import * as yup from 'yup';
 import { requireAuth } from '../../components';
-import { PartialTenant } from '../../types';
 
 const validation = yup.object({
   slug: yup
@@ -38,9 +37,8 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
-  const { val, poster } = useFetcher<PartialTenant>();
+  const { val, fetcher } = useFetcher();
   const user_id = (session as any)?.user?.id;
-  const newTenant = (body: any) => poster('/api/tenants', body);
 
   return (
     <Layout title="Tenant">
@@ -57,8 +55,11 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
           validationSchema={validation}
           onSubmit={async ({ slug }, { setSubmitting }) => {
             setSubmitting(true);
-            await newTenant({ slug, user_id });
-            setSubmitting(false);
+            await fetcher('/api/tenants', {
+              method: 'POST',
+              headers: { 'Content-type': 'application/json' },
+              body: JSON.stringify({ slug, user_id }),
+            }).finally(() => setSubmitting(false));
           }}>
           {({ isSubmitting }) => (
             <Form>

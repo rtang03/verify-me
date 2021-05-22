@@ -1,6 +1,5 @@
 import Divider from '@material-ui/core/Divider';
 import LinearProgress from '@material-ui/core/LinearProgress';
-import type { Paginated, Tenant } from '@verify/server';
 import { requireAuth } from 'components';
 import Error from 'components/Error';
 import Layout from 'components/Layout';
@@ -11,10 +10,12 @@ import { useRouter } from 'next/router';
 import React from 'react';
 import JSONTree from 'react-json-tree';
 import { useCommonResponse } from 'utils';
+import type { PaginatedTenant } from '../../../types';
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const router = useRouter();
-  const { data, isError, isLoading } = useCommonResponse<Paginated<Partial<Tenant>>>(
+  const { data, isError, isLoading } = useCommonResponse<PaginatedTenant>(
+    '/api/tenants',
     router.query.tenant as string
   );
 

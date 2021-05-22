@@ -19,12 +19,12 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
-import type { Paginated, Tenant } from '@verify/server';
 import sortBy from 'lodash/sortBy';
 import { signIn, signOut, useSession } from 'next-auth/client';
 import Head from 'next/head';
 import Link from 'next/link';
 import React, { FC, useEffect, MouseEvent, useState, useRef, KeyboardEvent } from 'react';
+import type { PaginatedTenant } from '../types';
 import { useCommonResponse, useStyles } from '../utils';
 import Error from './Error';
 import { sideBar } from './sidebar';
@@ -37,7 +37,7 @@ interface State {
 const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
   const [session] = useSession();
   const classes = useStyles();
-  const { data: tenant, isError, isLoading } = useCommonResponse<Paginated<Partial<Tenant>>>();
+  const { data: tenant, isError, isLoading } = useCommonResponse<PaginatedTenant>('/api/tenants');
   const [val, setVal] = useState<State>({ openAccount: false, openTenant: false });
   const handleToggle = (state: keyof State) => () => setVal({ ...val, [state]: !val[state] });
   const handleListKeyDown = (state: keyof State) => (event: KeyboardEvent) =>

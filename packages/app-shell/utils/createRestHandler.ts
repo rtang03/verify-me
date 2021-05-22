@@ -26,18 +26,26 @@ const doFetch = async (args: {
   const user_id = session?.user?.id;
 
   if (!user_id) return res.status(Status.OK).send({ data: 'protected' });
+
   const urlWithUserId = query ? `${url}?${query}&user_id=${user_id}` : `${url}?user_id=${user_id}`;
   const response = await fetch(urlWithUserId, options);
-  const status = response.status;
+  const { status } = response;
 
-  if (status === Status.OK || status === Status.CREATED) {
-    const json = await response.json();
-    res.status(status).send(json);
-  } else res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: OOPS });
+  return status === Status.OK || status === Status.CREATED
+    ? res.status(status).send(await response.json())
+    : res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: OOPS });
 };
 
-const handler: (url: string) => NextApiHandler = (url) => async (req, res) =>
-  ((
+const handler: (url: string, methods: string[]) => NextApiHandler = (url, methods) => async (
+  req,
+  res
+) => {
+  const method = req.method as string;
+
+  if (!methods.includes(method))
+    return res.status(Status.METHOD_NOT_ALLOWED).end('Method Not Allowed');
+
+  return (
     {
       ['GET' as string]: async (id: string | string[] | undefined) =>
         id
@@ -51,7 +59,7 @@ const handler: (url: string) => NextApiHandler = (url) => async (req, res) =>
               req,
               res,
               url,
-              query: `skip=${req?.query?.skip ?? 0}&take=${req?.query?.take ?? 10}`,
+              query: `cursor=${req?.query?.cursor ?? 0}&pagesize=${req?.query?.pagesize ?? 10}`,
               options: { headers: { authorization: `Bearer kljkljkl;j;` } },
             }),
       POST: async () =>
@@ -89,12 +97,13 @@ const handler: (url: string) => NextApiHandler = (url) => async (req, res) =>
             headers: { authorization: `Bearer kljkljkl;j;` },
           },
         }),
-    }[req?.method as string] ||
+    }[method] ||
     (() => {
-      res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
+      res.setHeader('Allow', methods);
       res.status(Status.METHOD_NOT_ALLOWED).end('Method Not Allowed');
     })
-  )(req.query?.id));
+  )(req.query?.id);
+};
 
 /**
  * Generic Handler for REST methods
@@ -104,5 +113,9 @@ const handler: (url: string) => NextApiHandler = (url) => async (req, res) =>
  * - DELETE /api/items/:id
  * - PUT /api/items/:id
  * @param url
+ * @param methods
  */
-export const createRestHandler = (url: string) => catchHandlerErrors(handler(url));
+export const createRestHandler = (
+  url: string,
+  methods: string[] = ['GET', 'POST', 'PUT', 'DELETE']
+) => catchHandlerErrors(handler(url, methods));

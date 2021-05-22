@@ -10,12 +10,16 @@ type Result<TData> = {
   error: any;
 };
 
-export const useCommonResponse: <TData>(id?: string) => Result<TData> = <TData>(
+/**
+ * A fetcher by useSWR
+ */
+export const useCommonResponse: <TData>(baseUrl: string, id?: string) => Result<TData> = <TData>(
+  baseUrl: string,
   id: string | undefined
 ) => {
   const { data, error } = id
-    ? useSWR<CommonResponse<TData>>(`/api/tenants?id=${id}`, fetcher)
-    : useSWR<CommonResponse<TData>>(`/api/tenants`, fetcher);
+    ? useSWR<CommonResponse<TData>>(`${baseUrl}?id=${id}`, fetcher)
+    : useSWR<CommonResponse<TData>>(baseUrl, fetcher);
 
   // The returned data should be CommonResponse
 
