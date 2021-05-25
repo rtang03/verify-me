@@ -110,7 +110,7 @@ export const createVirualHostRouter = (
     }
   });
 
-  router.get('/actions/:tenant_id/tenant_status', async (req: RequestWithVhost, res) => {
+  router.post('/actions/:tenant_id/tenant_status', async (req: RequestWithVhost, res) => {
     const tenantId = req.params.tenant_id;
 
     if (!tenantId)

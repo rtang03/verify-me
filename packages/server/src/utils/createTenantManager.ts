@@ -8,6 +8,7 @@ import type { TenantManager, TenantStatus } from '../types';
 import type { TTAgent } from './setupVeramo';
 import { setupVeramo } from './setupVeramo';
 
+const getSchemaName = (uuid: string) => 't_' + uuid.split('-')[0];
 const createConnOption: (tenant: Tenant) => ConnectionOptions = (tenant) => ({
   name: tenant.id,
   type: 'postgres',
@@ -19,7 +20,7 @@ const createConnOption: (tenant: Tenant) => ConnectionOptions = (tenant) => ({
   synchronize: false,
   logging: true,
   entities: Entities,
-  schema: tenant.id,
+  schema: getSchemaName(tenant.id),
 });
 
 const debug = Debug('utils:createTenantManager');
@@ -54,7 +55,9 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
       // step 1: check schema
       console.log('Create schema if not exist,... ');
       try {
-        const result = await commonConnection.query(`CREATE SCHEMA IF NOT EXISTS ${tenant.id}`);
+        const result = await commonConnection.query(
+          `CREATE SCHEMA IF NOT EXISTS ${getSchemaName(tenant.id)}`
+        );
         console.log(result);
         isSchemaExist = true;
       } catch (e) {
@@ -113,7 +116,9 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
       for await (const tenant of tenants) {
         try {
           await commonConnection.query(
-            `SELECT schema_name FROM information_schema.schemata WHERE schema_name = '${tenant.id}';`
+            `SELECT schema_name FROM information_schema.schemata WHERE schema_name = '${getSchemaName(
+              tenant.id
+            )}';`
           );
           const option = createConnOption(tenant);
           const conn = createConnection(option);
@@ -168,7 +173,9 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
 
       try {
         await commonConnection.query(
-          `SELECT schema_name FROM information_schema.schemata WHERE schema_name = '${tenantId}';`
+          `SELECT schema_name FROM information_schema.schemata WHERE schema_name = '${getSchemaName(
+            tenantId
+          )}';`
         );
         isSchemaExist = true;
       } catch {

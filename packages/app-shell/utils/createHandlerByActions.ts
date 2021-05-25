@@ -10,7 +10,8 @@ const handler: (domain: string, methods: string[]) => NextApiHandler = (domain, 
   const method = req.method as string;
   const slug = req.query.slug;
   const action = req.query.action;
-  const url = `http://${slug}.${domain}/${action}`;
+  // const url = `http://${slug}.${domain}/actions/${req.query?.id}/${action}`;
+  const url = `${process.env.NEXT_PUBLIC_BACKEND}/actions/${req.query?.id}/${action}`;
 
   return (
     {
@@ -28,11 +29,12 @@ const handler: (domain: string, methods: string[]) => NextApiHandler = (domain, 
               url,
               options: { headers: { authorization: `Bearer kljkljkl;j;` } },
             }),
-      POST: async () =>
+      POST: async (id: string | string[] | undefined) =>
         doFetch({
           req,
           res,
           url,
+          query: `action=${req?.query?.action}`,
           options: {
             method: 'POST',
             mode: 'cors',
@@ -48,5 +50,5 @@ const handler: (domain: string, methods: string[]) => NextApiHandler = (domain, 
   )(req.query?.id);
 };
 
-export const createHandlerByDomain = (url: string, methods: string[] = ['GET', 'POST']) =>
+export const createHandlerByActions = (url: string, methods: string[] = ['GET', 'POST']) =>
   catchHandlerErrors(handler(url, methods));

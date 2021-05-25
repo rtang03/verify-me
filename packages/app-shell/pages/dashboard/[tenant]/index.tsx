@@ -10,8 +10,8 @@ import Switch from '@material-ui/core/Switch';
 import MuiTextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
-import clsx from 'clsx';
 import { withAuth } from 'components';
+import Activation from 'components/Activation';
 import AvatarMd5 from 'components/AvatarMd5';
 import Error from 'components/Error';
 import Layout from 'components/Layout';
@@ -27,7 +27,7 @@ import React, { ChangeEvent, useState, useEffect } from 'react';
 import { mutate } from 'swr';
 import { useCommonResponse, useFetcher } from 'utils';
 import * as yup from 'yup';
-import type { PaginatedTenant } from '../../../types';
+import type { PaginatedTenant, TenantInfo } from '../../../types';
 
 const baseUrl = '/api/tenants';
 const validation = yup.object({ name: yup.string().nullable() });
@@ -46,15 +46,6 @@ type PsqlUpdated = {
   affected: number;
 };
 
-type TenantInfo = {
-  id?: string;
-  slug?: string;
-  name?: string;
-  activated?: boolean;
-  members?: any;
-  updated_at?: string;
-};
-
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const router = useRouter();
   const classes = useStyles();
@@ -67,9 +58,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   const tenantInfo: TenantInfo | null = data
     ? pick(data.items[0], 'id', 'slug', 'name', 'activated', 'members', 'updated_at')
     : null;
-
-  // First time activation
-
 
   // Update Tenant
   const { val: updateResult, updater } = useFetcher<PsqlUpdated>();
@@ -92,36 +80,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         {isError && !isLoading && <Error />}
         <Divider />
         {/* IF NOT ACTIVATE */}
-        {!!tenantInfo && !tenantInfo.activated && (
-          <Formik
-            initialValues={{}}
-            onSubmit={() => {
-              console.log(null);
-            }}>
-            {({ isSubmitting }) => (
-              <>
-                <Card className={classes.root} variant="outlined">
-                  <CardContent>
-                    <Typography variant="body1" color="textSecondary" component="p">
-                      This tenant is not activated. Please sign below term-and-conditions to
-                      activate. You are about to use no-fee beta service.
-                    </Typography>
-                  </CardContent>
-                  <CardActions disableSpacing>
-                    <Button
-                      className={classes.submit}
-                      color="primary"
-                      disabled={isSubmitting}
-                      type="submit"
-                      variant="contained">
-                      Activate
-                    </Button>
-                  </CardActions>
-                </Card>
-              </>
-            )}
-          </Formik>
-        )}
+        {!!tenantInfo && !tenantInfo.activated && <Activation tenantInfo={tenantInfo} />}
         {/* IF ACTIVATE */}
         {!!tenantInfo && tenantInfo.activated && (
           <Formik
@@ -173,10 +132,20 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                     </Button>
                   </CardActions>
                   <CardContent>
-                    <Divider />
-                    <br />
-                    {updateResult?.data?.affected === 1 && !updateResult.loading && <Success />}
-                    {updateResult?.error && !updateResult.loading && <Error />}
+                    {updateResult?.data?.affected === 1 && !updateResult.loading && (
+                      <>
+                        <Divider />
+                        <br />
+                        <Success />
+                      </>
+                    )}
+                    {updateResult?.error && !updateResult.loading && (
+                      <>
+                        <Divider />
+                        <br />
+                        <Error />
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               </Form>

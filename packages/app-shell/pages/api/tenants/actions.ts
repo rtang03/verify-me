@@ -1,5 +1,5 @@
-import { createHandlerByDomain } from '../../../utils';
+import { createHandlerByActions } from '../../../utils';
 
-const handler = createHandlerByDomain(`${process.env.NEXT_PUBLIC_DOMAIN}/actions`, ['GET']);
+const handler = createHandlerByActions(`${process.env.NEXT_PUBLIC_DOMAIN}`, ['GET', 'POST']);
 
 export default handler;
