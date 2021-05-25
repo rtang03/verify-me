@@ -1,15 +1,15 @@
-import { createStyles, ListItemText } from '@material-ui/core';
 import Button from '@material-ui/core/Button';
 import Divider from '@material-ui/core/Divider';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
+import ListItemText from '@material-ui/core/ListItemText';
 import MuiTextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
-import { makeStyles, Theme } from '@material-ui/core/styles';
+import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import { IIdentifier } from '@veramo/core';
 import type { Paginated } from '@verify/server';
-import { requireAuth } from 'components';
+import { withAuth } from 'components';
 import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
 import { Form, Field, Formik } from 'formik';
@@ -242,6 +242,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   );
 };
 
-export const getServerSideProps = requireAuth;
+export const getServerSideProps = withAuth;
 
 export default Page;

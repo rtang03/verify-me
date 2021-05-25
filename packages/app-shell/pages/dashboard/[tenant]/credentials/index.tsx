@@ -4,7 +4,7 @@ import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
 import type { Paginated } from '@verify/server';
 import type { UniqueVerifiableCredential } from '@verify/server';
-import { requireAuth } from 'components';
+import { withAuth } from 'components';
 import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
 import omit from 'lodash/omit';
@@ -61,6 +61,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   );
 };
 
-export const getServerSideProps = requireAuth;
+export const getServerSideProps = withAuth;
 
 export default Page;

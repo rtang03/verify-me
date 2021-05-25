@@ -17,20 +17,18 @@ const ENV_VAR = {
   DB_PASSWORD: process.env.TYPEORM_PASSWORD,
   DB_NAME: process.env.TYPEORM_DATABASE,
 };
-const commonConnectionOptions: ConnectionOptions[] = [
-  {
-    name: 'default',
-    type: 'postgres',
-    host: ENV_VAR.DB_HOST,
-    port: ENV_VAR.DB_PORT,
-    username: ENV_VAR.DB_USERNAME,
-    password: ENV_VAR.DB_PASSWORD,
-    database: ENV_VAR.DB_NAME,
-    synchronize: false,
-    logging: true,
-    entities: [Tenant, Users],
-  },
-];
+const commonConnectionOptions: ConnectionOptions = {
+  name: 'default',
+  type: 'postgres',
+  host: ENV_VAR.DB_HOST,
+  port: ENV_VAR.DB_PORT,
+  username: ENV_VAR.DB_USERNAME,
+  password: ENV_VAR.DB_PASSWORD,
+  database: ENV_VAR.DB_NAME,
+  synchronize: false,
+  logging: true,
+  entities: [Tenant, Users],
+};
 
 let app: Express;
 let user: Users;

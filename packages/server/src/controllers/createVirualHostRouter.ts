@@ -1,11 +1,9 @@
 import { AgentRouter, RequestWithAgentRouter } from '@veramo/remote-server';
 import { Router, Request } from 'express';
 import Status from 'http-status';
-import { Connection, getConnection } from 'typeorm';
-import { Tenant } from '../entities/Tenant';
+import { Connection } from 'typeorm';
+import type { TenantManager } from '../types';
 import type { TTAgent } from '../utils';
-import { deactivateTenant, getAgents, isTenantActive } from '../utils';
-import { activiateTenant } from '../utils';
 
 const availableMethods = [
   'keyManagerGetKeyManagementSystems',
@@ -61,14 +59,17 @@ interface RequestWithVhost extends Request {
   vhost?: any;
 }
 
-export const createVirualHostRouter = (commonConnection: Connection) => {
+export const createVirualHostRouter = (
+  commonConnection: Connection,
+  tenantManager: TenantManager
+) => {
   const router = Router();
 
   router.use(
     RequestWithAgentRouter({
       getAgentForRequest: (req: RequestWithVhost) => {
-        // get agent from connection manager
-        const agent: TTAgent = getAgents()?.[req.vhost[0]];
+        // NOTE: use VHost
+        const agent: TTAgent = tenantManager.getAgents()?.[req.vhost[0]];
         // return agent ? Promise.resolve(agent) : Promise.reject(new Error('Agent not found'));
         return agent ? Promise.resolve(agent) : Promise.resolve(null);
       },
@@ -77,44 +78,61 @@ export const createVirualHostRouter = (commonConnection: Connection) => {
 
   router.use('/agent', AgentRouter({ exposedMethods: availableMethods }));
 
-  router.post('/activate_tenant', async (req: RequestWithVhost, res) => {
-    const slug = req.vhost[0];
+  router.post('/actions/:tenant_id/activate', async (req: RequestWithVhost, res) => {
+    // todo: Later, use Vhost to double check against tenant_id, as a form of authentication.
+    // const slug = req.vhost[0];
+    const tenantId = req.params.tenant_id;
 
-    if (!slug)
-      return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'missing slug' });
+    if (!tenantId)
+      return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'missing tenantId' });
 
     try {
-      await activiateTenant(slug, commonConnection);
-      res.status(Status.OK).send({ status: 'OK' });
+      const data = await tenantManager.activiate(tenantId);
+      res.status(Status.OK).send({ status: 'OK', data });
     } catch (error) {
       console.error(error);
       res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error });
     }
   });
 
-  router.post('/deactivate_tenant', async (req: RequestWithVhost, res) => {
-    const slug = req.vhost[0];
+  router.post('/actions/:tenant_id/deactivate', async (req: RequestWithVhost, res) => {
+    const tenantId = req.params.tenant_id;
 
-    if (!slug)
+    if (!tenantId)
       return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'missing slug' });
 
     try {
-      await deactivateTenant(slug);
-      res.status(Status.OK).send({ status: 'Ok' });
+      const data = await tenantManager.deactivate(tenantId);
+      res.status(Status.OK).send({ status: 'Ok', data });
     } catch (error) {
       console.error(error);
       res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error });
     }
   });
 
-  router.get('/is_tenant_active', (req: RequestWithVhost, res) => {
-    const slug = req.vhost[0];
+  router.get('/actions/:tenant_id/tenant_status', async (req: RequestWithVhost, res) => {
+    const tenantId = req.params.tenant_id;
 
-    if (!slug)
-      return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'missing slug' });
+    if (!tenantId)
+      return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'missing id' });
 
-    const data = isTenantActive(slug);
-    res.status(Status.OK).send({ status: 'OK', data });
+    try {
+      const data = await tenantManager.getTenantStatus(tenantId);
+      res.status(Status.OK).send({ status: 'OK', data });
+    } catch (error) {
+      console.error(error);
+      res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error });
+    }
+  });
+
+  router.get('/actions/tenant_summary', async (req: RequestWithVhost, res) => {
+    try {
+      const data = await tenantManager.getTenantSummary();
+      res.status(Status.OK).send({ data });
+    } catch (error) {
+      console.error(error);
+      res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error });
+    }
   });
 
   return router;

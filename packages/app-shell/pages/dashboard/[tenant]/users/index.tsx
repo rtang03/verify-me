@@ -10,7 +10,7 @@ import Typography from '@material-ui/core/Typography';
 import SettingsIcon from '@material-ui/icons/Settings';
 import type { IIdentifier } from '@veramo/core';
 import type { Paginated } from '@verify/server';
-import { requireAuth } from 'components';
+import { withAuth } from 'components';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import type { NextPage } from 'next';
@@ -75,6 +75,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   );
 };
 
-export const getServerSideProps = requireAuth;
+export const getServerSideProps = withAuth;
 
 export default Page;

@@ -10,7 +10,7 @@ import MuiTextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme } from '@material-ui/core/styles';
 import type { ICredentialRequestInput, Issuer } from '@verify/server';
-import { requireAuth } from 'components';
+import { withAuth } from 'components';
 import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
 import { Form, Field, Formik } from 'formik';
@@ -293,7 +293,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   );
 };
 
-export const getServerSideProps = requireAuth;
+export const getServerSideProps = withAuth;
 
 export default Page;
 

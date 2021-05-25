@@ -3,7 +3,7 @@ import Divider from '@material-ui/core/Divider';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
 import type { IIdentifier } from '@veramo/core';
-import { requireAuth } from 'components';
+import { withAuth } from 'components';
 import AccessDenied from 'components/AccessDenied';
 import Layout from 'components/Layout';
 import type { NextPage } from 'next';
@@ -59,6 +59,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   );
 };
 
-export const getServerSideProps = requireAuth;
+export const getServerSideProps = withAuth;
 
 export default Page;

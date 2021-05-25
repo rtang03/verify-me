@@ -31,21 +31,19 @@ const ENV_VAR = {
 //   entities: Entities,
 // };
 
-const commonConnectionOptions: ConnectionOptions[] = [
-  {
-    name: 'default',
-    type: 'postgres',
-    host: ENV_VAR.DB_HOST,
-    port: ENV_VAR.DB_PORT,
-    username: ENV_VAR.DB_USERNAME,
-    password: ENV_VAR.DB_PASSWORD,
-    database: ENV_VAR.DB_NAME,
-    synchronize: false,
-    logging: true,
-    schema: 'public',
-    entities: [Tenant, Accounts, Sessions, Users],
-  },
-];
+const commonConnectionOptions: ConnectionOptions = {
+  name: 'default',
+  type: 'postgres',
+  host: ENV_VAR.DB_HOST,
+  port: ENV_VAR.DB_PORT,
+  username: ENV_VAR.DB_USERNAME,
+  password: ENV_VAR.DB_PASSWORD,
+  database: ENV_VAR.DB_NAME,
+  synchronize: false,
+  logging: true,
+  schema: 'public',
+  entities: [Tenant, Accounts, Sessions, Users],
+};
 
 (async () => {
   let server;

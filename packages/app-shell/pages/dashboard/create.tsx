@@ -1,9 +1,8 @@
-import { createStyles } from '@material-ui/core';
 import Button from '@material-ui/core/Button';
 import Divider from '@material-ui/core/Divider';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
-import { makeStyles, Theme } from '@material-ui/core/styles';
+import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import Layout from 'components/Layout';
 import LowerCaseTextField from 'components/LowerCaseTextField';
 import Main from 'components/Main';
@@ -14,8 +13,9 @@ import React from 'react';
 import JSONTree from 'react-json-tree';
 import { useFetcher } from 'utils';
 import * as yup from 'yup';
-import { requireAuth } from '../../components';
-import { PartialTenant } from '../../types';
+import { withAuth } from '../../components';
+import type { PartialTenant } from '../../types';
+import Success from '../../components/Success';
 
 const validation = yup.object({
   slug: yup
@@ -92,12 +92,10 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         <Divider />
         {val.data && !val.loading && (
           <>
-            <br />
-            <Typography variant="h6" color="secondary">
-              Tenant is successfully created.
+            <Success />
+            <Typography variant="caption" color="primary">
+              id: {val.data.id}
             </Typography>
-            <br />
-            <JSONTree theme="bright" data={val.data} />
           </>
         )}
       </Main>
@@ -105,6 +103,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   );
 };
 
-export const getServerSideProps = requireAuth;
+export const getServerSideProps = withAuth;
 
 export default Page;

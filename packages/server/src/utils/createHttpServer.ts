@@ -4,7 +4,7 @@ import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { Connection, ConnectionOptions, createConnections, getConnection } from 'typeorm';
+import { Connection, ConnectionOptions, createConnection, getConnection } from 'typeorm';
 import vhost from 'vhost';
 import {
   createAccountRoute,
@@ -15,33 +15,31 @@ import {
 import { Accounts } from '../entities/Accounts';
 import { Tenant } from '../entities/Tenant';
 import { Users } from '../entities/Users';
-import { connectAllDatabases, setupAgents } from './connectionManager';
+import { createTenantManager } from './createTenantManager';
 import { WebDidDocRouter } from './webDidRouter';
 
 export const createHttpServer: (option: {
-  connectionOptions?: ConnectionOptions;
-  commonConnectionOptions?: ConnectionOptions[];
+  commonConnectionOptions?: ConnectionOptions;
   envVariables?: any;
   baseUrl?: string;
-}) => Promise<Express> = async ({
-  connectionOptions,
-  commonConnectionOptions,
-  envVariables,
-  baseUrl,
-}) => {
-  let commonConnections: Connection[];
+}) => Promise<Express> = async ({ commonConnectionOptions, envVariables, baseUrl }) => {
+  let commonConnections: Connection;
+
   try {
     // Connect common connection
-    commonConnections = await createConnections(commonConnectionOptions);
+    commonConnections = await createConnection(commonConnectionOptions);
   } catch (e) {
     console.error('Fail to create common connection');
     console.error(e);
     process.exit(1);
   }
 
+  const tenantManager = createTenantManager(commonConnections);
+
   try {
     // Connect all pre-existing tenants
-    await connectAllDatabases(commonConnections[0]);
+    // await connectAllDatabases(commonConnections[0]);
+    await tenantManager.connectAllDatabases();
   } catch (e) {
     console.error('Fail to create tenant connections');
     console.error(e);
@@ -50,7 +48,7 @@ export const createHttpServer: (option: {
 
   try {
     // setup agents
-    setupAgents();
+    tenantManager.setupAgents();
   } catch (e) {
     console.error('Fail to setup agents');
     console.error(e);
@@ -89,7 +87,7 @@ export const createHttpServer: (option: {
   app.use('/tenants', createTenantRoute(tenantRepo, usersRepo, envVariables));
   app.use('/users', createUserRoute(usersRepo));
   app.use('/accounts', createAccountRoute(accountsRepo));
-  app.use(vhost('*.*.*', createVirualHostRouter(commonConnections[0])));
+  app.use(vhost('*.*.*', createVirualHostRouter(commonConnections, tenantManager)));
 
   // /issuers/did:web:example.com/credentials
   // app.use('/issuers', createIssuerRoute(credentialRepo));

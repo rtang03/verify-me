@@ -126,6 +126,7 @@ export const createTenantRoute = (
         return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'invalid argument' });
 
       const data = await tenantRepo.update(req.params.id, body);
+
       res.status(Status.OK).send({ status: 'OK', data });
     },
   });

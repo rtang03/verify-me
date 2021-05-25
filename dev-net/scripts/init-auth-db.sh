@@ -60,7 +60,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
       id uuid DEFAULT uuid_generate_v4 (),
       slug VARCHAR(255) UNIQUE NOT NULL,
       name VARCHAR(100),
-      enabled BOOLEAN NOT NULL DEFAULT FALSE,
+      activated BOOLEAN NOT NULL DEFAULT FALSE,
       members TEXT,
       user_id INTEGER NOT NULL,
       db_name VARCHAR(100) NOT NULL,

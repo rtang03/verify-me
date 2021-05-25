@@ -13,7 +13,7 @@ export class Tenant {
   name: string;
 
   @Column({ type: 'boolean', nullable: false, default: false })
-  enabled: boolean;
+  activated: boolean;
 
   @Column({ type: 'simple-array', nullable: true })
   members: string[];

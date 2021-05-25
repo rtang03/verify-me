@@ -33,7 +33,6 @@ import React, { FC, useEffect, MouseEvent, useState, useRef, KeyboardEvent } fro
 import type { PaginatedTenant } from '../types';
 import { useCommonResponse, useStyles } from '../utils';
 import AvatarMd5 from './AvatarMd5';
-import Error from './Error';
 import { sideBar } from './sidebar';
 
 interface State {
@@ -203,7 +202,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                               <ListItemText secondary="Switch tenant" />
                             </ListItem>
                           )}
-                          {tenant?.items?.length && (
+                          {tenant && tenant?.items?.length !== 0 && (
                             <Collapse in={openSwitchTenant} timeout="auto" unmountOnExit>
                               <List component="div" disablePadding>
                                 {sortBy(tenant.items, 'slug')?.map((item, index) => (
@@ -293,7 +292,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                                 <ListItemIcon>
                                   <UserProfileIcon />
                                 </ListItemIcon>
-                                <ListItemText secondary="User Profile" />
+                                <ListItemText secondary="User profile" />
                               </ListItem>
                             </a>
                           </Link>
@@ -358,12 +357,6 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
       <main className={classes.content}>
         <div className={classes.toolbar} />
         {children}
-        {isError && !isLoading && (
-          <>
-            <Divider />
-            <Error />
-          </>
-        )}
       </main>
     </div>
   );

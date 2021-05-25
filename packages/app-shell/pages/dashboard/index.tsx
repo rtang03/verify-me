@@ -8,7 +8,7 @@ import ListItemText from '@material-ui/core/ListItemText';
 import Typography from '@material-ui/core/Typography';
 import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
 import Pagination from '@material-ui/lab/Pagination';
-import { requireAuth } from 'components';
+import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
@@ -106,6 +106,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   );
 };
 
-export const getServerSideProps = requireAuth;
+export const getServerSideProps = withAuth;
 
 export default Page;

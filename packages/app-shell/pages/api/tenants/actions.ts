@@ -1,5 +1,5 @@
-import { createRestHandler } from '../../../utils';
+import { createHandlerByDomain } from '../../../utils';
 
-const handler = createRestHandler(`${process.env.NEXT_PUBLIC_BACKEND}/actions`, ['POST']);
+const handler = createHandlerByDomain(`${process.env.NEXT_PUBLIC_DOMAIN}/actions`, ['GET']);
 
 export default handler;
