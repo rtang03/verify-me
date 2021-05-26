@@ -1,37 +1,41 @@
-import { Column, Entity, ObjectID, ObjectIdColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, Index } from 'typeorm';
 
 @Entity()
 export class Accounts {
-  @ObjectIdColumn()
-  _id: ObjectID;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column()
-  compoundId: string;
+  @Index('compound_id', { unique: true })
+  @Column({ type: 'varchar', length: 255, nullable: false })
+  compound_id: string;
 
-  @Column()
-  userId: string;
+  @Index('user_id')
+  @Column({ type: 'int', nullable: false })
+  user_id: number;
 
-  @Column()
-  providerType: string;
+  @Column({ type: 'varchar', length: 255, nullable: false })
+  provider_type: string;
 
-  @Column()
-  providerId: string;
+  @Index('provider_id')
+  @Column({ type: 'varchar', length: 255, nullable: false })
+  provider_id: string;
 
-  @Column()
-  providerAccountId: string;
+  @Index('provider_account_id')
+  @Column({ type: 'varchar', length: 255, nullable: false })
+  provider_account_id: string;
 
-  @Column()
-  refreshToken: string;
+  @Column({ type: 'text', nullable: true })
+  refresh_token: string;
 
-  @Column()
-  accessToken: string;
+  @Column({ type: 'text', nullable: true })
+  access_token: string;
 
-  @Column()
-  accessTokenExpires: string;
+  @Column({ type: 'timestamp with time zone', nullable: true })
+  access_token_expires: string;
 
-  @Column()
-  createdAt: string;
+  @Column({ type: 'timestamp with time zone', nullable: false, default: 'Now()' })
+  created_at: string;
 
-  @Column()
-  updatedAt: string;
+  @Column({ type: 'timestamp with time zone', nullable: false, default: 'Now()' })
+  updated_at: string;
 }

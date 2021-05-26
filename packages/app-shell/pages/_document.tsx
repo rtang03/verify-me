@@ -9,17 +9,16 @@ export default class MyDocument extends Document {
         <Head>
           <link
             rel="stylesheet"
-    href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
-      />
-      {/*<script src="http://localhost:8082/remoteEntry.js" type="text/javascript" async />*/}
-      <noscript id="jss-insertion-point" />
-      </Head>
-      <body>
-      <Main />
-      <NextScript />
-      </body>
+            href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
+          />
+          <noscript id="jss-insertion-point" />
+        </Head>
+        <body>
+          <Main />
+          <NextScript />
+        </body>
       </Html>
-  );
+    );
   }
 }
 
@@ -53,7 +52,7 @@ MyDocument.getInitialProps = async (ctx) => {
   ctx.renderPage = () =>
     originalRenderPage({
       enhanceApp: (App) => (props) => sheets.collect(<App {...props} />),
-});
+    });
 
   const initialProps = await Document.getInitialProps(ctx);
 

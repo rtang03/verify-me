@@ -3,3 +3,4 @@ export * from './utils';
 export { Accounts } from './entities/Accounts';
 export { Users } from './entities/Users';
 export { Sessions } from './entities/Sessions';
+export { Tenant } from './entities/Tenant';

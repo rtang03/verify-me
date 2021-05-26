@@ -1,6 +1,8 @@
 import Adapters from 'next-auth/adapters';
 import Providers from 'next-auth/providers';
 import type { ConnectionOptions } from 'typeorm';
+import type { Session } from 'next-auth';
+import { Users } from '@verify/server';
 
 export const nextauthOptions: any = (connectionOptions: ConnectionOptions) => ({
   theme: 'light' as any,
@@ -29,9 +31,7 @@ export const nextauthOptions: any = (connectionOptions: ConnectionOptions) => ({
     // Use JSON Web Tokens for session instead of database sessions.
     // This option can be used with or without a database for users/accounts.
     // Note: `jwt` is automatically set to `true` if no database is specified.
-    // TODO: cannot use false, there is unknown bug, in connecting Mongo's Session collection
-    // Leave it alone; no urgency to fix it.
-    jwt: true,
+    jwt: false,
 
     // Seconds - How long until an idle session expires and is no longer valid.
     // maxAge: 30 * 24 * 60 * 60, // 30 days
@@ -52,18 +52,15 @@ export const nextauthOptions: any = (connectionOptions: ConnectionOptions) => ({
     // message if not defined explicitly.
     // secret: 'INp8IvdIyeMcoGAgFGoA61DdBglwwSqnXJZkgz8PSnw',
     // secret: process.env.SECRET,
-
     // You can generate a signing key using `jose newkey -s 512 -t oct -a HS512`
     // This gives you direct knowledge of the key used to sign the token so you can use it
     // to authenticate indirectly (eg. to a database driver)
     // signingKey: {"kty":"oct","kid":"Dl893BEV-iVE-x9EC52TDmlJUgGm9oZ99_ZL025Hc5Q","alg":"HS512","k":"K7QqRmJOKRK2qcCKV_pi9PSBv3XP0fpTu30TP8xn4w01xR3ZMZM38yL2DnTVPVw6e4yhdh0jtoah-i4c_pZagA"},
-
     // If you chose something other than the default algorithm for the signingKey (HS512)
     // you also need to configure the algorithm
     // verificationOptions: {
     //    algorithms: ['HS256']
     // },
-
     // Set to true to use encryption. Defaults to false (signing only).
     // encryption: true,
     // encryptionKey: "",
@@ -71,7 +68,6 @@ export const nextauthOptions: any = (connectionOptions: ConnectionOptions) => ({
     // decryptionOptions = {
     //    algorithms: ['A256GCM']
     // },
-
     // You can define your own encode/decode functions for signing and encryption
     // if you want to override the default behaviour.
     // async encode({ secret, token, maxAge }) {},
@@ -97,7 +93,10 @@ export const nextauthOptions: any = (connectionOptions: ConnectionOptions) => ({
   callbacks: {
     // async signIn(user, account, profile) { return true },
     // async redirect(url, baseUrl) { return baseUrl },
-    // async session(session, user) { return session },
+    async session(session: Session, user: Users) {
+      session.user = user;
+      return session;
+    },
     // async jwt(token, user, account, profile, isNewUser) { return token }
   },
 
@@ -107,16 +106,6 @@ export const nextauthOptions: any = (connectionOptions: ConnectionOptions) => ({
 
   // Enable debug messages in the console if you are having problems
   debug: false,
-
-  // adapter: Adapters.TypeORM.Adapter({
-  //   type: 'mongodb',
-  //   host: '0.0.0.0',
-  //   port: 27017,
-  //   username: 'tester',
-  //   password: 'tester-password',
-  //   database: 'did-db',
-  //   useUnifiedTopology: true,
-  // }),
 
   adapter: Adapters.TypeORM.Adapter(connectionOptions),
 });

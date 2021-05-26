@@ -1,32 +1,31 @@
 import { Request, Response, Router } from 'express';
 import Status from 'http-status';
-import { SOMETHING_WRONG } from './constants';
 
 type Action = {
   GET_ALL: (req: Request, res: Response, skip: number, take: number) => Promise<any>;
   GET: (req: Request, res: Response) => Promise<any>;
   POST: (req: Request, res: Response) => Promise<any>;
   DELETE: (req: Request, res: Response) => Promise<any>;
+  PUT: (req: Request, res: Response) => Promise<any>;
 };
 
-export const createRestRoute = ({ GET, GET_ALL, POST, DELETE }: Action) => {
+export const createRestRoute = ({ GET, GET_ALL, POST, DELETE, PUT }: Action) => {
   const router = Router();
 
-  const catchHandlerErrors = (fn: (req: Request, res: Response) => Promise<void>) => async (
+  const catchErrors = (fn: (req: Request, res: Response) => Promise<void>) => async (
     req: Request,
     res: Response
   ) => {
     try {
       await fn(req, res);
-    } catch (e) {
-      console.error(e);
-      res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: SOMETHING_WRONG });
+    } catch (error) {
+      res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: error.message });
     }
   };
 
   router.get(
     '/',
-    catchHandlerErrors(async (req, res) => {
+    catchErrors(async (req, res) => {
       let skip = 0;
       let take = 10;
 
@@ -48,17 +47,22 @@ export const createRestRoute = ({ GET, GET_ALL, POST, DELETE }: Action) => {
 
   router.get(
     '/:id',
-    catchHandlerErrors(async (req, res) => GET(req, res))
+    catchErrors(async (req, res) => GET(req, res))
   );
 
   router.post(
     '/',
-    catchHandlerErrors(async (req, res) => POST(req, res))
+    catchErrors(async (req, res) => POST(req, res))
   );
 
   router.delete(
     '/:id',
-    catchHandlerErrors(async (req, res) => DELETE(req, res))
+    catchErrors(async (req, res) => DELETE(req, res))
+  );
+
+  router.put(
+    '/:id',
+    catchErrors(async (req, res) => PUT(req, res))
   );
 
   router.all('/', (req, res) => {

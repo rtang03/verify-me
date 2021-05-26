@@ -1,68 +1,75 @@
 import Status from 'http-status';
-import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
-import { OOPS } from './constants';
+import type { NextApiHandler } from 'next';
+import { catchHandlerErrors } from './catchHandlerError';
+import { doFetch } from './doFetch';
 
-export const catchHandlerErrors = (
-  fn: (req: NextApiRequest, res: NextApiResponse) => void | Promise<void>
-) => async (req: NextApiRequest, res: NextApiResponse) => {
-  try {
-    await fn(req, res);
-  } catch (e) {
-    console.error(e);
-    res.status(Status.INTERNAL_SERVER_ERROR).send({ status: 'ERROR', message: OOPS });
-  }
-};
+const handler: (url: string, methods: string[]) => NextApiHandler = (url, methods) => async (
+  req,
+  res
+) => {
+  const method = req.method as string;
 
-const doFetch = async (res: NextApiResponse, url: string, options?: RequestInit) => {
-  const response = await fetch(url, options);
-  const status = response.status;
+  if (!methods.includes(method))
+    return res.status(Status.METHOD_NOT_ALLOWED).end('Method Not Allowed');
 
-  if (status === Status.OK || status === Status.CREATED) {
-    const json = await response.json();
-    res.status(Status.OK).send(json);
-  } else res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: OOPS });
-};
-
-const handler: (url: string) => NextApiHandler = (url) => async (req, res) => {
-  const method = req?.method as string;
-  const id = req.query?.id;
-
-  await (
+  return (
     {
-      ['GET' as string]: async () =>
+      ['GET' as string]: async (id: string | string[] | undefined) =>
         id
-          ? doFetch(res, `${url}/${id}`, { headers: { authorization: `Bearer kljkljkl;j;` } })
-          : doFetch(
+          ? doFetch({
+              req,
               res,
-              `${url}?cursor=${req?.query?.cursor ?? 0}&pagesize=${req?.query?.pagesize ?? 10}`,
-              { headers: { authorization: `Bearer kljkljkl;j;` } }
-            ),
+              url: `${url}/${id}`,
+              options: { headers: { authorization: `Bearer kljkljkl;j;` } },
+            })
+          : doFetch({
+              req,
+              res,
+              url,
+              query: `cursor=${req?.query?.cursor ?? 0}&pagesize=${req?.query?.pagesize ?? 10}`,
+              options: { headers: { authorization: `Bearer kljkljkl;j;` } },
+            }),
       POST: async () =>
-        doFetch(res, url, {
-          method: 'POST',
-          mode: 'cors',
-          headers: { 'Content-Type': 'application/json', authorization: `Bearer jklj;kljkl` },
-          body: JSON.stringify(req.body),
+        doFetch({
+          req,
+          res,
+          url,
+          options: {
+            method: 'POST',
+            mode: 'cors',
+            headers: { 'Content-Type': 'application/json', authorization: `Bearer jklj;kljkl` },
+            body: JSON.stringify(req.body),
+          },
         }),
-      PUT: async () =>
-        doFetch(res, url, {
-          method: 'PUT',
-          mode: 'cors',
-          headers: { 'Content-Type': 'application/json', authorization: `Bearer kljkljkl;j;` },
-          body: JSON.stringify(req.body),
+      PUT: async (id: string | string[] | undefined) =>
+        doFetch({
+          req,
+          res,
+          url: `${url}/${id}`,
+          options: {
+            method: 'PUT',
+            mode: 'cors',
+            headers: { 'Content-Type': 'application/json', authorization: `Bearer kljkljkl;j;` },
+            body: JSON.stringify(req.body),
+          },
         }),
-      DELETE: async () =>
-        doFetch(res, url, {
-          method: 'DELETE',
-          mode: 'cors',
-          headers: { authorization: `Bearer kljkljkl;j;` },
+      DELETE: async (id: string | string[] | undefined) =>
+        doFetch({
+          req,
+          res,
+          url: `${url}/${id}`,
+          options: {
+            method: 'DELETE',
+            mode: 'cors',
+            headers: { authorization: `Bearer kljkljkl;j;` },
+          },
         }),
     }[method] ||
     (() => {
-      res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
-      res.status(Status.METHOD_NOT_ALLOWED).end(`Method ${method} Not Allowed`);
+      res.setHeader('Allow', methods);
+      res.status(Status.METHOD_NOT_ALLOWED).end('Method Not Allowed');
     })
-  )();
+  )(req.query?.id);
 };
 
 /**
@@ -73,5 +80,9 @@ const handler: (url: string) => NextApiHandler = (url) => async (req, res) => {
  * - DELETE /api/items/:id
  * - PUT /api/items/:id
  * @param url
+ * @param methods
  */
-export const createRestHandler = (url: string) => catchHandlerErrors(handler(url));
+export const createRestHandler = (
+  url: string,
+  methods: string[] = ['GET', 'POST', 'PUT', 'DELETE']
+) => catchHandlerErrors(handler(url, methods));

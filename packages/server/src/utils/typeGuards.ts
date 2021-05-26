@@ -1,23 +1,29 @@
-import { DidDocument } from '../entities/DidDocument';
-import type { CreateDidDocumentPayload } from '../types';
+import type { IIdentifier } from '@veramo/core';
+import { Credential } from '@veramo/data-store';
+import { Tenant } from '../entities/Tenant';
 
-export const isCreateDidDocumentPayload = (input: any): input is CreateDidDocumentPayload =>
-  input?.id !== undefined && input?.description !== undefined && input?.controllerKey !== undefined;
+export const isIdentitifer = (input: any): input is IIdentifier =>
+  input.did !== undefined &&
+  input.provider !== undefined &&
+  input.keys !== undefined &&
+  input.services !== undefined;
 
-export const isDidDocument = (input: any): input is DidDocument =>
+export const isCredential = (input: any): input is Credential =>
+  input?.credentialSubject !== undefined &&
+  input?.issuer !== undefined &&
+  input?.type !== undefined &&
+  input?.['@context'] !== undefined &&
+  input?.issuanceDate !== undefined &&
+  input?.proof !== undefined;
+
+export const isTenant = (input: any): input is Tenant =>
+  input?.slug !== undefined &&
   input?.id !== undefined &&
-  input?.controller !== undefined &&
-  input?.verificationMethod !== undefined &&
-  input?.created !== undefined;
-
-export const isDidDocumentArray = (input: any): input is DidDocument[] =>
-  Array.isArray(input) &&
-  input
-    .map(
-      (item) =>
-        item?.id !== undefined &&
-        item?.controller !== undefined &&
-        item?.verificationMethod !== undefined &&
-        item?.created !== undefined
-    )
-    .reduce((prev, curr) => curr && prev, true);
+  input?.user_id !== undefined &&
+  input?.created_at !== undefined &&
+  input?.updated_at !== undefined &&
+  input?.db_name !== undefined &&
+  input?.db_host !== undefined &&
+  input?.db_username !== undefined &&
+  input?.db_password !== undefined &&
+  input?.db_port !== undefined;

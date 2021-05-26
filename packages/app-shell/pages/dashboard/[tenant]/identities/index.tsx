@@ -1,113 +1,83 @@
-import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import Divider from '@material-ui/core/Divider';
-import IconButton from '@material-ui/core/IconButton';
 import LinearProgress from '@material-ui/core/LinearProgress';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemAvatar from '@material-ui/core/ListItemAvatar';
-import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
-import ListItemText from '@material-ui/core/ListItemText';
 import Typography from '@material-ui/core/Typography';
-import PersonOutlineIcon from '@material-ui/icons/PersonOutline';
-import SettingsIcon from '@material-ui/icons/Settings';
-import Pagination from '@material-ui/lab/Pagination';
-import type { PaginatedDIDDocument } from '@verify/server';
-import AccessDenied from 'components/AccessDenied';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import type { IIdentifier } from '@veramo/core';
+import { withAuth } from 'components';
 import Layout from 'components/Layout';
-import type { NextPage, NextPageContext } from 'next';
+import Main from 'components/Main';
+import pick from 'lodash/pick';
+import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import { getSession } from 'next-auth/client';
-import Link from 'next/link';
-import React, { useState, useEffect } from 'react';
-import { useStyles } from '../../../../utils';
+import { useRouter } from 'next/router';
+import React, { useEffect } from 'react';
+import JSONTree from 'react-json-tree';
+import type { PaginatedTenant, TenantInfo } from 'types';
+import { useCommonResponse, useFetcher } from 'utils';
 
-const PAGESIZE = 5;
+const webDidUrl = process.env.NEXT_PUBLIC_BACKEND?.split(':')[1].replace('//', '');
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    root: { maxWidth: 550, margin: theme.spacing(3, 1, 2) },
+    submit: { margin: theme.spacing(3, 2, 2) },
+  })
+);
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
-  const [paginated, setPaginated] = useState<PaginatedDIDDocument>();
-  const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const classes = useStyles();
-  const pageCount = paginated?.total && Math.ceil(paginated.total / PAGESIZE);
-  const total = paginated?.total && paginated.total;
-  const fetcher = (cursor: number) => {
-    setLoading(true);
-    return fetch(`/api/dids?cursor=${cursor}&pagesize=${PAGESIZE}`)
-      .then((r) => r.json())
-      .then((json) => json?.data && setPaginated(json.data));
-  };
 
-  useEffect(() => {
-    fetcher(0).then(() => setLoading(false));
-  }, [session]);
+  // Query TenantInfo
+  const { data, isError, isLoading } = useCommonResponse<PaginatedTenant>(
+    '/api/tenants',
+    router.query.tenant as string
+  );
+  const tenantInfo: TenantInfo | null = data
+    ? pick(data.items[0], 'id', 'slug', 'name', 'activated')
+    : null;
 
-  const handlePageChange = async (event: React.ChangeEvent<unknown>, pagenumber: number) =>
-    fetcher((pagenumber - 1) * PAGESIZE).then(() => setLoading(false));
+  // Create Web Did
+  // const { val, fetcher } = useFetcher<IIdentifier>();
+  // const createDidDocument = async () => fetcher(`/api/identitifers/create`, { method: 'POST' });
+  // useEffect(() => {
+  //   fetcher(`/api/identitifers/did-json`).finally(() => true);
+  // }, [session]);
+
 
   return (
-    <Layout title="Identity">
-      {session ? (
+    <Layout title="Identifiers">
+      <Main
+        session={session}
+        title="Issuers"
+        subtitle="Setup decentralized identity for web. Each tenant can have only one web did-document.">
         <>
-          <Typography variant="h5">Identities</Typography>
-          <Typography variant="caption">Setup decentralized identity. Learn more </Typography>
-          <br />
-          <br />
-          <Link href="/dashboard/1/identities/id">
-            <Button size="small" variant="contained">
-              + CREATE IDENTITY
-            </Button>
-          </Link>
-          {loading ? <LinearProgress /> : <Divider />}
-          <div>
-            <Typography variant="caption">Total: {total}</Typography>
-          </div>
-          {paginated?.items && (
-            <>
-              <br />
-              <Pagination
-                count={pageCount}
-                showFirstButton
-                showLastButton
-                onChange={handlePageChange}
-              />
-            </>
-          )}
-          <List dense>
-            {paginated &&
-              paginated.items.map((did, index) => (
-                <ListItem key={index}>
-                  <ListItemAvatar>
-                    <Avatar>
-                      <PersonOutlineIcon />
-                    </Avatar>
-                  </ListItemAvatar>
-                  <Link href={'/dashboard/1/identities/' + did.id}>
-                    <a>
-                      <ListItemText
-                        primary={did.description || 'No description'}
-                        secondary={did.id}
-                      />
-                    </a>
-                  </Link>
-                  <ListItemSecondaryAction>
-                    <IconButton edge="end" aria-label="settings">
-                      <SettingsIcon />
-                    </IconButton>
-                  </ListItemSecondaryAction>
-                </ListItem>
-              ))}
-            <Divider variant="inset" />
-          </List>
+          {/*{val.loading ? <LinearProgress /> : <Divider />}*/}
+          {/*{!val.data && (*/}
+          {/*  <>*/}
+          {/*    <Typography variant="caption">*/}
+          {/*      No Did-Document for {webDidUrl}. Create web Did-Document. Learn more*/}
+          {/*    </Typography>*/}
+          {/*    <br />*/}
+          {/*    <Button size="small" variant="contained" onClick={createDidDocument}>*/}
+          {/*      + CREATE WEB DID*/}
+          {/*    </Button>*/}
+          {/*  </>*/}
+          {/*)}*/}
+          {/*{val.data && (*/}
+          {/*  <>*/}
+          {/*    <br />*/}
+          {/*    <Typography variant="h5">Web Did-Document</Typography>*/}
+          {/*    <JSONTree theme="bright" data={val.data} hideRoot={true} />*/}
+          {/*  </>*/}
+          {/*)}*/}
+          {/*{() => console.log(data)}*/}
         </>
-      ) : (
-        <AccessDenied />
-      )}
+      </Main>
     </Layout>
   );
 };
 
-export const getServerSideProps = async (context: NextPageContext) => ({
-  props: { session: await getSession(context) },
-});
+export const getServerSideProps = withAuth;
 
 export default Page;

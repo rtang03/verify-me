@@ -1,22 +1,29 @@
-import { Column, Entity, ObjectID, ObjectIdColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Users {
-  @ObjectIdColumn()
-  _id: ObjectID;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255, nullable: true })
   name: string;
 
-  @Column()
+  @Index('email', { unique: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   email: string;
 
-  @Column()
+  @Column({ type: 'timestamp with time zone', nullable: true })
+  email_verified: string;
+
+  @Column({ type: 'text', nullable: true })
   image: string;
 
-  @Column()
-  createdAt: string;
+  @Column({ type: 'timestamp with time zone', nullable: false, default: 'Now()' })
+  created_at: string;
 
-  @Column()
-  updatedAt: string;
+  @Column({ type: 'timestamp with time zone', nullable: false, default: 'Now()' })
+  updated_at: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  active_tenant: number;
 }
