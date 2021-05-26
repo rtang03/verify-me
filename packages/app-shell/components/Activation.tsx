@@ -36,7 +36,6 @@ const Activation: React.FC<{ tenantInfo: TenantInfo }> = ({ tenantInfo }) => {
     <Formik
       initialValues={{}}
       onSubmit={async (_, { setSubmitting }) => {
-        console.log('CAlling');
         setSubmitting(true);
         await activateTenant();
         setSubmitting(false);

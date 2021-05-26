@@ -1,0 +1,27 @@
+server { # simple reverse-proxy
+    listen       ${NGINX_PORT};
+    listen       [::]:${NGINX_PORT};
+    server_name  example.com;
+    access_log   /var/log/nginx/host.access.log  main;
+
+    # serve static files
+    location ~ ^/(images|javascript|js|css|flash|media|static)/  {
+      root    /var/www/virtual/big.server.com/htdocs;
+      expires 30d;
+    }
+
+    location /issuer/ {
+      proxy_pass http://957d843b4c62.ngrok.io/slug/issuer/;
+      proxy_redirect default;
+    }
+
+    location /verifier/ {
+      proxy_pass http://957d843b4c62.ngrok.io/slug/verifier/;
+      proxy_redirect default;
+    }
+
+    location /dummybank/ {
+      proxy_pass http://957d843b4c62.ngrok.io/slug/dummybank/;
+      proxy_redirect default;
+    }
+}

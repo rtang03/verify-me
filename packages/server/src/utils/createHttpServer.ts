@@ -1,4 +1,3 @@
-import { ApiSchemaRouter, MessagingRouter } from '@veramo/remote-server';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express } from 'express';
@@ -10,13 +9,12 @@ import {
   createAccountRoute,
   createTenantRoute,
   createUserRoute,
-  createVirualHostRouter,
+  createActionsRouter, createAgentRouter
 } from '../controllers';
 import { Accounts } from '../entities/Accounts';
 import { Tenant } from '../entities/Tenant';
 import { Users } from '../entities/Users';
 import { createTenantManager } from './createTenantManager';
-import { WebDidDocRouter } from './webDidRouter';
 
 export const createHttpServer: (option: {
   commonConnectionOptions?: ConnectionOptions;
@@ -48,17 +46,12 @@ export const createHttpServer: (option: {
 
   try {
     // setup agents
-    tenantManager.setupAgents();
+    await tenantManager.setupAgents();
   } catch (e) {
     console.error('Fail to setup agents');
     console.error(e);
     process.exit(1);
   }
-
-  // const schemaRouter = ApiSchemaRouter({ exposedMethods, basePath: '/open-api.json' });
-  // const requestWithAgentRouter = RequestWithAgentRouter({ agent });
-  // const didDocRouter = WebDidDocRouter();
-  // const messageRouter = MessagingRouter({ metaData: { type: 'DIDComm' } });
   const tenantRepo = getConnection('default').getRepository(Tenant);
   const usersRepo = getConnection('default').getRepository(Users);
   const accountsRepo = getConnection('default').getRepository(Accounts);
@@ -71,23 +64,13 @@ export const createHttpServer: (option: {
   app.use(helmet());
   baseUrl && app.use(cors({ origin: baseUrl }));
 
-  // app.use(requestWithAgentRouter);
-
-  // all agent methods
-  // app.use('/agent', agentRouter);
-
-  // api schema
-  // app.use('/open-api.json', schemaRouter);
-
-  // e.g. /.well-known/did.json
-  // app.use(didDocRouter);
-
-  // app.use(messageRouter);
-
+  // app.get('/issuer', (_, res) => res.status(200).send({ data: 'OK' }));
   app.use('/tenants', createTenantRoute(tenantRepo, usersRepo, envVariables));
   app.use('/users', createUserRoute(usersRepo));
   app.use('/accounts', createAccountRoute(accountsRepo));
-  app.use(vhost('*.*.*', createVirualHostRouter(commonConnections, tenantManager)));
+  // app.use(vhost('*.*.*', createVirualHostRouter(commonConnections, tenantManager)));
+  app.use('/actions', createActionsRouter(commonConnections, tenantManager));
+  app.use('/slug', createAgentRouter(commonConnections, tenantManager));
 
   // /issuers/did:web:example.com/credentials
   // app.use('/issuers', createIssuerRoute(credentialRepo));

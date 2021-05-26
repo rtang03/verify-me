@@ -169,7 +169,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                               <AvatarMd5 subject={getTenantId() || 'idle'} />
                             </ListItemAvatar>
                             <Typography variant="inherit" color="secondary">
-                              {getSlug() || 'No tenant'}
+                              {typeof window !== 'undefined' && (getSlug() || 'No tenant')}
                             </Typography>
                           </ListItem>
                           <Divider />
@@ -343,7 +343,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
         <div className={classes.toolbar} />
         <Divider />
         <List>
-          {sideBar.map(({ text, icon, link }, index) => (
+          {sideBar(getTenantId() || '0').map(({ text, icon, link }, index) => (
             <Link href={link} key={index}>
               <ListItem button>
                 <ListItemIcon>{icon}</ListItemIcon>

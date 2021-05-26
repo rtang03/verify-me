@@ -1,5 +1,6 @@
 import { IDIDManager, IIdentifier, TAgent } from '@veramo/core';
 import { Request, Router } from 'express';
+import Status from 'http-status';
 
 interface RequestWithAgentDIDManager extends Request {
   agent?: TAgent<IDIDManager>;
@@ -33,9 +34,9 @@ export const WebDidDocRouter = (): Router => {
         did: 'did:web:' + getAliasForRequest(req),
       });
       const didDoc = didDocForIdentifier(serverIdentifier);
-      res.json(didDoc);
+      res.status(Status.OK).json(didDoc);
     } catch (e) {
-      res.status(404).send(e);
+      res.status(Status.NOT_FOUND).send(e);
     }
   });
 
@@ -45,9 +46,9 @@ export const WebDidDocRouter = (): Router => {
         did: 'did:web:' + getAliasForRequest(req) + ':' + req.params[0].replace('/', ':'),
       });
       const didDoc = didDocForIdentifier(identifier);
-      res.json(didDoc);
+      res.status(Status.OK).json(didDoc);
     } catch (e) {
-      res.status(404).send(e);
+      res.status(Status.NOT_FOUND).send(e);
     }
   });
   return router;

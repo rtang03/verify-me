@@ -115,6 +115,7 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
 
       for await (const tenant of tenants) {
         try {
+          console.log('Creating schema, if not exist');
           await commonConnection.query(
             `SELECT schema_name FROM information_schema.schemata WHERE schema_name = '${getSchemaName(
               tenant.id
@@ -225,6 +226,7 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
     },
     setupAgents: async () => {
       for await (const [tenantId, promise] of Object.entries(connectionPromises)) {
+        console.log('Setup agents: ' + tenantId);
         const tenant = await tenantRepo.findOne(tenantId);
         tenant && (agents[tenant.slug] = setupVeramo(promise));
       }
