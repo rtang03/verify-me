@@ -3,7 +3,7 @@ export const INVALID_PAYLOAD = 'Invalid Payload';
 export const SOMETHING_WRONG = 'Something Wrong';
 export const UNKNOWN_ERROR = 'Unknown Error';
 
-export const exposedMethods = [
+export const exposedMethods: string[] = [
   'keyManagerGetKeyManagementSystems',
   'keyManagerCreate',
   'keyManagerGet',

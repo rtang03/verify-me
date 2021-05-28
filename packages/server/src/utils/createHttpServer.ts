@@ -36,7 +36,6 @@ export const createHttpServer: (option: {
 
   try {
     // Connect all pre-existing tenants
-    // await connectAllDatabases(commonConnections[0]);
     await tenantManager.connectAllDatabases();
   } catch (e) {
     console.error('Fail to create tenant connections');
@@ -64,7 +63,6 @@ export const createHttpServer: (option: {
   app.use(helmet());
   baseUrl && app.use(cors({ origin: baseUrl }));
 
-  // app.get('/issuer', (_, res) => res.status(200).send({ data: 'OK' }));
   app.use('/tenants', createTenantRoute(tenantRepo, usersRepo, envVariables));
   app.use('/users', createUserRoute(usersRepo));
   app.use('/accounts', createAccountRoute(accountsRepo));
