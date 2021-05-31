@@ -1,6 +1,6 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express, { Express } from 'express';
+import express, { Express, json } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { Connection, ConnectionOptions, createConnection, getConnection } from 'typeorm';
@@ -9,7 +9,8 @@ import {
   createAccountRoute,
   createTenantRoute,
   createUserRoute,
-  createActionsRouter, createAgentRouter
+  createActionsRouter,
+  createAgentRouter,
 } from '../controllers';
 import { Accounts } from '../entities/Accounts';
 import { Tenant } from '../entities/Tenant';
@@ -56,19 +57,19 @@ export const createHttpServer: (option: {
   const accountsRepo = getConnection('default').getRepository(Accounts);
   const app = express();
 
-  app.use(express.json());
+  app.use(json());
   app.use(cookieParser());
   app.use(express.urlencoded({ extended: true }));
-  app.use(morgan('combined'));
+  app.use(morgan('dev'));
   app.use(helmet());
   baseUrl && app.use(cors({ origin: baseUrl }));
-
+  app.use(vhost('*.*.*', createAgentRouter(commonConnections, tenantManager)));
   app.use('/tenants', createTenantRoute(tenantRepo, usersRepo, envVariables));
   app.use('/users', createUserRoute(usersRepo));
   app.use('/accounts', createAccountRoute(accountsRepo));
   // app.use(vhost('*.*.*', createVirualHostRouter(commonConnections, tenantManager)));
   app.use('/actions', createActionsRouter(commonConnections, tenantManager));
-  app.use('/slug', createAgentRouter(commonConnections, tenantManager));
+  // app.use('/slug', createAgentRouter(commonConnections, tenantManager));
 
   // /issuers/did:web:example.com/credentials
   // app.use('/issuers', createIssuerRoute(credentialRepo));

@@ -18,7 +18,7 @@ import Link from 'next/link';
 import React, { Fragment, useState } from 'react';
 import Error from '../../components/Error';
 import type { PaginatedTenant } from '../../types';
-import { useCommonResponse } from '../../utils';
+import { useReSWR } from '../../utils';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
@@ -35,7 +35,7 @@ const useStyles = makeStyles((theme: Theme) =>
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const [pageIndex, setPageIndex] = useState(0);
-  const { data, isError, isLoading } = useCommonResponse<PaginatedTenant>(
+  const { data, isError, isLoading } = useReSWR<PaginatedTenant>(
     `/api/tenants?cursor=${pageIndex * PAGESIZE}&pagesize=${PAGESIZE}`
   );
   const handlePageChange = (event: React.ChangeEvent<unknown>, pagenumber: number) =>

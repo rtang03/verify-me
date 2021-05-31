@@ -7,8 +7,6 @@ import Divider from '@material-ui/core/Divider';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import Switch from '@material-ui/core/Switch';
-import MuiTextField from '@material-ui/core/TextField';
-import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import { withAuth } from 'components';
 import Activation from 'components/Activation';
@@ -25,7 +23,7 @@ import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React, { ChangeEvent, useState, useEffect } from 'react';
 import { mutate } from 'swr';
-import { useCommonResponse, useFetcher } from 'utils';
+import { useReSWR, useFetcher } from 'utils';
 import * as yup from 'yup';
 import type { PaginatedTenant, TenantInfo } from '../../../types';
 
@@ -42,16 +40,14 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-type PsqlUpdated = {
-  affected: number;
-};
+type PsqlUpdated = { affected: number };
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const router = useRouter();
   const classes = useStyles();
 
   // Query TenantInfo
-  const { data, isError, isLoading } = useCommonResponse<PaginatedTenant>(
+  const { data, isError, isLoading } = useReSWR<PaginatedTenant>(
     '/api/tenants',
     router.query.tenant as string
   );
@@ -84,7 +80,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         {/* IF ACTIVATE */}
         {!!tenantInfo && tenantInfo.activated && (
           <Formik
-            initialValues={{ name: tenantInfo.name, enabled: false }}
+            initialValues={{ name: tenantInfo.name || '', enabled: false }}
             validateOnChange={true}
             validationSchema={validation}
             onSubmit={async ({ name }, { setSubmitting }) => {
@@ -125,7 +121,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                     <Button
                       className={classes.submit}
                       color="primary"
-                      disabled={!editMode || isSubmitting}
+                      disabled={!editMode || isSubmitting || !!errors?.name || !values.name}
                       type="submit"
                       variant="contained">
                       Save

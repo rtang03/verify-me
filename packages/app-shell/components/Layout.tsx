@@ -31,23 +31,33 @@ import Head from 'next/head';
 import Link from 'next/link';
 import React, { FC, useEffect, MouseEvent, useState, useRef, KeyboardEvent } from 'react';
 import type { PaginatedTenant } from '../types';
-import { useCommonResponse, useStyles } from '../utils';
+import { useReSWR, useStyles } from '../utils';
 import AvatarMd5 from './AvatarMd5';
 import { sideBar } from './sidebar';
 
 interface State {
   openAccount: boolean;
   openTenant: boolean;
+  slugLocal: string | null;
+  tenantIdLocal: string | null;
+  openSwitchTenant: boolean;
 }
+const isClient = () => typeof window !== 'undefined';
 
 const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
   const [session] = useSession();
   const classes = useStyles();
-  const { data: tenant, isError, isLoading } = useCommonResponse<PaginatedTenant>('/api/tenants');
-  const [val, setVal] = useState<State>({ openAccount: false, openTenant: false });
-  const handleToggle = (state: keyof State) => () => setVal({ ...val, [state]: !val[state] });
-  const handleListKeyDown = (state: keyof State) => (event: KeyboardEvent) =>
-    event.key === 'Tab' && event.preventDefault() && setVal({ ...val, [state]: false });
+  const [state, setState] = useState<State>({
+    openAccount: false,
+    openTenant: false,
+    slugLocal: '',
+    tenantIdLocal: '',
+    openSwitchTenant: false,
+  });
+  const { data: tenant, isError, isLoading } = useReSWR<PaginatedTenant>('/api/tenants');
+  const handleToggle = (key: keyof State) => () => setState({ ...state, [key]: !state[key] });
+  const handleListKeyDown = (key: keyof State) => (event: KeyboardEvent) =>
+    event.key === 'Tab' && event.preventDefault() && setState({ ...state, [key]: false });
 
   // POPUP MENU for TENANT
   // @see https://material-ui.com/components/drawers/
@@ -56,51 +66,54 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
 
   const handleCloseTenant = ({ target }: MouseEvent<EventTarget>) =>
     !anchorRefTenant?.current?.contains(target as HTMLElement) &&
-    setVal({ ...val, openTenant: false });
+    setState({ ...state, openTenant: false });
 
-  const prevOpenTenant = useRef(val.openTenant);
+  const prevOpenTenant = useRef(state.openTenant);
 
   useEffect(() => {
-    prevOpenTenant.current && !val.openTenant && anchorRefTenant.current?.focus();
-    prevOpenTenant.current = val.openTenant;
-  }, [val.openTenant]);
+    prevOpenTenant.current && !state.openTenant && anchorRefTenant.current?.focus();
+    prevOpenTenant.current = state.openTenant;
+  }, [state.openTenant]);
   // END OF TENTANT
 
   // POPUP MENU for ACCOUNT
   const anchorRefAccount = useRef<HTMLButtonElement>(null);
   const handleCloseAccount = ({ target }: MouseEvent<EventTarget>) =>
     !anchorRefAccount?.current?.contains(target as HTMLElement) &&
-    setVal({ ...val, openAccount: false });
-  const prevOpenAccount = useRef(val.openAccount);
+    setState({ ...state, openAccount: false });
+  const prevOpenAccount = useRef(state.openAccount);
 
   useEffect(() => {
-    prevOpenAccount.current && !val.openAccount && anchorRefAccount.current?.focus();
-    prevOpenAccount.current = val.openAccount;
-  }, [val.openAccount]);
+    prevOpenAccount.current && !state.openAccount && anchorRefAccount.current?.focus();
+    prevOpenAccount.current = state.openAccount;
+  }, [state.openAccount]);
   // END OF ACCOUNT
 
   // ACTIVE TENANT
-  const getTenantId = () =>
-    (typeof window !== 'undefined' && localStorage.getItem('tenantId')) || null;
-  const getSlug = () => (typeof window !== 'undefined' && localStorage.getItem('slug')) || null;
+  useEffect(
+    () =>
+      setState({
+        ...state,
+        slugLocal: localStorage.getItem('slug') || null,
+        tenantIdLocal: localStorage.getItem('tenantId') || null,
+      }),
+    [session]
+  );
   if (tenant && !isLoading) {
     const tenantId = tenant.items?.[0]?.id;
     const slug = tenant.items?.[0]?.slug;
     // check if the localStorage's tenantId & slug is not out-of-dated.
     const tenants = tenant?.items?.map(({ id }) => ({ id }));
-    if (tenants?.filter(({ id }) => id === getTenantId()).length === 0) {
-      typeof window !== 'undefined' && localStorage.setItem('tenantId', '');
-      typeof window !== 'undefined' && localStorage.setItem('slug', '');
+    if (tenants?.filter(({ id }) => id === state.tenantIdLocal).length === 0) {
+      isClient() && localStorage.setItem('tenantId', '');
+      isClient() && localStorage.setItem('slug', '');
     }
     // if none exists, save it to localStorage
-    !getTenantId() &&
-      typeof window !== 'undefined' &&
-      tenantId &&
-      localStorage.setItem('tenantId', tenantId);
-    !getSlug() && typeof window !== 'undefined' && slug && localStorage.setItem('slug', slug);
+    !state.tenantIdLocal && isClient() && tenantId && localStorage.setItem('tenantId', tenantId);
+    !state.slugLocal && isClient() && slug && localStorage.setItem('slug', slug);
   }
   const setActiveTenant = (id: string, slug: string) => {
-    if (typeof window !== 'undefined') {
+    if (isClient()) {
       localStorage.setItem('tenantId', id);
       localStorage.setItem('slug', slug);
     }
@@ -108,8 +121,8 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
   // END OF CHECK ACTIVE TENANT
 
   // SWITCH TENANT
-  const [openSwitchTenant, setOpenSwitchTenant] = useState(false);
-  const handleSwitchTenant = () => setOpenSwitchTenant(!openSwitchTenant);
+  const handleSwitchTenant = () =>
+    setState({ ...state, openSwitchTenant: !state.openSwitchTenant });
   // END OF SWITCH TENANT
 
   return (
@@ -141,13 +154,13 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
               <Button
                 color="inherit"
                 ref={anchorRefTenant}
-                aria-controls={val.openTenant ? 'menu-list-grow' : undefined}
+                aria-controls={state.openTenant ? 'menu-list-grow' : undefined}
                 aria-haspopup="true"
                 onClick={handleToggle('openTenant')}>
-                <a>{getSlug() || 'No tenant'}</a>
+                <a>{state.slugLocal || 'No tenant'}</a>
               </Button>
               <Popper
-                open={val.openTenant}
+                open={state.openTenant}
                 anchorEl={anchorRefTenant.current}
                 role={undefined}
                 transition
@@ -161,21 +174,21 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                     <Paper>
                       <ClickAwayListener onClickAway={handleCloseTenant}>
                         <MenuList
-                          autoFocusItem={val.openTenant}
+                          autoFocusItem={state.openTenant}
                           id="menu-list-grow"
                           onKeyDown={handleListKeyDown('openTenant')}>
                           <ListItem onClick={handleCloseTenant}>
                             <ListItemAvatar>
-                              <AvatarMd5 subject={getTenantId() || 'idle'} />
+                              <AvatarMd5 subject={state.tenantIdLocal || 'idle'} />
                             </ListItemAvatar>
                             <Typography variant="inherit" color="secondary">
-                              {typeof window !== 'undefined' && (getSlug() || 'No tenant')}
+                              {state.slugLocal || 'No tenant'}
                             </Typography>
                           </ListItem>
                           <Divider />
                           {/* hide when no active tenant */}
-                          {getTenantId() && (
-                            <Link href={`/dashboard/${getTenantId()}`}>
+                          {state.tenantIdLocal && (
+                            <Link href={`/dashboard/${state.tenantIdLocal}`}>
                               <a>
                                 <ListItem onClick={handleCloseTenant}>
                                   <ListItemIcon>
@@ -186,7 +199,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                               </a>
                             </Link>
                           )}
-                          {getTenantId() && (
+                          {state.tenantIdLocal && (
                             <ListItem onClick={handleCloseTenant}>
                               <ListItemIcon>
                                 <PersonAddIcon />
@@ -194,16 +207,16 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                               <ListItemText secondary="Invite member" />
                             </ListItem>
                           )}
-                          {getTenantId() && (
+                          {state.tenantIdLocal && (
                             <ListItem button onClick={handleSwitchTenant}>
                               <ListItemIcon>
-                                {openSwitchTenant ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                                {state.openSwitchTenant ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                               </ListItemIcon>
                               <ListItemText secondary="Switch tenant" />
                             </ListItem>
                           )}
                           {tenant && tenant?.items?.length !== 0 && (
-                            <Collapse in={openSwitchTenant} timeout="auto" unmountOnExit>
+                            <Collapse in={state.openSwitchTenant} timeout="auto" unmountOnExit>
                               <List component="div" disablePadding>
                                 {sortBy(tenant.items, 'slug')?.map((item, index) => (
                                   <Link key={index} href={`/dashboard/${item.id}`}>
@@ -253,7 +266,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
               <Button
                 color="inherit"
                 ref={anchorRefAccount}
-                aria-controls={val.openAccount ? 'menu-list-grow' : undefined}
+                aria-controls={state.openAccount ? 'menu-list-grow' : undefined}
                 aria-haspopup="true"
                 onClick={handleToggle('openAccount')}>
                 {session?.user?.image ? (
@@ -263,7 +276,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                 )}
               </Button>
               <Popper
-                open={val.openAccount}
+                open={state.openAccount}
                 anchorEl={anchorRefAccount.current}
                 role={undefined}
                 transition
@@ -277,7 +290,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                     <Paper>
                       <ClickAwayListener onClickAway={handleCloseAccount}>
                         <MenuList
-                          autoFocusItem={val.openAccount}
+                          autoFocusItem={state.openAccount}
                           id="menu-list-grow"
                           onKeyDown={handleListKeyDown('openAccount')}>
                           <ListItem onClick={handleCloseAccount}>
@@ -343,7 +356,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
         <div className={classes.toolbar} />
         <Divider />
         <List>
-          {sideBar(getTenantId() || '0').map(({ text, icon, link }, index) => (
+          {sideBar(state.tenantIdLocal || '0').map(({ text, icon, link }, index) => (
             <Link href={link} key={index}>
               <ListItem button>
                 <ListItemIcon>{icon}</ListItemIcon>

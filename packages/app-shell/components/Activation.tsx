@@ -25,20 +25,20 @@ const useStyles = makeStyles((theme: Theme) =>
 const Activation: React.FC<{ tenantInfo: TenantInfo }> = ({ tenantInfo }) => {
   const classes = useStyles();
   const { val, poster } = useFetcher();
-  const activateTenant = async () =>
-    tenantInfo &&
-    mutate(
-      `${baseUrl}?id=${tenantInfo.id}`,
-      poster(`${baseUrl}?id=${tenantInfo.id}&action=activate&slug=${tenantInfo.slug}`)
-    );
 
   return (
     <Formik
       initialValues={{}}
       onSubmit={async (_, { setSubmitting }) => {
         setSubmitting(true);
-        await activateTenant();
-        setSubmitting(false);
+        await (() =>
+          tenantInfo &&
+          mutate(
+            `${baseUrl}?id=${tenantInfo.id}`,
+            poster(
+              `${baseUrl}?id=${tenantInfo.id}&action=activate&slug=${tenantInfo.slug}`
+            ).then(() => setSubmitting(false))
+          ));
       }}>
       {({ isSubmitting }) => (
         <Form>
@@ -71,6 +71,7 @@ const Activation: React.FC<{ tenantInfo: TenantInfo }> = ({ tenantInfo }) => {
                   <Success />
                 </>
               )}
+              {val?.data && <Success />}
               {val?.error && <Error />}
             </CardContent>
           </Card>

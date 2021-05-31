@@ -1,18 +1,18 @@
-import AccountBoxIcon from '@material-ui/icons/AccountBox';
 import CallReceivedIcon from '@material-ui/icons/CallReceived';
 import FolderSharedIcon from '@material-ui/icons/FolderShared';
+import LanguageIcon from '@material-ui/icons/Language';
 import MailIcon from '@material-ui/icons/Mail';
 import PhonelinkIcon from '@material-ui/icons/Phonelink';
 import ScreenShareIcon from '@material-ui/icons/ScreenShare';
 
 export const sideBar: (tenantId: string) => { text: string; icon: any; link: string }[] = (id) => [
   {
-    text: 'Issuer',
-    icon: <AccountBoxIcon />,
+    text: 'Web Identifier',
+    icon: <LanguageIcon />,
     link: `/dashboard/${id}/identities`,
   },
   {
-    text: 'User',
+    text: 'User Identifier',
     icon: <FolderSharedIcon />,
     link: `/dashboard/${id}/users`,
   },

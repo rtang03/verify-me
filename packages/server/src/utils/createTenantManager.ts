@@ -80,7 +80,7 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
         console.warn(util.format('fail to setup Agent %s, %j', tenant.id, e));
       }
 
-      // step 5: update Tenant
+      // step 4: update Tenant
       try {
         const result = await tenantRepo.update(tenant.id, { activated: true });
         result?.affected === 1 && (isTenantUpdated = true);

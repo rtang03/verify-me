@@ -13,7 +13,20 @@ const createFetcher: <TValue>(
   setVal({ ...val, loading: true });
   return fetch(url, option)
     .then((r) => r.json())
-    .then((json) => json?.data && setVal((value: any) => ({ ...value, data: json.data })))
+    .then((json) => {
+      if (json?.status === 'OK')
+        setVal((value: any) => ({
+          ...value,
+          data: json.data,
+          status: json.status,
+        }));
+      else
+        setVal((value: any) => ({
+          ...value,
+          error: json.error,
+          status: json.status,
+        }));
+    })
     .catch((error) => setVal((value: any) => ({ ...value, error })))
     .finally(() => setVal((value: any) => ({ ...value, loading: false })));
 };

@@ -3,6 +3,7 @@ import http from 'http';
 import util from 'util';
 import { Accounts, Sessions, Tenant, Users } from '@verify/server';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
 import express from 'express';
 import morgan from 'morgan';
 import next from 'next';
@@ -47,6 +48,7 @@ app
     server.use(express.urlencoded({ extended: true }));
     server.use(cookieParser());
     server.use(morgan('dev'));
+    server.use(cors({ origin: '*' }));
 
     // NOTE: using next-auth in custom Express server
     // @see https://github.com/nextauthjs/next-auth/issues/531

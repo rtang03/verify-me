@@ -5,18 +5,22 @@ import Typography from '@material-ui/core/Typography';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import type { IIdentifier } from '@veramo/core';
 import { withAuth } from 'components';
+import Error from 'components/Error';
+import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
+import { Form, Formik } from 'formik';
 import pick from 'lodash/pick';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
-import React, { useEffect } from 'react';
+import React from 'react';
 import JSONTree from 'react-json-tree';
+import { mutate } from 'swr';
 import type { PaginatedTenant, TenantInfo } from 'types';
-import { useCommonResponse, useFetcher } from 'utils';
+import { getTenantUrl, useFetcher, useReSWR } from 'utils';
 
-const webDidUrl = process.env.NEXT_PUBLIC_BACKEND?.split(':')[1].replace('//', '');
+const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { maxWidth: 550, margin: theme.spacing(3, 1, 2) },
@@ -29,50 +33,83 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
 
   // Query TenantInfo
-  const { data, isError, isLoading } = useCommonResponse<PaginatedTenant>(
-    '/api/tenants',
-    router.query.tenant as string
-  );
-  const tenantInfo: TenantInfo | null = data
-    ? pick(data.items[0], 'id', 'slug', 'name', 'activated')
+  const {
+    data: tenant,
+    isError: tenantError,
+    isLoading: tenantLoading,
+  } = useReSWR<PaginatedTenant>('/api/tenants', router.query.tenant as string);
+  const tenantInfo: TenantInfo | null = tenant
+    ? pick(tenant.items[0], 'id', 'slug', 'name', 'activated', 'members')
     : null;
 
-  // Create Web Did
-  // const { val, fetcher } = useFetcher<IIdentifier>();
-  // const createDidDocument = async () => fetcher(`/api/identitifers/create`, { method: 'POST' });
-  // useEffect(() => {
-  //   fetcher(`/api/identitifers/did-json`).finally(() => true);
-  // }, [session]);
+  const fqUrl = tenantInfo?.slug && domain && getTenantUrl(tenantInfo?.slug, domain);
 
+  // Query Web Did
+  const url = `/api/identifiers/did-json?slug=${tenantInfo?.slug}`;
+  const { data, isLoading, error: didError } = useReSWR(url, undefined, !!tenantInfo?.slug);
+
+  // Create Web Did
+  const { val: webDid, poster } = useFetcher<IIdentifier>();
+  const createDid = async (body: { alias: string }) =>
+    mutate(url, poster(`/api/identifers/create`, body));
 
   return (
     <Layout title="Identifiers">
       <Main
         session={session}
-        title="Issuers"
+        title="Web Identifier"
         subtitle="Setup decentralized identity for web. Each tenant can have only one web did-document.">
-        <>
-          {/*{val.loading ? <LinearProgress /> : <Divider />}*/}
-          {/*{!val.data && (*/}
-          {/*  <>*/}
-          {/*    <Typography variant="caption">*/}
-          {/*      No Did-Document for {webDidUrl}. Create web Did-Document. Learn more*/}
-          {/*    </Typography>*/}
-          {/*    <br />*/}
-          {/*    <Button size="small" variant="contained" onClick={createDidDocument}>*/}
-          {/*      + CREATE WEB DID*/}
-          {/*    </Button>*/}
-          {/*  </>*/}
-          {/*)}*/}
-          {/*{val.data && (*/}
-          {/*  <>*/}
-          {/*    <br />*/}
-          {/*    <Typography variant="h5">Web Did-Document</Typography>*/}
-          {/*    <JSONTree theme="bright" data={val.data} hideRoot={true} />*/}
-          {/*  </>*/}
-          {/*)}*/}
-          {/*{() => console.log(data)}*/}
-        </>
+        {tenantLoading || isLoading ? <LinearProgress /> : <Divider />}
+        {(tenantError || didError) && <Error />}
+        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
+        {tenantInfo?.activated && !data && !didError && (
+          <>
+            <br />
+            <Typography variant="body2">Issuer URL: {fqUrl}</Typography>
+            <br />
+            <Typography variant="caption">
+              ⚠️ No Decentralized Identity Document Found. You are about to create one, with
+              web-method.
+            </Typography>
+            <br />
+            <Formik
+              initialValues={{}}
+              onSubmit={async (_, { setSubmitting }) => {
+                if (fqUrl) {
+                  setSubmitting(true);
+                  await createDid({ alias: fqUrl }).then(() => {
+                    console.log(webDid);
+                    setSubmitting(false);
+                  });
+                }
+              }}>
+              {({ isSubmitting }) => (
+                <Form>
+                  <p>
+                    <Button
+                      className={classes.submit}
+                      variant="contained"
+                      color="primary"
+                      size="small"
+                      disabled={isSubmitting}
+                      type="submit">
+                      + Create Web Identifier
+                    </Button>
+                  </p>
+                </Form>
+              )}
+            </Formik>
+          </>
+        )}
+        {tenantInfo?.activated && data && (
+          <>
+            <br />
+            <Typography variant="body2">Issuer URL: {fqUrl}</Typography>
+            <br />
+            <Typography variant="h5">Did Document</Typography>
+            <JSONTree theme="bright" data={data} hideRoot={true} />
+          </>
+        )}
       </Main>
     </Layout>
   );

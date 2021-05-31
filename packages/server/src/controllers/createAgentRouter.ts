@@ -8,12 +8,13 @@ import type { TenantManager } from '../types';
 import type { TTAgent } from '../utils';
 import { createDidDocument, exposedMethods } from '../utils';
 
-const didDocEndpoint = '.well-known/did.json';
-const debug = Debug('createAgentRouter');
+const debug = Debug('utils:createAgentRouter');
 const getAliasForRequest = (req: Request) => encodeURIComponent(req.hostname);
+const reservedWord = ['default', 'public'];
 
 interface RequestWithAgent extends Request {
-  agent: TTAgent;
+  agent?: TTAgent;
+  vhost?: any;
 }
 
 export const createAgentRouter = (commonConnection: Connection, tenantManager: TenantManager) => {
@@ -25,19 +26,23 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
 
   // 1. setup Agent
   router.use(
-    '/:slug',
     RequestWithAgentRouter({
-      getAgentForRequest: (req) => {
+      getAgentForRequest: async (req: RequestWithAgent) => {
         // baseUrl is /slug/:slug
-        const slug = req.baseUrl.replace('/slug/', '');
-        const agent: TTAgent = tenantManager.getAgents()?.[slug];
-        return agent ? Promise.resolve(agent) : Promise.resolve(null);
+        // const slug = req.baseUrl.replace('/slug/', '');
+        const slug = req.vhost[0];
+
+        if (!slug) return Promise.resolve(null);
+
+        if (reservedWord.includes(slug)) return Promise.reject(new Error('slug name invalid'));
+
+        return Promise.resolve(tenantManager.getAgents()?.[slug]);
       },
     })
   );
 
   // 2. healthcheck
-  router.get('/:slug/is_agent_exist', (req: RequestWithAgent, res) =>
+  router.get('/is_agent_exist', (req: RequestWithAgent, res) =>
     req.agent
       ? res.status(Status.OK).send({ data: 'Agent found' })
       : res.status(Status.OK).send({ data: 'Agent not found' })
@@ -45,8 +50,8 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
 
   // 3. execute Agent methods
   exposedMethods.forEach((method) =>
-    router.post(`/:slug/agent/${method}`, async (req: RequestWithAgent, res: Response) => {
-      if (!req.agent) throw Error('Agent not available');
+    router.post(`/agent/${method}`, async (req: RequestWithAgent, res: Response) => {
+      if (!req.agent) return res.status(Status.BAD_GATEWAY).send({ error: 'agent not found' });
 
       try {
         const result = await req.agent.execute(method, req.body);
@@ -65,20 +70,34 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
     })
   );
 
-  // 4. /.well-known/did.json
-  router.get(`/:slug/${didDocEndpoint}`, async (req: RequestWithAgent, res) => {
+  // 4. serve .well-known/did.json
+  router.get(`/.well-known/did.json`, async (req: RequestWithAgent, res) => {
+    if (!req.agent) return res.status(Status.BAD_GATEWAY).send({ error: 'agent not found' });
+
     try {
-      const serverIdentifier = await req.agent.didManagerGet({
-        did: 'did:web:' + getAliasForRequest(req),
-      });
-      const didDoc = createDidDocument(serverIdentifier);
-      res.status(Status.OK).json(didDoc);
-    } catch (e) {
-      res.status(Status.NOT_FOUND).send(e);
+      // Note: it returns req.hostname, like "http://issuer.examp.com:3001" will return issuer.example.com
+      const alias = getAliasForRequest(req);
+
+      debug('getAliasForRequest: %s', alias);
+
+      const identifier = await req.agent.didManagerGet({ did: `did:web:${alias}` });
+      const didDocument = createDidDocument(identifier);
+
+      debug('did-document', didDocument);
+
+      res.status(Status.OK).json(didDocument);
+    } catch (error) {
+      debug(error.message);
+
+      if (error.message.includes('not found')) {
+        res.status(Status.NOT_FOUND).send({ message: error.message });
+      } else res.status(Status.BAD_GATEWAY).send({ error });
     }
   });
 
   router.get(/^\/(.+)\/did.json$/, async (req: RequestWithAgent, res) => {
+    if (!req.agent) return res.status(Status.BAD_GATEWAY).send({ error: 'agent not found' });
+
     try {
       const identifier = await req.agent.didManagerGet({
         did: 'did:web:' + getAliasForRequest(req) + ':' + req.params[1].replace('/', ':'),
@@ -93,7 +112,9 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
 
   // 5. messaging router
   router.use(text({ type: '*/*' }));
-  router.post('/:slug', async (req: RequestWithAgent, res) => {
+  router.post('/', async (req: RequestWithAgent, res) => {
+    if (!req.agent) return res.status(Status.BAD_GATEWAY).send({ error: 'agent not found' });
+
     try {
       const message = await req.agent?.handleMessage({
         raw: (req.body as any) as string,

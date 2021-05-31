@@ -58,3 +58,5 @@ Bar->Ledger: Verify on Ledger
 Ledger->Bar: Verification
 Bar->Janet: Have Loyalty Card
 ```
+
+sudo lsof -i :5432

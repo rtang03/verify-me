@@ -3,19 +3,18 @@ import Divider from '@material-ui/core/Divider';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
+import { withAuth } from 'components';
 import Layout from 'components/Layout';
 import LowerCaseTextField from 'components/LowerCaseTextField';
 import Main from 'components/Main';
+import Success from 'components/Success';
 import { Form, Field, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React from 'react';
-import JSONTree from 'react-json-tree';
 import { useFetcher } from 'utils';
 import * as yup from 'yup';
-import { withAuth } from '../../components';
 import type { PartialTenant } from '../../types';
-import Success from '../../components/Success';
 
 const validation = yup.object({
   slug: yup
@@ -25,6 +24,7 @@ const validation = yup.object({
     .required('tenant name is required')
     .matches(/^[a-zA-Z0-9]+$/, 'Cannot contain special characters or spaces'),
 });
+
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
@@ -40,7 +40,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { val, poster } = useFetcher<PartialTenant>();
   const user_id = (session as any)?.user?.id;
-  const newTenant = (body: any) => poster('/api/tenants', body);
+  const newTenant = (body: { slug: string; user_id: string }) => poster('/api/tenants', body);
 
   return (
     <Layout title="Tenant">
@@ -63,7 +63,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
           {({ isSubmitting }) => (
             <Form>
               <Field
-                disabled={val.data}
+                disabled={!!val.data}
                 className={classes.textField}
                 label="Short memorable name"
                 size="small"
