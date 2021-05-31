@@ -9,31 +9,31 @@ export const sideBar: (tenantId: string) => { text: string; icon: any; link: str
   {
     text: 'Web Identifier',
     icon: <LanguageIcon />,
-    link: `/dashboard/${id}/identities`,
+    link: id === '0' ? `/dashboard` : `/dashboard/${id}/identities`,
   },
   {
     text: 'User Identifier',
     icon: <FolderSharedIcon />,
-    link: `/dashboard/${id}/users`,
+    link: id === '0' ? `/dashboard` : `/dashboard/${id}/users`,
   },
   {
     text: 'Credential',
     icon: <PhonelinkIcon />,
-    link: `/dashboard/${id}/credentials`,
+    link: id === '0' ? `/dashboard` : `/dashboard/${id}/credentials`,
   },
   {
     text: 'Inbox',
     icon: <MailIcon />,
-    link: `/dashboard/${id}/messages`,
+    link: id === '0' ? `/dashboard` : `/dashboard/${id}/messages`,
   },
   {
     text: 'Request',
     icon: <ScreenShareIcon />,
-    link: `/dashboard/${id}/requests`,
+    link: id === '0' ? `/dashboard` : `/dashboard/${id}/requests`,
   },
   {
     text: 'Response',
     icon: <CallReceivedIcon />,
-    link: `/dashboard/${id}/responses`,
+    link: id === '0' ? `/dashboard` : `/dashboard/${id}/responses`,
   },
 ];

@@ -31,14 +31,12 @@ const Activation: React.FC<{ tenantInfo: TenantInfo }> = ({ tenantInfo }) => {
       initialValues={{}}
       onSubmit={async (_, { setSubmitting }) => {
         setSubmitting(true);
-        await (() =>
-          tenantInfo &&
-          mutate(
-            `${baseUrl}?id=${tenantInfo.id}`,
-            poster(
-              `${baseUrl}?id=${tenantInfo.id}&action=activate&slug=${tenantInfo.slug}`
-            ).then(() => setSubmitting(false))
-          ));
+        await mutate(
+          `/api/tenants?id=${tenantInfo.id}`,
+          poster(
+            `${baseUrl}?id=${tenantInfo.id}&action=activate&slug=${tenantInfo.slug}`
+          ).then(() => setSubmitting(false))
+        );
       }}>
       {({ isSubmitting }) => (
         <Form>
@@ -53,7 +51,7 @@ const Activation: React.FC<{ tenantInfo: TenantInfo }> = ({ tenantInfo }) => {
               <Button
                 className={classes.submit}
                 color="primary"
-                disabled={isSubmitting || !!val?.data || !!val?.error}
+                disabled={isSubmitting || !!val?.data || !!val?.error || !tenantInfo}
                 type="submit"
                 variant="contained">
                 Activate

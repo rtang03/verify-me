@@ -12,7 +12,6 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
-import MenuItem from '@material-ui/core/MenuItem';
 import MenuList from '@material-ui/core/MenuList';
 import Paper from '@material-ui/core/Paper';
 import Popper from '@material-ui/core/Popper';
@@ -25,6 +24,7 @@ import UserProfileIcon from '@material-ui/icons/PermContactCalendar';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import QueueIcon from '@material-ui/icons/Queue';
 import SettingsIcon from '@material-ui/icons/Settings';
+import clsx from 'clsx';
 import sortBy from 'lodash/sortBy';
 import { signIn, signOut, useSession } from 'next-auth/client';
 import Head from 'next/head';
@@ -38,8 +38,6 @@ import { sideBar } from './sidebar';
 interface State {
   openAccount: boolean;
   openTenant: boolean;
-  slugLocal: string | null;
-  tenantIdLocal: string | null;
   openSwitchTenant: boolean;
 }
 const isClient = () => typeof window !== 'undefined';
@@ -50,11 +48,9 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
   const [state, setState] = useState<State>({
     openAccount: false,
     openTenant: false,
-    slugLocal: '',
-    tenantIdLocal: '',
     openSwitchTenant: false,
   });
-  const { data: tenant, isError, isLoading } = useReSWR<PaginatedTenant>('/api/tenants');
+  const { data: tenant, isLoading } = useReSWR<PaginatedTenant>('/api/tenants');
   const handleToggle = (key: keyof State) => () => setState({ ...state, [key]: !state[key] });
   const handleListKeyDown = (key: keyof State) => (event: KeyboardEvent) =>
     event.key === 'Tab' && event.preventDefault() && setState({ ...state, [key]: false });
@@ -90,30 +86,27 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
   // END OF ACCOUNT
 
   // ACTIVE TENANT
-  useEffect(
-    () =>
-      setState({
-        ...state,
-        slugLocal: localStorage.getItem('slug') || null,
-        tenantIdLocal: localStorage.getItem('tenantId') || null,
-      }),
-    [session]
-  );
-  if (tenant && !isLoading) {
-    const tenantId = tenant.items?.[0]?.id;
-    const slug = tenant.items?.[0]?.slug;
-    // check if the localStorage's tenantId & slug is not out-of-dated.
-    const tenants = tenant?.items?.map(({ id }) => ({ id }));
-    if (tenants?.filter(({ id }) => id === state.tenantIdLocal).length === 0) {
-      isClient() && localStorage.setItem('tenantId', '');
-      isClient() && localStorage.setItem('slug', '');
+  const [toggleStorage, setToggleStorage] = useState(false);
+  const [slugLocal, setSlugLocal] = useState<string | null>('');
+  const [tenantIdLocal, setTenantIdLocal] = useState<string | null>('');
+  useEffect(() => {
+    setSlugLocal(localStorage.getItem('slug'));
+    setTenantIdLocal(localStorage.getItem('tenantId'));
+
+    if (tenant && !isLoading) {
+      const tenantId = tenant.items?.[0]?.id;
+      const slug = tenant.items?.[0]?.slug;
+      isClient() &&
+        tenantId &&
+        !localStorage.getItem('tenantId') &&
+        localStorage.setItem('tenantId', tenantId);
+      isClient() && slug && !localStorage.getItem('slug') && localStorage.setItem('slug', slug);
     }
-    // if none exists, save it to localStorage
-    !state.tenantIdLocal && isClient() && tenantId && localStorage.setItem('tenantId', tenantId);
-    !state.slugLocal && isClient() && slug && localStorage.setItem('slug', slug);
-  }
+  }, [session, toggleStorage]);
+
   const setActiveTenant = (id: string, slug: string) => {
     if (isClient()) {
+      setToggleStorage(!toggleStorage);
       localStorage.setItem('tenantId', id);
       localStorage.setItem('slug', slug);
     }
@@ -157,7 +150,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                 aria-controls={state.openTenant ? 'menu-list-grow' : undefined}
                 aria-haspopup="true"
                 onClick={handleToggle('openTenant')}>
-                <a>{state.slugLocal || 'No tenant'}</a>
+                <a>{slugLocal || 'No tenant'}</a>
               </Button>
               <Popper
                 open={state.openTenant}
@@ -179,16 +172,16 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                           onKeyDown={handleListKeyDown('openTenant')}>
                           <ListItem onClick={handleCloseTenant}>
                             <ListItemAvatar>
-                              <AvatarMd5 subject={state.tenantIdLocal || 'idle'} />
+                              <AvatarMd5 subject={tenantIdLocal || 'idle'} />
                             </ListItemAvatar>
                             <Typography variant="inherit" color="secondary">
-                              {state.slugLocal || 'No tenant'}
+                              {slugLocal || 'No tenant'}
                             </Typography>
                           </ListItem>
                           <Divider />
                           {/* hide when no active tenant */}
-                          {state.tenantIdLocal && (
-                            <Link href={`/dashboard/${state.tenantIdLocal}`}>
+                          {tenantIdLocal && (
+                            <Link href={`/dashboard/${tenantIdLocal}`}>
                               <a>
                                 <ListItem onClick={handleCloseTenant}>
                                   <ListItemIcon>
@@ -199,7 +192,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                               </a>
                             </Link>
                           )}
-                          {state.tenantIdLocal && (
+                          {tenantIdLocal && (
                             <ListItem onClick={handleCloseTenant}>
                               <ListItemIcon>
                                 <PersonAddIcon />
@@ -207,7 +200,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                               <ListItemText secondary="Invite member" />
                             </ListItem>
                           )}
-                          {state.tenantIdLocal && (
+                          {tenantIdLocal && (
                             <ListItem button onClick={handleSwitchTenant}>
                               <ListItemIcon>
                                 {state.openSwitchTenant ? <ExpandLessIcon /> : <ExpandMoreIcon />}
@@ -345,9 +338,9 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
         </Toolbar>
       </AppBar>
       <Drawer
-        open={false}
+        open={!!session?.user}
         className={classes.drawer}
-        variant="permanent"
+        variant="persistent"
         classes={{
           paper: classes.drawerPaper,
         }}
@@ -356,7 +349,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
         <div className={classes.toolbar} />
         <Divider />
         <List>
-          {sideBar(state.tenantIdLocal || '0').map(({ text, icon, link }, index) => (
+          {sideBar(tenantIdLocal || '0').map(({ text, icon, link }, index) => (
             <Link href={link} key={index}>
               <ListItem button>
                 <ListItemIcon>{icon}</ListItemIcon>
@@ -367,7 +360,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
           <Divider />
         </List>
       </Drawer>
-      <main className={classes.content}>
+      <main className={clsx(classes.content, { [classes.contentShift]: !!session?.user })}>
         <div className={classes.toolbar} />
         {children}
       </main>

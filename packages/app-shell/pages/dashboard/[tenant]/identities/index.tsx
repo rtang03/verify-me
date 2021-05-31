@@ -18,7 +18,8 @@ import React from 'react';
 import JSONTree from 'react-json-tree';
 import { mutate } from 'swr';
 import type { PaginatedTenant, TenantInfo } from 'types';
-import { getTenantUrl, useFetcher, useReSWR } from 'utils';
+import { getTenantUrl, prettyLog, useFetcher, useReSWR } from 'utils';
+import Success from '../../../../components/Success';
 
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const useStyles = makeStyles((theme: Theme) =>
@@ -31,57 +32,74 @@ const useStyles = makeStyles((theme: Theme) =>
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const router = useRouter();
   const classes = useStyles();
+  const tenantId = router.query.tenant as string;
 
   // Query TenantInfo
   const {
     data: tenant,
     isError: tenantError,
     isLoading: tenantLoading,
-  } = useReSWR<PaginatedTenant>('/api/tenants', router.query.tenant as string);
+  } = useReSWR<PaginatedTenant>('/api/tenants', tenantId, tenantId !== '0');
   const tenantInfo: TenantInfo | null = tenant
     ? pick(tenant.items[0], 'id', 'slug', 'name', 'activated', 'members')
     : null;
 
   const fqUrl = tenantInfo?.slug && domain && getTenantUrl(tenantInfo?.slug, domain);
+  const nonFqUrl = fqUrl?.replace('https://', '').replace('http://', '');
 
   // Query Web Did
   const url = `/api/identifiers/did-json?slug=${tenantInfo?.slug}`;
-  const { data, isLoading, error: didError } = useReSWR(url, undefined, !!tenantInfo?.slug);
+  let data;
+  let isLoading;
+  let didError;
+
+  if (tenantInfo?.slug) {
+    // make sure the url above is having non-null slug value. Otherwise, the swr cache won't work.
+    const swr = useReSWR(url, undefined, !!tenantInfo?.slug);
+    data = swr.data;
+    isLoading = swr.isLoading;
+    didError = swr.error;
+  }
+
+  // const { data, isLoading, error: didError }
 
   // Create Web Did
   const { val: webDid, poster } = useFetcher<IIdentifier>();
   const createDid = async (body: { alias: string }) =>
-    mutate(url, poster(`/api/identifers/create`, body));
+    mutate(url, poster(`/api/identifiers/create?slug=${tenantInfo?.slug}`, body));
 
   return (
     <Layout title="Identifiers">
       <Main
         session={session}
         title="Web Identifier"
-        subtitle="Setup decentralized identity for web. Each tenant can have only one web did-document.">
+        subtitle="Setup decentralized identity for web. Each tenant can have only one web did-document."
+        parentText="Dashboard"
+        parentUrl={`/dashboard/${tenantInfo?.id}`}>
         {tenantLoading || isLoading ? <LinearProgress /> : <Divider />}
         {(tenantError || didError) && <Error />}
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
         {tenantInfo?.activated && !data && !didError && (
           <>
             <br />
-            <Typography variant="body2">Issuer URL: {fqUrl}</Typography>
-            <br />
-            <Typography variant="caption">
-              ⚠️ No Decentralized Identity Document Found. You are about to create one, with
-              web-method.
-            </Typography>
-            <br />
+            <Typography variant="body2">Issuer URL: {nonFqUrl}</Typography>
+            {!webDid?.data && (
+              <>
+                <br />
+                <Typography variant="caption">
+                  ⚠️ No Decentralized Identity Document Found. You are about to create one, with
+                  web-method.
+                </Typography>
+                <br />
+              </>
+            )}
             <Formik
               initialValues={{}}
               onSubmit={async (_, { setSubmitting }) => {
-                if (fqUrl) {
-                  setSubmitting(true);
-                  await createDid({ alias: fqUrl }).then(() => {
-                    console.log(webDid);
-                    setSubmitting(false);
-                  });
-                }
+                setSubmitting(true);
+                await createDid({ alias: nonFqUrl as string }).then(() => {
+                  setSubmitting(false);
+                });
               }}>
               {({ isSubmitting }) => (
                 <Form>
@@ -91,7 +109,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                       variant="contained"
                       color="primary"
                       size="small"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !fqUrl || !!webDid?.data}
                       type="submit">
                       + Create Web Identifier
                     </Button>
@@ -109,6 +127,17 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
             <Typography variant="h5">Did Document</Typography>
             <JSONTree theme="bright" data={data} hideRoot={true} />
           </>
+        )}
+        {webDid?.data && (
+          <>
+            <Divider />
+            <Success />
+          </>
+        )}
+        {webDid?.data && (
+          <Typography variant="caption" color="primary">
+            {webDid?.data.did} is created.
+          </Typography>
         )}
       </Main>
     </Layout>

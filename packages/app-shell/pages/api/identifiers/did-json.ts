@@ -19,15 +19,15 @@ const handler: NextApiHandler = async (req, res) => {
 
     const response = await fetch(`${getTenantUrl(slug, domain)}/.well-known/did.json`);
 
-    res.status(Status.OK).send(
-      (
-        (await {
-          [Status.OK]: async () => ({ status: 'OK', data: await response.json() }),
-          [Status.NOT_FOUND]: async () => ({ status: NOT_FOUND, data: null, message: NOT_FOUND }),
-        }[response.status as number]) ||
-        (async () => ({ status: 'ERROR', message: OOPS, error: await response.text() }))
-      )()
-    );
+    const result = await (
+      {
+        [Status.OK]: async () => ({ status: 'OK', data: await response.json() }),
+        [Status.NOT_FOUND]: async () => ({ status: NOT_FOUND, data: null, message: NOT_FOUND }),
+      }[response.status as number] ||
+      (async () => ({ status: 'ERROR', message: OOPS, error: await response.text() }))
+    )();
+
+    res.status(Status.OK).send(result);
   } else res.status(Status.METHOD_NOT_ALLOWED).send({ status: 'ERROR', message: OOPS });
 };
 

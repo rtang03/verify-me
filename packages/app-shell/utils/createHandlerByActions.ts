@@ -59,5 +59,5 @@ const handler: (domain: string, methods: string[]) => NextApiHandler = (domain, 
   )(req.query?.id);
 };
 
-export const createHandlerByActions = (url: string, methods: string[] = ['GET', 'POST']) =>
-  catchHandlerErrors(handler(url, methods));
+export const createHandlerByActions = (domain: string, methods: string[] = ['GET', 'POST']) =>
+  catchHandlerErrors(handler(domain, methods));
