@@ -10,3 +10,4 @@ export * from './getTenantUrl';
 export * from './catchHandlerError';
 export * from './createHandlerByAgentMethod';
 export * from './prettyLog';
+export * from './getTenantInfo';

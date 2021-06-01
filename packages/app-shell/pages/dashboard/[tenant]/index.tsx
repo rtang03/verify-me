@@ -17,13 +17,12 @@ import Main from 'components/Main';
 import Success from 'components/Success';
 import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
-import pick from 'lodash/pick';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React, { ChangeEvent, useState, useEffect } from 'react';
 import { mutate } from 'swr';
-import { useReSWR, useFetcher } from 'utils';
+import { useReSWR, useFetcher, getTenantInfo } from 'utils';
 import * as yup from 'yup';
 import type { PaginatedTenant, TenantInfo } from '../../../types';
 
@@ -51,9 +50,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
     '/api/tenants',
     router.query.tenant as string
   );
-  const tenantInfo: TenantInfo | null = data
-    ? pick(data.items[0], 'id', 'slug', 'name', 'activated', 'members', 'updated_at')
-    : null;
+  const tenantInfo = getTenantInfo(data);
 
   // Update Tenant
   const { val: updateResult, updater } = useFetcher<PsqlUpdated>();

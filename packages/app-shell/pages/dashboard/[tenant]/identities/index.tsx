@@ -9,6 +9,7 @@ import Error from 'components/Error';
 import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
+import Success from 'components/Success';
 import { Form, Formik } from 'formik';
 import pick from 'lodash/pick';
 import type { NextPage } from 'next';
@@ -18,8 +19,7 @@ import React from 'react';
 import JSONTree from 'react-json-tree';
 import { mutate } from 'swr';
 import type { PaginatedTenant, TenantInfo } from 'types';
-import { getTenantUrl, prettyLog, useFetcher, useReSWR } from 'utils';
-import Success from '../../../../components/Success';
+import { getTenantUrl, useFetcher, useReSWR } from 'utils';
 
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const useStyles = makeStyles((theme: Theme) =>
@@ -43,29 +43,16 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   const tenantInfo: TenantInfo | null = tenant
     ? pick(tenant.items[0], 'id', 'slug', 'name', 'activated', 'members')
     : null;
-
   const fqUrl = tenantInfo?.slug && domain && getTenantUrl(tenantInfo?.slug, domain);
   const nonFqUrl = fqUrl?.replace('https://', '').replace('http://', '');
 
   // Query Web Did
-  const url = `/api/identifiers/did-json?slug=${tenantInfo?.slug}`;
-  let data;
-  let isLoading;
-  let didError;
-
-  if (tenantInfo?.slug) {
-    // make sure the url above is having non-null slug value. Otherwise, the swr cache won't work.
-    const swr = useReSWR(url, undefined, !!tenantInfo?.slug);
-    data = swr.data;
-    isLoading = swr.isLoading;
-    didError = swr.error;
-  }
-
-  // const { data, isLoading, error: didError }
+  const url = tenantInfo?.slug ? `/api/identifiers/did-json?slug=${tenantInfo.slug}` : null;
+  const { data, isLoading, error: didError } = useReSWR(url, undefined, !!tenantInfo?.slug);
 
   // Create Web Did
   const { val: webDid, poster } = useFetcher<IIdentifier>();
-  const createDid = async (body: { alias: string }) =>
+  const newDid = async (body: { alias: string }) =>
     mutate(url, poster(`/api/identifiers/create?slug=${tenantInfo?.slug}`, body));
 
   return (
@@ -74,7 +61,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         session={session}
         title="Web Identifier"
         subtitle="Setup decentralized identity for web. Each tenant can have only one web did-document."
-        parentText="Dashboard"
+        parentText={`Dashboard/${tenantInfo?.slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}>
         {tenantLoading || isLoading ? <LinearProgress /> : <Divider />}
         {(tenantError || didError) && <Error />}
@@ -82,7 +69,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         {tenantInfo?.activated && !data && !didError && (
           <>
             <br />
-            <Typography variant="body2">Issuer URL: {nonFqUrl}</Typography>
+            <Typography variant="body2">Web-identifier URL: {nonFqUrl}</Typography>
             {!webDid?.data && (
               <>
                 <br />
@@ -97,9 +84,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
               initialValues={{}}
               onSubmit={async (_, { setSubmitting }) => {
                 setSubmitting(true);
-                await createDid({ alias: nonFqUrl as string }).then(() => {
-                  setSubmitting(false);
-                });
+                await newDid({ alias: nonFqUrl as string }).then(() => setSubmitting(false));
               }}>
               {({ isSubmitting }) => (
                 <Form>
@@ -122,22 +107,21 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         {tenantInfo?.activated && data && (
           <>
             <br />
-            <Typography variant="body2">Issuer URL: {fqUrl}</Typography>
+            <Typography variant="body2">Tenant&apos;s URL: {fqUrl}</Typography>
             <br />
-            <Typography variant="h5">Did Document</Typography>
+            <Typography variant="h5">Identity</Typography>
             <JSONTree theme="bright" data={data} hideRoot={true} />
           </>
         )}
         {webDid?.data && (
           <>
+            <br />
             <Divider />
             <Success />
+            <Typography variant="caption" color="primary">
+              {webDid?.data.did} is created.
+            </Typography>
           </>
-        )}
-        {webDid?.data && (
-          <Typography variant="caption" color="primary">
-            {webDid?.data.did} is created.
-          </Typography>
         )}
       </Main>
     </Layout>

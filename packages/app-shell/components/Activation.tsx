@@ -51,7 +51,7 @@ const Activation: React.FC<{ tenantInfo: TenantInfo }> = ({ tenantInfo }) => {
               <Button
                 className={classes.submit}
                 color="primary"
-                disabled={isSubmitting || !!val?.data || !!val?.error || !tenantInfo}
+                disabled={isSubmitting || !!val?.data || !!val?.error || !tenantInfo?.id}
                 type="submit"
                 variant="contained">
                 Activate

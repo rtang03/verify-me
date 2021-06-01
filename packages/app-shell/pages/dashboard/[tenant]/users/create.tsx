@@ -1,20 +1,29 @@
 import Button from '@material-ui/core/Button';
+import Card from '@material-ui/core/Card';
+import CardActions from '@material-ui/core/CardActions';
+import CardContent from '@material-ui/core/CardContent';
+import CardHeader from '@material-ui/core/CardHeader';
 import Divider from '@material-ui/core/Divider';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import type { IIdentifier } from '@veramo/core';
 import { withAuth } from 'components';
-import AccessDenied from 'components/AccessDenied';
+import Error from 'components/Error';
+import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import LowerCaseTextField from 'components/LowerCaseTextField';
+import Main from 'components/Main';
+import Success from 'components/Success';
 import { Form, Field, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import Link from 'next/link';
+import { useRouter } from 'next/router';
 import React from 'react';
 import JSONTree from 'react-json-tree';
-import { useFetcher } from 'utils';
+import { mutate } from 'swr';
+import type { PaginatedTenant } from 'types';
+import { getTenantInfo, useFetcher, useReSWR } from 'utils';
 import * as yup from 'yup';
 
 const domain = process.env.NEXT_PUBLIC_BACKEND?.split(':')[1].replace('//', '');
@@ -31,91 +40,109 @@ const useStyles = makeStyles((theme: Theme) =>
     root: {
       display: 'flex',
       flexWrap: 'wrap',
+      maxWidth: 500,
     },
     textField: { width: '40ch' },
-    submit: { margin: theme.spacing(3, 0, 2) },
+    submit: { margin: theme.spacing(3, 2, 2) },
   })
 );
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
-  const { val, fetcher } = useFetcher<IIdentifier>();
+  const router = useRouter();
+  const tenantId = router.query.tenant as string;
+
+  // Query TenantInfo
+  const {
+    data: tenant,
+    isError: tenantError,
+    isLoading: tenantLoading,
+  } = useReSWR<PaginatedTenant>('/api/tenants', tenantId, tenantId !== '0');
+  const tenantInfo = getTenantInfo(tenant);
+
+  // Create User Identifier
+  const { val: userDid, poster } = useFetcher<IIdentifier>();
 
   return (
     <Layout title="User">
-      {session && (
-        <>
-          <Link href="/dashboard/1/users">
-            <a>
-              <Typography variant="caption">← Back to User-Identifiers</Typography>
-            </a>
-          </Link>
-          <br />
-          <br />
-          <Typography variant="h4">Create User Identifier</Typography>
-          <br />
-          <br />
-          {val.loading ? <LinearProgress /> : <Divider />}
+      <Main
+        session={session}
+        title="Create User Identifier"
+        parentUrl={`/dashboard/${tenantInfo?.id}/users`}
+        parentText={`User-Identifiers`}>
+        {tenantLoading || userDid.loading ? <LinearProgress /> : <Divider />}
+        {tenantError || (userDid.error && <Error />)}
+        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
+        {tenantInfo?.activated && (
           <Formik
             initialValues={{ username: '' }}
             validateOnChange={true}
             validationSchema={validation}
             onSubmit={async ({ username }, { setSubmitting }) => {
               setSubmitting(true);
-              await fetcher('/api/users/create', {
-                method: 'POST',
-                headers: { 'Content-type': 'application/json' },
-                body: JSON.stringify({ username }),
-              }).finally(() => setSubmitting(false));
+              const key = tenantInfo?.slug
+                ? `/api/users/${username}?slug=${tenantInfo.slug}`
+                : null;
+              const newUser = (body: any) =>
+                mutate(key, poster('/api/users?slug=${tenantInfo?.slug}', body));
+              await newUser({ username }).then(() => setSubmitting(false));
             }}>
             {({ values: { username }, isSubmitting, errors }) => (
               <Form>
-                <p>Your web-did = {username ? `did:web:${domain}:users:${username}` : '[N/A]'}</p>
                 <br />
-                <div>
-                  <Typography variant="caption" color="secondary">
-                    Note: only lower case and _ underscore is allowed. Special characters disabled.
-                  </Typography>
-                </div>
-                <Field
-                  disabled={val.data}
-                  className={classes.textField}
-                  label="Alias for User Identiifier"
-                  size="small"
-                  component={LowerCaseTextField}
-                  name={'username'}
-                  placeholder={'a short memorable name'}
-                  variant="outlined"
-                  margin="normal"
-                  fullwidth="true"
-                  autoFocus={true}
-                />
-                <p>
-                  <Button
-                    className={classes.submit}
-                    variant="contained"
-                    color="primary"
-                    size="small"
-                    type="submit"
-                    disabled={isSubmitting || !!errors?.username || !username || !!val?.data}>
-                    Submit
-                  </Button>
-                </p>
+                <Card className={classes.root}>
+                  <CardHeader
+                    title="User identifier"
+                    subheader="Only lower-case and _ underscore is allowed. Special characters and space disabled."
+                  />
+                  <CardContent>
+                    <Typography variant="caption">You are </Typography>
+                    <Typography variant="caption" color="primary">
+                      {username
+                        ? `"did:web:${tenantInfo.slug}.${domain}:users:${username}"`
+                        : '...'}
+                    </Typography>
+                    <br />
+                    <br />
+                    <Field
+                      disabled={!!userDid?.data}
+                      className={classes.textField}
+                      label="Alias for User Identiifier"
+                      size="small"
+                      component={LowerCaseTextField}
+                      name={'username'}
+                      placeholder={'a short memorable name'}
+                      variant="outlined"
+                      margin="normal"
+                      fullwidth="true"
+                      autoFocus={true}
+                    />
+                  </CardContent>
+                  <CardActions>
+                    <Button
+                      className={classes.submit}
+                      variant="contained"
+                      color="primary"
+                      type="submit"
+                      disabled={isSubmitting || !!errors?.username || !username || !!userDid?.data}>
+                      Submit
+                    </Button>
+                  </CardActions>
+                </Card>
               </Form>
             )}
           </Formik>
-          <Divider />
-          {val.data && !val.loading && (
-            <>
-              <Typography variant="h6" color="secondary">
-                Did-document is successfully created.
-              </Typography>
-              <JSONTree theme="bright" data={val.data} />
-            </>
-          )}
-        </>
-      )}
-      {!session && <AccessDenied />}
+        )}
+        {/* after creation succeeds*/}
+        {userDid?.data && !userDid.loading && (
+          <>
+            <br />
+            <Divider />
+            <Success />
+            <JSONTree theme="bright" data={userDid.data} />
+          </>
+        )}
+      </Main>
     </Layout>
   );
 };

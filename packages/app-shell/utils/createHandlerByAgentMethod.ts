@@ -25,13 +25,10 @@ const handler: (agentMethod: string) => NextApiHandler = (agentMethod) => async 
     const status = response.status;
     let result;
 
-    if (status === Status.OK || status === Status.CREATED) {
-      const data = await response.json();
-      result = { status: 'OK', data };
-    } else {
-      const error = await response.text();
-      result = { status: 'ERROR', message: OOPS, error };
-    }
+    if (status === Status.OK || status === Status.CREATED)
+      result = { status: 'OK', data: await response.json() };
+    else result = { status: 'ERROR', message: OOPS, error: await response.text() };
+
     res.status(Status.OK).send(result);
   } else res.status(Status.METHOD_NOT_ALLOWED).send({ status: 'ERROR', message: OOPS });
 };

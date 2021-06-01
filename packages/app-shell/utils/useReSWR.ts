@@ -15,17 +15,21 @@ export type Result<TData> = {
  * A fetcher by useSWR
  */
 export const useReSWR: <TData>(
-  baseUrl: string,
+  baseUrl: string | null,
   id?: string,
   shouldFetch?: boolean
 ) => Result<TData> = <TData>(
-  baseUrl: string,
+  baseUrl: string | null,
   id: string | undefined,
   shouldFetch: boolean | undefined
 ) => {
   const _args = id ? `${baseUrl}?id=${id}` : baseUrl;
   // @see https://swr.vercel.app/docs/conditional-fetching
-  const args = shouldFetch === undefined ? _args : shouldFetch ? _args : null;
+  let args = shouldFetch === undefined ? _args : shouldFetch ? _args : null;
+
+  // if no baseUrl because of no awaiting tenantInfo, args is set to null; as a dependent fetching
+  if (!baseUrl) args = null;
+
   const { data, error } = useSWR<CommonResponse<TData>>(args, fetcher);
 
   // Not found: no data, no error

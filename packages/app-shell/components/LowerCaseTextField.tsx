@@ -35,7 +35,7 @@ const lowerCasing: (value: string) => string = (value) =>
         .replace(/\|/g, '')
     : '';
 
-const LowerCasTextField: React.FC<any> = (props: TextFieldProps) => {
+const LowerCaseTextField: React.FC<any> = (props: TextFieldProps) => {
   const {
     form: { setFieldValue },
     field: { name },
@@ -50,4 +50,4 @@ const LowerCasTextField: React.FC<any> = (props: TextFieldProps) => {
   return <MuiTextField {...fieldToTextField(props)} onChange={onChange} />;
 };
 
-export default LowerCasTextField;
+export default LowerCaseTextField;

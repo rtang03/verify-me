@@ -7,54 +7,54 @@ import type {
 } from '@verify/server';
 import Status from 'http-status';
 import type { NextApiHandler } from 'next';
-import { OOPS } from '../../../utils';
+import { getTenantUrl, MISSING_DOMAIN, MISSING_SLUG, OOPS } from '../../../utils';
 
 const handler: NextApiHandler = async (req, res) => {
+  // Note: this is GET method, which in turn invokes agentMethod with POST.
   if (req.method === 'GET') {
-    // TODO Change to paginated
-    const skip = 0;
-    const take = 50;
+    const slug = req.query.slug as string;
+    const cursor = req.query.cursor as string;
+    const skip = (cursor && parseInt(cursor, 10)) || 0;
+    const pagesize = req.query.pagesize as string;
+    const take = (pagesize && parseInt(pagesize, 10)) || 50;
+    const domain = process.env.NEXT_PUBLIC_DOMAIN;
+
+    if (!slug) return res.status(Status.OK).send({ status: 'ERROR', error: MISSING_SLUG });
+    if (!domain) return res.status(Status.OK).send({ status: 'ERROR', error: MISSING_DOMAIN });
+
+    const getUrl = (agentMethod: string) => `${getTenantUrl(slug, domain)}/agent/${agentMethod}`;
+
     // Query Result
-    const url = `${process.env.NEXT_PUBLIC_BACKEND}/agent/dataStoreORMGetIdentifiers`;
-    const args: DataStoreORMGetIdentifiersArgs = {
-      skip,
-      take,
-      // https://veramo.io/docs/api/data-store.where
-    };
-    const response = await fetch(url, {
+    // @see https://veramo.io/docs/api/data-store.where
+    const response = await fetch(getUrl('dataStoreORMGetIdentifiers'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', authorization: `Bearer jklj;kljkl` },
-      body: JSON.stringify(args),
+      body: JSON.stringify(<DataStoreORMGetIdentifiersArgs>{ skip, take }),
     });
 
     // Query Count
-    const countUrl = `${process.env.NEXT_PUBLIC_BACKEND}/agent/dataStoreORMGetIdentifiersCount`;
-    const args2: DataStoreORMGetIdentifiersCountArgs = {};
-    const countResponse = await fetch(countUrl, {
+    const countResponse = await fetch(getUrl('dataStoreORMGetIdentifiersCount'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', authorization: `Bearer jklj;kljkl` },
-      body: JSON.stringify(args2),
+      body: JSON.stringify(<DataStoreORMGetIdentifiersCountArgs>{}),
     });
-
     const status = response.status;
+
+    let result;
 
     if (status === Status.OK) {
       const items: Partial<IIdentifier>[] = await response.json();
       const total = await countResponse.json();
       const hasMore = skip + take < total;
       const cursor = hasMore ? skip + take : total;
-      const result: CommonResponse<Paginated<Partial<IIdentifier>>> = {
+      result = <CommonResponse<Paginated<Partial<IIdentifier>>>>{
         status: 'OK',
         data: { total, cursor, hasMore, items },
       };
-      return res.status(Status.OK).send(result);
-    } else {
-      console.error(`fail to fetch ${url}, status: ${status}`);
-      return res.status(Status.OK).send({ status: 'ERROR', message: OOPS });
-    }
-  }
+    } else result = { status: 'ERROR', message: OOPS, error: await response.text() };
 
-  res.status(Status.METHOD_NOT_ALLOWED).send({ status: 'ERROR', message: OOPS });
+    res.status(Status.OK).send(result);
+  } else res.status(Status.METHOD_NOT_ALLOWED).send({ status: 'ERROR', message: OOPS });
 };
 
 export default handler;
