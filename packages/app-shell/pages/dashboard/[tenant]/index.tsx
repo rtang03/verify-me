@@ -88,7 +88,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
             }}>
             {({ values, errors, isSubmitting }) => (
               <Form>
-                <Card className={classes.root} variant="outlined">
+                <Card className={classes.root}>
                   <CardHeader
                     avatar={<AvatarMd5 subject={tenantInfo.id || 'no id'} />}
                     title={tenantInfo.slug}

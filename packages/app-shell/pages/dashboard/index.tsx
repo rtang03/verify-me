@@ -1,4 +1,8 @@
 import Button from '@material-ui/core/Button';
+import Card from '@material-ui/core/Card';
+import CardActions from '@material-ui/core/CardActions';
+import CardContent from '@material-ui/core/CardContent';
+import CardHeader from '@material-ui/core/CardHeader';
 import Divider from '@material-ui/core/Divider';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import List from '@material-ui/core/List';
@@ -25,7 +29,7 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       width: '100%',
-      maxWidth: '45ch',
+      maxWidth: '60ch',
       backgroundColor: theme.palette.background.paper,
     },
     inline: { display: 'inline' },
@@ -48,42 +52,51 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
     <Layout title="Tenant">
       <Main session={session} title="Tenants" subtitle="List of tenants. Learn more">
         {isLoading ? <LinearProgress /> : <Divider />}
+        <br />
         {!!data?.items?.length && !isLoading && (
-          <>
-            <Pagination count={count} showFirstButton showLastButton onChange={handlePageChange} />
-            <Typography variant="caption">Total: {data?.total || 0}</Typography>
-            <List className={classes.root}>
-              {data.items.map((item, index) => (
-                <Fragment key={index}>
-                  <Link href={`/dashboard/${item.id}`}>
-                    <a>
-                      <ListItem alignItems="flex-start">
-                        <ListItemAvatar>
-                          <AvatarMd5 subject={item.id || 'idle'} />
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={item.slug}
-                          secondary={
-                            <Fragment>
-                              <Typography
-                                component="span"
-                                variant="caption"
-                                className={classes.inline}
-                                color="textPrimary">
-                                {item.id}
-                              </Typography>
-                              {item.name}
-                            </Fragment>
-                          }
-                        />
-                      </ListItem>
-                    </a>
-                  </Link>
-                  <Divider variant="inset" component="li" />
-                </Fragment>
-              ))}
-            </List>
-          </>
+          <Card className={classes.root}>
+            <CardHeader subheader={<>Total: {data?.total || 0}</>} />
+            <CardContent>
+              <Pagination
+                count={count}
+                showFirstButton
+                showLastButton
+                onChange={handlePageChange}
+              />
+              <br />
+              <List className={classes.root}>
+                {data.items.map((item, index) => (
+                  <Fragment key={index}>
+                    <Link href={`/dashboard/${item.id}`}>
+                      <a>
+                        <ListItem alignItems="flex-start">
+                          <ListItemAvatar>
+                            <AvatarMd5 subject={item.id || 'idle'} />
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={item.slug}
+                            secondary={
+                              <Fragment>
+                                <Typography
+                                  component="span"
+                                  variant="caption"
+                                  className={classes.inline}
+                                  color="textPrimary">
+                                  {item.id}
+                                </Typography>
+                                {item.name}
+                              </Fragment>
+                            }
+                          />
+                        </ListItem>
+                      </a>
+                    </Link>
+                    <Divider variant="inset" component="li" />
+                  </Fragment>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
         )}
         {isError && !isLoading && <Error />}
         {/* WHEN NO TENTANT */}

@@ -11,7 +11,6 @@ import Layout from 'components/Layout';
 import Main from 'components/Main';
 import Success from 'components/Success';
 import { Form, Formik } from 'formik';
-import pick from 'lodash/pick';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
@@ -19,7 +18,7 @@ import React from 'react';
 import JSONTree from 'react-json-tree';
 import { mutate } from 'swr';
 import type { PaginatedTenant, TenantInfo } from 'types';
-import { getTenantUrl, useFetcher, useReSWR } from 'utils';
+import { getTenantInfo, getTenantUrl, useFetcher, useReSWR } from 'utils';
 
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const useStyles = makeStyles((theme: Theme) =>
@@ -40,9 +39,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
     isError: tenantError,
     isLoading: tenantLoading,
   } = useReSWR<PaginatedTenant>('/api/tenants', tenantId, tenantId !== '0');
-  const tenantInfo: TenantInfo | null = tenant
-    ? pick(tenant.items[0], 'id', 'slug', 'name', 'activated', 'members')
-    : null;
+  const tenantInfo = getTenantInfo(tenant);
   const fqUrl = tenantInfo?.slug && domain && getTenantUrl(tenantInfo?.slug, domain);
   const nonFqUrl = fqUrl?.replace('https://', '').replace('http://', '');
 

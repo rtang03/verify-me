@@ -1,3 +1,4 @@
+import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
@@ -6,10 +7,12 @@ import CardHeader from '@material-ui/core/CardHeader';
 import Divider from '@material-ui/core/Divider';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
+import { red } from '@material-ui/core/colors';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import type { IIdentifier } from '@veramo/core';
 import { withAuth } from 'components';
 import Error from 'components/Error';
+import GotoIdentifier from 'components/GotoIdentifier';
 import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import LowerCaseTextField from 'components/LowerCaseTextField';
@@ -23,7 +26,7 @@ import React from 'react';
 import JSONTree from 'react-json-tree';
 import { mutate } from 'swr';
 import type { PaginatedTenant } from 'types';
-import { getTenantInfo, useFetcher, useReSWR } from 'utils';
+import { getTenantInfo, getTenantUrl, useFetcher, useReSWR } from 'utils';
 import * as yup from 'yup';
 
 const domain = process.env.NEXT_PUBLIC_BACKEND?.split(':')[1].replace('//', '');
@@ -40,10 +43,13 @@ const useStyles = makeStyles((theme: Theme) =>
     root: {
       display: 'flex',
       flexWrap: 'wrap',
-      maxWidth: 500,
+      maxWidth: '60ch',
     },
     textField: { width: '40ch' },
     submit: { margin: theme.spacing(3, 2, 2) },
+    avatar: {
+      backgroundColor: red[500],
+    },
   })
 );
 
@@ -59,6 +65,8 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
     isLoading: tenantLoading,
   } = useReSWR<PaginatedTenant>('/api/tenants', tenantId, tenantId !== '0');
   const tenantInfo = getTenantInfo(tenant);
+  const fqUrl = tenantInfo?.slug && domain && getTenantUrl(tenantInfo?.slug, domain);
+  const nonFqUrl = fqUrl?.replace('https://', '').replace('http://', '');
 
   // Create User Identifier
   const { val: userDid, poster } = useFetcher<IIdentifier>();
@@ -71,7 +79,8 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         parentUrl={`/dashboard/${tenantInfo?.id}/users`}
         parentText={`User-Identifiers`}>
         {tenantLoading || userDid.loading ? <LinearProgress /> : <Divider />}
-        {tenantError || (userDid.error && <Error />)}
+        {tenantError && <Error />}
+        {userDid.error && <Error error={userDid.error} />}
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
         {tenantInfo?.activated && (
           <Formik
@@ -84,8 +93,10 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                 ? `/api/users/${username}?slug=${tenantInfo.slug}`
                 : null;
               const newUser = (body: any) =>
-                mutate(key, poster('/api/users?slug=${tenantInfo?.slug}', body));
-              await newUser({ username }).then(() => setSubmitting(false));
+                mutate(key, poster(`/api/users/create?slug=${tenantInfo?.slug}`, body));
+              await newUser({ alias: `${nonFqUrl}:users:${username}` }).then(() =>
+                setSubmitting(false)
+              );
             }}>
             {({ values: { username }, isSubmitting, errors }) => (
               <Form>
@@ -93,16 +104,15 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                 <Card className={classes.root}>
                   <CardHeader
                     title="User identifier"
-                    subheader="Only lower-case and _ underscore is allowed. Special characters and space disabled."
+                    subheader="Only lower-case and numeric are allowed; special characters and space disabled."
+                    avatar={<Avatar className={classes.avatar}>{username.slice(0, 2)}</Avatar>}
                   />
                   <CardContent>
                     <Typography variant="caption">You are </Typography>
                     <Typography variant="caption" color="primary">
-                      {username
-                        ? `"did:web:${tenantInfo.slug}.${domain}:users:${username}"`
-                        : '...'}
+                      {username ? `"did:web:${nonFqUrl}:users:${username}"` : '...'}
                     </Typography>
-                    <br />
+                    <Divider />
                     <br />
                     <Field
                       disabled={!!userDid?.data}
@@ -134,12 +144,12 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
           </Formik>
         )}
         {/* after creation succeeds*/}
-        {userDid?.data && !userDid.loading && (
+        {tenantInfo && userDid?.data?.alias && !userDid.loading && (
           <>
             <br />
             <Divider />
             <Success />
-            <JSONTree theme="bright" data={userDid.data} />
+            <GotoIdentifier tenantInfo={tenantInfo} alias={userDid.data.alias} />
           </>
         )}
       </Main>
