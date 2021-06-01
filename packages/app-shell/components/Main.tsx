@@ -1,3 +1,5 @@
+import Divider from '@material-ui/core/Divider';
+import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
 import { Session } from 'next-auth';
 import Link from 'next/link';
@@ -10,7 +12,8 @@ const Main: React.FC<{
   parentText?: string;
   title: string;
   subtitle?: string;
-}> = ({ children, session, parentUrl, parentText, title, subtitle }) => {
+  isLoading: boolean;
+}> = ({ children, session, parentUrl, parentText, title, subtitle, isLoading }) => {
   return (
     <>
       {session && (
@@ -30,6 +33,7 @@ const Main: React.FC<{
           {subtitle && <Typography variant="caption">{subtitle}</Typography>}
           <br />
           <br />
+          {isLoading ? <LinearProgress /> : <Divider />}
           {children}
         </>
       )}

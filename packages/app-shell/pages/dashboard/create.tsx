@@ -1,6 +1,5 @@
 import Button from '@material-ui/core/Button';
 import Divider from '@material-ui/core/Divider';
-import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import { withAuth } from 'components';
@@ -49,8 +48,8 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         parentText="Dashboard"
         parentUrl="/dashboard"
         title="Create Tenant"
-        subtitle="Each tenant does .... Learn more.">
-        {val.loading ? <LinearProgress /> : <Divider />}
+        subtitle="Each tenant does .... Learn more."
+        isLoading={val.loading}>
         <Formik
           initialValues={{ slug: '' }}
           validateOnChange={true}

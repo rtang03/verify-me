@@ -1,10 +1,8 @@
 import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
-import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
 import Divider from '@material-ui/core/Divider';
-import LinearProgress from '@material-ui/core/LinearProgress';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
@@ -50,8 +48,11 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 
   return (
     <Layout title="Tenant">
-      <Main session={session} title="Tenants" subtitle="List of tenants. Learn more">
-        {isLoading ? <LinearProgress /> : <Divider />}
+      <Main
+        session={session}
+        title="Tenants"
+        subtitle="List of tenants. Learn more"
+        isLoading={isLoading}>
         <br />
         {!!data?.items?.length && !isLoading && (
           <Card className={classes.root}>

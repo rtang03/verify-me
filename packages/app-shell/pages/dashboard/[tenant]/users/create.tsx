@@ -5,7 +5,6 @@ import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
 import Divider from '@material-ui/core/Divider';
-import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
 import { red } from '@material-ui/core/colors';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
@@ -23,7 +22,6 @@ import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React from 'react';
-import JSONTree from 'react-json-tree';
 import { mutate } from 'swr';
 import type { PaginatedTenant } from 'types';
 import { getTenantInfo, getTenantUrl, useFetcher, useReSWR } from 'utils';
@@ -77,8 +75,8 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         session={session}
         title="Create User Identifier"
         parentUrl={`/dashboard/${tenantInfo?.id}/users`}
-        parentText={`User-Identifiers`}>
-        {tenantLoading || userDid.loading ? <LinearProgress /> : <Divider />}
+        parentText={`User-Identifiers`}
+        isLoading={tenantLoading || userDid.loading}>
         {tenantError && <Error />}
         {userDid.error && <Error error={userDid.error} />}
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}

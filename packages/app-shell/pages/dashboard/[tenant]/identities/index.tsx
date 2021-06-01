@@ -1,6 +1,5 @@
 import Button from '@material-ui/core/Button';
 import Divider from '@material-ui/core/Divider';
-import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import type { IIdentifier } from '@veramo/core';
@@ -59,8 +58,8 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         title="Web Identifier"
         subtitle="Setup decentralized identity for web. Each tenant can have only one web did-document."
         parentText={`Dashboard/${tenantInfo?.slug}`}
-        parentUrl={`/dashboard/${tenantInfo?.id}`}>
-        {tenantLoading || isLoading ? <LinearProgress /> : <Divider />}
+        parentUrl={`/dashboard/${tenantInfo?.id}`}
+        isLoading={tenantLoading || isLoading}>
         {(tenantError || didError) && <Error />}
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
         {tenantInfo?.activated && !data && !didError && (

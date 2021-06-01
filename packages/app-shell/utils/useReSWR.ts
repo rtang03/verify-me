@@ -25,7 +25,7 @@ export const useReSWR: <TData>(
 ) => {
   const _args = id ? `${baseUrl}?id=${id}` : baseUrl;
   // @see https://swr.vercel.app/docs/conditional-fetching
-  let args = shouldFetch === undefined ? _args : shouldFetch ? _args : null;
+  let args: any = shouldFetch === undefined ? _args : shouldFetch ? _args : null;
 
   // if no baseUrl because of no awaiting tenantInfo, args is set to null; as a dependent fetching
   if (!baseUrl) args = null;

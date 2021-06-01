@@ -5,7 +5,6 @@ import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
 import Divider from '@material-ui/core/Divider';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
-import LinearProgress from '@material-ui/core/LinearProgress';
 import Switch from '@material-ui/core/Switch';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import { withAuth } from 'components';
@@ -68,8 +67,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         subtitle={data?.items?.[0].name || ''}
         session={session}
         parentText="Dashboard"
-        parentUrl="/dashboard">
-        {isLoading ? <LinearProgress /> : <Divider />}
+        parentUrl="/dashboard" isLoading={isLoading}>
         {isError && !isLoading && <Error />}
         <Divider />
         {/* IF NOT ACTIVATE */}

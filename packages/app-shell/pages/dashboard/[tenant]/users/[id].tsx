@@ -1,24 +1,32 @@
-import { createStyles } from '@material-ui/core';
+import { makeStyles, Theme, createStyles } from '@material-ui/core';
 import Button from '@material-ui/core/Button';
+import Card from '@material-ui/core/Card';
+import CardActions from '@material-ui/core/CardActions';
+import CardContent from '@material-ui/core/CardContent';
+import CardHeader from '@material-ui/core/CardHeader';
 import Divider from '@material-ui/core/Divider';
-import LinearProgress from '@material-ui/core/LinearProgress';
-import Typography from '@material-ui/core/Typography';
-import { makeStyles, Theme } from '@material-ui/core/styles';
 import type { IIdentifier } from '@veramo/core';
 import { withAuth } from 'components';
-import AccessDenied from 'components/AccessDenied';
+import AvatarMd5 from 'components/AvatarMd5';
+import Error from 'components/Error';
+import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
+import Main from 'components/Main';
+import Success from 'components/Success';
 import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import JSONTree from 'react-json-tree';
-import { useFetcher } from 'utils';
+import { mutate } from 'swr';
+import type { PaginatedTenant } from 'types';
+import { getTenantInfo, getTenantUrl, useFetcher, useReSWR } from 'utils';
 import * as yup from 'yup';
 
+const domain = process.env.NEXT_PUBLIC_DOMAIN;
+const secure = process.env.NEXT_PUBLIC_DOMAIN_SECURE === 'true';
 const validation = yup.object({
   serviceEndpoint: yup.string().url().required('url is required'),
 });
@@ -30,117 +38,147 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     typeTextField: { width: '15ch' },
     serviceTextField: { width: '50ch' },
-    submit: { margin: theme.spacing(3, 0, 2) },
+    submit: { margin: theme.spacing(3, 3, 2) },
   })
 );
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const router = useRouter();
-  const { val, fetcher } = useFetcher<IIdentifier>();
-  const { val: addServiceEP, fetcher: addServiceEPFetcher } = useFetcher<{ success: boolean }>();
-  const isMessagingExist = () =>
-    val.data?.services
-      ?.map(({ type }) => type === 'Messaging')
-      .reduce((prev, curr) => prev || curr, false);
+  const tenantId = router.query.tenant as string;
 
-  useEffect(() => {
-    fetcher(`/api/users/${router.query.id}`).finally(() => true);
-  }, [session]);
+  // Query TenantInfo
+  const {
+    data: tenant,
+    isError: tenantError,
+    isLoading: tenantLoading,
+  } = useReSWR<PaginatedTenant>('/api/tenants', tenantId, tenantId !== '0');
+  const tenantInfo = getTenantInfo(tenant);
+
+  // Query IIdentifier
+  const id = router.query.id as string; // this is "IIdentifier.alias"
+  const url = tenantInfo?.slug ? `/api/users/${id}?slug=${tenantInfo?.slug}&id={id}` : null;
+  const { data, isLoading, isError, error } = useReSWR<IIdentifier>(
+    url,
+    undefined,
+    !!tenantInfo?.slug
+  );
+  const isMessagingExist = data?.services
+    ?.map(({ type }) => type === 'Messaging')
+    .reduce((prev, curr) => prev || curr, false);
+
+  const { val: addServiceEP, poster } = useFetcher<{ success: boolean }>();
+  const newService = (body: any) =>
+    mutate(url, poster(`/api/users/${router.query.id}/services?slug=${tenantInfo?.slug}`, body));
+  const serviceEndpoint =
+    (tenantInfo?.slug && domain && `${getTenantUrl(tenantInfo.slug, domain, secure)}`) || '';
 
   return (
     <Layout title="User">
-      {session && (
-        <>
-          <Link href="/dashboard/1/users">
-            <a>
-              <Typography variant="caption">← Back to User-Identifiers</Typography>
-            </a>
-          </Link>
-          <br />
-          <br />
-          <Typography variant="h4">User Identifier</Typography>
-          <br />
-          <br />
-          {val.loading ? <LinearProgress /> : <Divider />}
-          <Divider />
-          {val.data && (
-            <>
-              <Typography variant="h5">Current document</Typography>
-              <JSONTree theme="bright" data={val.data} hideRoot={true} />
-              <div hidden={isMessagingExist()}>
-                <Divider variant="inset" />
-                <Typography variant="h6">Add messaging endpoint</Typography>
+      <Main
+        session={session}
+        title="User Identifier"
+        parentUrl={`/dashboard/${tenantInfo?.id}/users`}
+        parentText="User-Identifiers"
+        isLoading={tenantLoading || isLoading}>
+        {tenantError && !tenantLoading && <Error />}
+        {isError && !isLoading && <Error error={error} />}
+        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
+        <br />
+        {tenantInfo?.activated && data && (
+          <Card>
+            <CardHeader
+              avatar={<AvatarMd5 subject={data.alias || 'idle'} />}
+              title="Active document"
+              subheader={data.did}
+            />
+            <CardContent>
+              <Divider />
+              <JSONTree data={data} hideRoot={true} />
+            </CardContent>
+            <CardContent>
+              {!isMessagingExist && (
                 <Formik
-                  initialValues={{ type: 'Messaging', serviceEndpoint: '' }}
+                  initialValues={{ type: 'Messaging', serviceEndpoint }}
                   validateOnChange={true}
                   validationSchema={validation}
                   onSubmit={async ({ type, serviceEndpoint }, { setSubmitting }) => {
                     setSubmitting(true);
-                    const numberOfServiceEndpoint = val.data?.services?.length ?? 0;
+                    const numberOfServiceEndpoint = data?.services?.length ?? 0;
                     const id = `service#${numberOfServiceEndpoint + 1}`;
-                    console.log(id);
-                    await addServiceEPFetcher(`/api/users/${router.query.id}/services`, {
-                      method: 'POST',
-                      headers: { 'Content-type': 'application/json' },
-                      body: JSON.stringify({ serviceEndpoint, type, id }),
-                    }).finally(() => setSubmitting(false));
+                    await newService({
+                      did: data.did,
+                      provider: 'web',
+                      service: { id, type, serviceEndpoint, description: '' },
+                    }).then(() => setSubmitting(false));
                   }}>
                   {({ values: { serviceEndpoint }, isSubmitting, errors }) => (
                     <Form>
-                      <Field
-                        disabled={true}
-                        className={classes.typeTextField}
-                        label="Type"
-                        size="small"
-                        component={TextField}
-                        name={'type'}
-                        placeholder={'Messaging'}
-                        variant="outlined"
-                        margin="normal"
-                        fullwidth="20%"
-                      />{' '}
-                      <Field
-                        disabled={addServiceEP.data}
-                        className={classes.serviceTextField}
-                        label="Service endpoint"
-                        size="small"
-                        component={TextField}
-                        name={'serviceEndpoint'}
-                        placeholder={'e.g. http://example.com'}
-                        variant="outlined"
-                        margin="normal"
-                        fullwidth="50%"
-                        autoFocus={true}
-                      />
-                      <div>
-                        <Button
-                          className={classes.submit}
-                          variant="contained"
-                          color="primary"
-                          size="small"
-                          type="submit"
-                          disabled={
-                            isSubmitting ||
-                            !!errors?.serviceEndpoint ||
-                            !serviceEndpoint ||
-                            !!addServiceEP?.data
-                          }>
-                          Add
-                        </Button>
-                      </div>
+                      <Card>
+                        <CardHeader subheader="Add Messaging Service" />
+                        <CardContent>
+                          <Field
+                            disabled={true}
+                            className={classes.typeTextField}
+                            label="Type"
+                            size="small"
+                            component={TextField}
+                            name={'type'}
+                            placeholder={'Messaging'}
+                            variant="outlined"
+                            margin="normal"
+                            fullwidth="20%"
+                          />{' '}
+                          <Field
+                            disabled={!!addServiceEP.data}
+                            className={classes.serviceTextField}
+                            label="Service endpoint"
+                            size="small"
+                            component={TextField}
+                            name={'serviceEndpoint'}
+                            placeholder={'e.g. http://example.com'}
+                            variant="outlined"
+                            margin="normal"
+                            fullwidth="50%"
+                            autoFocus={true}
+                          />
+                        </CardContent>
+                        <CardActions>
+                          <Button
+                            className={classes.submit}
+                            variant="contained"
+                            color="primary"
+                            type="submit"
+                            disabled={
+                              isSubmitting ||
+                              !!errors?.serviceEndpoint ||
+                              !serviceEndpoint ||
+                              !!addServiceEP?.data
+                            }>
+                            Add Service
+                          </Button>
+                        </CardActions>
+                        {tenantInfo && addServiceEP?.data && (
+                          <CardContent>
+                            <Divider />
+                            <Success />
+                          </CardContent>
+                        )}
+                        {tenantInfo && addServiceEP?.error && (
+                          <CardContent>
+                            <Divider />
+                            <Error error={addServiceEP.error} />
+                          </CardContent>
+                        )}
+                      </Card>
                     </Form>
                   )}
                 </Formik>
-                <Typography variant="caption" color="secondary">
-                  {addServiceEP?.data?.success && 'Service endpoint added'}
-                </Typography>
-              </div>
-            </>
-          )}
-        </>
-      )}
-      {!session && <AccessDenied />}
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </Main>
     </Layout>
   );
 };
