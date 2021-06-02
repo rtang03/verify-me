@@ -1,4 +1,4 @@
-import type { IMessage } from '@veramo/core';
+import type { IMessage, IDIDManagerAddServiceArgs, IDIDManagerGetOrCreateArgs } from '@veramo/core';
 import type {
   FindArgs,
   TClaimsColumns,
@@ -41,4 +41,6 @@ export {
   IMessage,
   ICredentialRequestInput,
   Issuer,
+  IDIDManagerAddServiceArgs,
+  IDIDManagerGetOrCreateArgs,
 };

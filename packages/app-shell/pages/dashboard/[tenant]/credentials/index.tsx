@@ -1,62 +1,116 @@
-import Button from '@material-ui/core/Button';
+import Card from '@material-ui/core/Card';
+import CardContent from '@material-ui/core/CardContent';
+import CardHeader from '@material-ui/core/CardHeader';
 import Divider from '@material-ui/core/Divider';
-import LinearProgress from '@material-ui/core/LinearProgress';
-import Typography from '@material-ui/core/Typography';
-import type { Paginated } from '@verify/server';
-import type { UniqueVerifiableCredential } from '@verify/server';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemAvatar from '@material-ui/core/ListItemAvatar';
+import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
+import ListItemText from '@material-ui/core/ListItemText';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import Pagination from '@material-ui/lab/Pagination';
 import { withAuth } from 'components';
-import AccessDenied from 'components/AccessDenied';
+import AvatarMd5 from 'components/AvatarMd5';
+import Error from 'components/Error';
+import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
+import Main from 'components/Main';
+import NoRecord from 'components/NoRecord';
+import QuickAction from 'components/QuickAction';
 import omit from 'lodash/omit';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import Link from 'next/link';
-import React, { useEffect, Fragment } from 'react';
+import { useRouter } from 'next/router';
+import React, { Fragment, useState } from 'react';
 import JSONTree from 'react-json-tree';
-import { useFetcher } from 'utils';
+import type { PaginatedTenant, PaginatedVerifiableCredential } from 'types';
+import { getTenantInfo, useReSWR } from 'utils';
+
+const PAGESIZE = 5;
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    root: {
+      width: '100%',
+      maxWidth: '60ch',
+      backgroundColor: theme.palette.background.paper,
+    },
+    inline: { display: 'inline' },
+  })
+);
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
-  const { val, fetcher } = useFetcher<Paginated<UniqueVerifiableCredential>>();
+  const classes = useStyles();
+  const router = useRouter();
+  const tenantId = router.query.tenant as string;
 
-  useEffect(() => {
-    fetcher('/api/credentials').finally(() => true);
-  }, [session]);
+  // handle PageChange upon pagination
+  const [pageIndex, setPageIndex] = useState(0);
+  const handlePageChange = (event: React.ChangeEvent<unknown>, pagenumber: number) =>
+    setPageIndex((pagenumber - 1) * PAGESIZE);
+
+  // Query TenantInfo
+  const {
+    data: tenant,
+    isError: tenantError,
+    isLoading: tenantLoading,
+  } = useReSWR<PaginatedTenant>(`/api/tenants?id=${tenantId}`, tenantId !== '0');
+  const tenantInfo = getTenantInfo(tenant);
+  const slug = tenantInfo?.slug;
+
+  // Query Credentials
+  const url = slug
+    ? `/api/credentials?slug=${slug}&cursor=${pageIndex * PAGESIZE}&pagesize=${PAGESIZE}`
+    : null;
+  const { data, isLoading, isError, error } = useReSWR<PaginatedVerifiableCredential>(url, !!slug);
+  let count;
+  data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
 
   return (
     <Layout title="Credentials">
-      {session && (
-        <>
-          <Typography variant="h4">Credentials</Typography>
-          <Typography variant="caption">Create verifiable credentials. Learn more</Typography>
-          <br />
-          <br />
-          <Link href="/dashboard/1/credentials/issue">
-            <Button size="small" variant="contained">
-              + Issue Credential
-            </Button>
-          </Link>
-          {val.loading ? <LinearProgress /> : <Divider />}
-          {val?.data?.items?.length ? (
-            <>
-              <br />
-              <Typography variant="h5">Verifiable credentials</Typography>
-              <Typography variant="caption">total: {val.data.total}</Typography>
-              {val.data.items.map(({ verifiableCredential, hash }, index) => (
-                <Fragment key={index}>
-                  <JSONTree
-                    theme="bright"
-                    data={omit(verifiableCredential, 'proof', '@context', 'type')}
-                    hideRoot={true}
-                  />
-                </Fragment>
-              ))}
-            </>
-          ) : (
-            <p>No record</p>
-          )}
-        </>
-      )}
-      {!session && <AccessDenied />}
+      <Main
+        session={session}
+        title="Credentials"
+        subtitle="Issue verifiable credentials"
+        parentText={`Dashboard/${slug}`}
+        parentUrl={`/dashboard/${tenantInfo?.id}`}
+        isLoading={tenantLoading || isLoading}>
+        <QuickAction
+          link={`/dashboard/${tenantInfo?.id}/credentials/issue`}
+          label="+ Issue Credential"
+          disabled={!tenantInfo?.id}
+        />
+        {tenantError && !tenantLoading && <Error />}
+        {isError && !isLoading && <Error error={error} />}
+        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
+        <br />
+        {tenantInfo?.activated && !!data?.items?.length && (
+          <Card>
+            <CardHeader title="Active credentials" subheader={<>Total: {data?.total || 0}</>} />
+            <Pagination count={count} showFirstButton showLastButton onChange={handlePageChange} />
+            <br />
+            <CardContent>
+              <List className={classes.root}>
+                {data.items.map(({ verifiableCredential, hash }, index) => (
+                  <Fragment key={index}>
+                    <ListItem>
+                      <ListItemAvatar>
+                        <AvatarMd5 subject={hash} />
+                      </ListItemAvatar>
+                      <JSONTree
+                        theme="bright"
+                        data={omit(verifiableCredential, 'proof', '@context', 'type')}
+                        hideRoot={true}
+                      />
+                    </ListItem>
+                    <Divider variant="inset" />
+                  </Fragment>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
+        )}
+        {tenantInfo && !data?.items?.length && <NoRecord />}
+      </Main>
     </Layout>
   );
 };

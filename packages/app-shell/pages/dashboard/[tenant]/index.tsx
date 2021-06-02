@@ -19,11 +19,11 @@ import { TextField } from 'formik-material-ui';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
-import React, { ChangeEvent, useState, useEffect } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 import { mutate } from 'swr';
+import type { PaginatedTenant } from 'types';
 import { useReSWR, useFetcher, getTenantInfo } from 'utils';
 import * as yup from 'yup';
-import type { PaginatedTenant, TenantInfo } from '../../../types';
 
 const baseUrl = '/api/tenants';
 const validation = yup.object({ name: yup.string().nullable() });
@@ -43,11 +43,11 @@ type PsqlUpdated = { affected: number };
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const router = useRouter();
   const classes = useStyles();
+  const tenantId = router.query.tenant as string;
 
   // Query TenantInfo
-  const { data, isError, isLoading } = useReSWR<PaginatedTenant>(
-    '/api/tenants',
-    router.query.tenant as string
+  const { data, isError, isLoading, error } = useReSWR<PaginatedTenant>(
+    `/api/tenants?id=${tenantId}`
   );
   const tenantInfo = getTenantInfo(data);
 
@@ -67,8 +67,9 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         subtitle={data?.items?.[0].name || ''}
         session={session}
         parentText="Dashboard"
-        parentUrl="/dashboard" isLoading={isLoading}>
-        {isError && !isLoading && <Error />}
+        parentUrl="/dashboard"
+        isLoading={isLoading}>
+        {isError && !isLoading && <Error error={error} />}
         <Divider />
         {/* IF NOT ACTIVATE */}
         {!!tenantInfo && !tenantInfo.activated && <Activation tenantInfo={tenantInfo} />}

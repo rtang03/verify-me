@@ -4,8 +4,8 @@ import React from 'react';
 const NoRecord: React.FC<unknown> = () => {
   return (
     <div>
-      <Typography variant="h6" color="primary">
-        No records found.
+      <Typography variant="body1" color="primary">
+        No record found.
       </Typography>
     </div>
   );

@@ -12,15 +12,15 @@ import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
 import Pagination from '@material-ui/lab/Pagination';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
+import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
 import React, { Fragment, useState } from 'react';
-import Error from '../../components/Error';
-import type { PaginatedTenant } from '../../types';
-import { useReSWR } from '../../utils';
+import type { PaginatedTenant } from 'types';
+import { useReSWR } from 'utils';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>

@@ -1,11 +1,11 @@
-import { makeStyles, Theme, createStyles } from '@material-ui/core';
 import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
 import Divider from '@material-ui/core/Divider';
-import type { IIdentifier } from '@veramo/core';
+import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
+import type { IIdentifier, IDIDManagerAddServiceArgs } from '@veramo/core';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import Error from 'components/Error';
@@ -52,26 +52,22 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
     data: tenant,
     isError: tenantError,
     isLoading: tenantLoading,
-  } = useReSWR<PaginatedTenant>('/api/tenants', tenantId, tenantId !== '0');
+  } = useReSWR<PaginatedTenant>(`/api/tenants?id=${tenantId}`, tenantId !== '0');
   const tenantInfo = getTenantInfo(tenant);
+  const slug = tenantInfo?.slug;
 
   // Query IIdentifier
   const id = router.query.id as string; // this is "IIdentifier.alias"
-  const url = tenantInfo?.slug ? `/api/users/${id}?slug=${tenantInfo?.slug}&id={id}` : null;
-  const { data, isLoading, isError, error } = useReSWR<IIdentifier>(
-    url,
-    undefined,
-    !!tenantInfo?.slug
-  );
+  const url = slug ? `/api/users/${id}?slug=${slug}&id={id}` : null;
+  const { data, isLoading, isError, error } = useReSWR<IIdentifier>(url, !!slug);
   const isMessagingExist = data?.services
     ?.map(({ type }) => type === 'Messaging')
     .reduce((prev, curr) => prev || curr, false);
 
   const { val: addServiceEP, poster } = useFetcher<{ success: boolean }>();
-  const newService = (body: any) =>
-    mutate(url, poster(`/api/users/${router.query.id}/services?slug=${tenantInfo?.slug}`, body));
-  const serviceEndpoint =
-    (tenantInfo?.slug && domain && `${getTenantUrl(tenantInfo.slug, domain, secure)}`) || '';
+  const newService = (body: IDIDManagerAddServiceArgs) =>
+    mutate(url, poster(`/api/users/${router.query.id}/services?slug=${slug}`, body));
+  const serviceEndpoint = (slug && domain && `${getTenantUrl(slug, domain, secure)}`) || '';
 
   return (
     <Layout title="User">
@@ -108,7 +104,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                     const id = `service#${numberOfServiceEndpoint + 1}`;
                     await newService({
                       did: data.did,
-                      provider: 'web',
+                      // provider: 'web',
                       service: { id, type, serviceEndpoint, description: '' },
                     }).then(() => setSubmitting(false));
                   }}>

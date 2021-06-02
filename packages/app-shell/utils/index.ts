@@ -11,3 +11,4 @@ export * from './catchHandlerError';
 export * from './createHandlerByAgentMethod';
 export * from './prettyLog';
 export * from './getTenantInfo';
+export * from './createHandlerPaginatedAgentFind';

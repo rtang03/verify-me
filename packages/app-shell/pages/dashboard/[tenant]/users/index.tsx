@@ -1,4 +1,3 @@
-import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
@@ -19,12 +18,13 @@ import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import NoRecord from 'components/NoRecord';
+import QuickAction from 'components/QuickAction';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import React, { Fragment, useState } from 'react';
-import type { PaginatedIIdentifier, PaginatedTenant, TenantInfo } from 'types';
+import type { PaginatedIIdentifier, PaginatedTenant } from 'types';
 import { getTenantInfo, useReSWR } from 'utils';
 
 const PAGESIZE = 5;
@@ -54,18 +54,15 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
     data: tenant,
     isError: tenantError,
     isLoading: tenantLoading,
-  } = useReSWR<PaginatedTenant>('/api/tenants', tenantId, tenantId !== '0');
+  } = useReSWR<PaginatedTenant>(`/api/tenants?id=${tenantId}`, tenantId !== '0');
   const tenantInfo = getTenantInfo(tenant);
+  const slug = tenantInfo?.slug;
 
   // Query IIdentifiers
-  const url = tenantInfo?.slug
-    ? `/api/users?slug=${tenantInfo?.slug}&cursor=${pageIndex * PAGESIZE}&pagesize=${PAGESIZE}`
+  const url = slug
+    ? `/api/users?slug=${slug}&cursor=${pageIndex * PAGESIZE}&pagesize=${PAGESIZE}`
     : null;
-  const { data, isLoading, isError, error } = useReSWR<PaginatedIIdentifier>(
-    url,
-    undefined,
-    !!tenantInfo?.slug
-  );
+  const { data, isLoading, isError, error } = useReSWR<PaginatedIIdentifier>(url, !!slug);
   let count;
   data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
 
@@ -75,17 +72,16 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         session={session}
         title="User Identifers"
         subtitle="Setup decentralized identity for users. Learn more"
-        parentText={`Dashboard/${tenantInfo?.slug}`}
+        parentText={`Dashboard/${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
         isLoading={tenantLoading || isLoading}>
-        <Link href={`/dashboard/${tenantInfo?.id}/users/create`}>
-          <Button color="primary" size="small" variant="contained" disabled={!tenantInfo?.id}>
-            + CREATE IDENTIFIER
-          </Button>
-        </Link>
-        <br />
-        {tenantError && <Error />}
-        {isError && <Error error={error} />}
+        <QuickAction
+          link={`/dashboard/${tenantInfo?.id}/users/create`}
+          label="+ CREATE IDENTIFIER"
+          disabled={!tenantInfo?.id}
+        />
+        {tenantError && !tenantLoading && <Error />}
+        {isError && !isLoading && <Error error={error} />}
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
         <br />
         {tenantInfo?.activated && data?.items?.length && (
@@ -130,7 +126,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
             </CardContent>
           </Card>
         )}
-        {tenantInfo && data?.items?.length === 0 && <NoRecord />}
+        {tenantInfo && !data?.items?.length && <NoRecord />}
       </Main>
     </Layout>
   );

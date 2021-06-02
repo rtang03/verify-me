@@ -2,7 +2,7 @@ import Button from '@material-ui/core/Button';
 import Divider from '@material-ui/core/Divider';
 import Typography from '@material-ui/core/Typography';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import type { IIdentifier } from '@veramo/core';
+import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
 import { withAuth } from 'components';
 import Error from 'components/Error';
 import GotoTenant from 'components/GotoTenant';
@@ -16,7 +16,7 @@ import { useRouter } from 'next/router';
 import React from 'react';
 import JSONTree from 'react-json-tree';
 import { mutate } from 'swr';
-import type { PaginatedTenant, TenantInfo } from 'types';
+import type { PaginatedTenant } from 'types';
 import { getTenantInfo, getTenantUrl, useFetcher, useReSWR } from 'utils';
 
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
@@ -37,19 +37,20 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
     data: tenant,
     isError: tenantError,
     isLoading: tenantLoading,
-  } = useReSWR<PaginatedTenant>('/api/tenants', tenantId, tenantId !== '0');
+  } = useReSWR<PaginatedTenant>(`/api/tenants?id=${tenantId}`, tenantId !== '0');
   const tenantInfo = getTenantInfo(tenant);
+  const slug = tenantInfo?.slug;
   const fqUrl = tenantInfo?.slug && domain && getTenantUrl(tenantInfo?.slug, domain);
   const nonFqUrl = fqUrl?.replace('https://', '').replace('http://', '');
 
   // Query Web Did
-  const url = tenantInfo?.slug ? `/api/identifiers/did-json?slug=${tenantInfo.slug}` : null;
-  const { data, isLoading, error: didError } = useReSWR(url, undefined, !!tenantInfo?.slug);
+  const url = slug ? `/api/identifiers/did-json?slug=${slug}` : null;
+  const { data, isLoading, error: didError } = useReSWR(url, !!slug);
 
   // Create Web Did
   const { val: webDid, poster } = useFetcher<IIdentifier>();
-  const newDid = async (body: { alias: string }) =>
-    mutate(url, poster(`/api/identifiers/create?slug=${tenantInfo?.slug}`, body));
+  const newDid = async (body: IDIDManagerGetOrCreateArgs) =>
+    mutate(url, poster(`/api/identifiers/create?slug=${slug}`, body));
 
   return (
     <Layout title="Identifiers">
@@ -57,7 +58,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         session={session}
         title="Web Identifier"
         subtitle="Setup decentralized identity for web. Each tenant can have only one web did-document."
-        parentText={`Dashboard/${tenantInfo?.slug}`}
+        parentText={`Dashboard/${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
         isLoading={tenantLoading || isLoading}>
         {(tenantError || didError) && <Error />}

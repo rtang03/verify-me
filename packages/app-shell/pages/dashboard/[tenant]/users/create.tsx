@@ -8,7 +8,7 @@ import Divider from '@material-ui/core/Divider';
 import Typography from '@material-ui/core/Typography';
 import { red } from '@material-ui/core/colors';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
-import type { IIdentifier } from '@veramo/core';
+import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
 import { withAuth } from 'components';
 import Error from 'components/Error';
 import GotoIdentifier from 'components/GotoIdentifier';
@@ -61,9 +61,10 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
     data: tenant,
     isError: tenantError,
     isLoading: tenantLoading,
-  } = useReSWR<PaginatedTenant>('/api/tenants', tenantId, tenantId !== '0');
+  } = useReSWR<PaginatedTenant>(`/api/tenants?id=${tenantId}`, tenantId !== '0');
   const tenantInfo = getTenantInfo(tenant);
-  const fqUrl = tenantInfo?.slug && domain && getTenantUrl(tenantInfo?.slug, domain);
+  const slug = tenantInfo?.slug;
+  const fqUrl = slug && domain && getTenantUrl(slug, domain);
   const nonFqUrl = fqUrl?.replace('https://', '').replace('http://', '');
 
   // Create User Identifier
@@ -87,11 +88,9 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
             validationSchema={validation}
             onSubmit={async ({ username }, { setSubmitting }) => {
               setSubmitting(true);
-              const key = tenantInfo?.slug
-                ? `/api/users/${username}?slug=${tenantInfo.slug}`
-                : null;
-              const newUser = (body: any) =>
-                mutate(key, poster(`/api/users/create?slug=${tenantInfo?.slug}`, body));
+              const key = slug ? `/api/users/${username}?slug=${slug}` : null;
+              const newUser = (body: IDIDManagerGetOrCreateArgs) =>
+                mutate(key, poster(`/api/users/create?slug=${slug}`, body));
               await newUser({ alias: `${nonFqUrl}:users:${username}` }).then(() =>
                 setSubmitting(false)
               );
