@@ -31,7 +31,7 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       width: '100%',
-      maxWidth: '60ch',
+      maxWidth: '100ch',
       backgroundColor: theme.palette.background.paper,
     },
     inline: { display: 'inline' },
@@ -43,11 +43,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   const router = useRouter();
   const tenantId = router.query.tenant as string;
 
-  // handle PageChange upon pagination
-  const [pageIndex, setPageIndex] = useState(0);
-  const handlePageChange = (event: React.ChangeEvent<unknown>, pagenumber: number) =>
-    setPageIndex((pagenumber - 1) * PAGESIZE);
-
   // Query TenantInfo
   const {
     data: tenant,
@@ -56,6 +51,11 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   } = useReSWR<PaginatedTenant>(`/api/tenants?id=${tenantId}`, tenantId !== '0');
   const tenantInfo = getTenantInfo(tenant);
   const slug = tenantInfo?.slug;
+
+  // handle PageChange upon pagination
+  const [pageIndex, setPageIndex] = useState(0);
+  const handlePageChange = (event: React.ChangeEvent<unknown>, pagenumber: number) =>
+    setPageIndex((pagenumber - 1) * PAGESIZE);
 
   // Query Credentials
   const url = slug
@@ -84,7 +84,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
         <br />
         {tenantInfo?.activated && !!data?.items?.length && (
-          <Card>
+          <Card className={classes.root}>
             <CardHeader title="Active credentials" subheader={<>Total: {data?.total || 0}</>} />
             <Pagination count={count} showFirstButton showLastButton onChange={handlePageChange} />
             <br />
@@ -93,14 +93,19 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                 {data.items.map(({ verifiableCredential, hash }, index) => (
                   <Fragment key={index}>
                     <ListItem>
-                      <ListItemAvatar>
-                        <AvatarMd5 subject={hash} />
-                      </ListItemAvatar>
-                      <JSONTree
-                        theme="bright"
-                        data={omit(verifiableCredential, 'proof', '@context', 'type')}
-                        hideRoot={true}
-                      />
+                      <Card>
+                        <CardHeader
+                          avatar={<AvatarMd5 subject={hash} />}
+                          title={verifiableCredential.issuer.id}
+                          subheader={verifiableCredential.issuanceDate}
+                        />
+                        <CardContent>
+                          <JSONTree
+                            data={omit(verifiableCredential, 'proof', '@context', 'type')}
+                            hideRoot={true}
+                          />
+                        </CardContent>
+                      </Card>
                     </ListItem>
                     <Divider variant="inset" />
                   </Fragment>

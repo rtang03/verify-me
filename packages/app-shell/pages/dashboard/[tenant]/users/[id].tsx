@@ -12,7 +12,7 @@ import Error from 'components/Error';
 import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
-import Success from 'components/Success';
+import Result from 'components/Result';
 import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
 import type { NextPage } from 'next';
@@ -154,18 +154,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                             Add Service
                           </Button>
                         </CardActions>
-                        {tenantInfo && addServiceEP?.data && (
-                          <CardContent>
-                            <Divider />
-                            <Success />
-                          </CardContent>
-                        )}
-                        {tenantInfo && addServiceEP?.error && (
-                          <CardContent>
-                            <Divider />
-                            <Error error={addServiceEP.error} />
-                          </CardContent>
-                        )}
+                        <Result isTenantExist={!!tenantInfo} result={addServiceEP} />
                       </Card>
                     </Form>
                   )}

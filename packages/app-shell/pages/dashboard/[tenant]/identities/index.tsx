@@ -1,5 +1,4 @@
 import Button from '@material-ui/core/Button';
-import Divider from '@material-ui/core/Divider';
 import Typography from '@material-ui/core/Typography';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
@@ -8,7 +7,7 @@ import Error from 'components/Error';
 import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
-import Success from 'components/Success';
+import Result from 'components/Result';
 import { Form, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
@@ -110,16 +109,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
             <JSONTree theme="bright" data={data} hideRoot={true} />
           </>
         )}
-        {webDid?.data && (
-          <>
-            <br />
-            <Divider />
-            <Success />
-            <Typography variant="caption" color="primary">
-              {webDid?.data.did} is created.
-            </Typography>
-          </>
-        )}
+        <Result isTenantExist={!!tenantInfo} result={webDid} />
       </Main>
     </Layout>
   );

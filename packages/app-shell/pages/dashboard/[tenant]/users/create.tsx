@@ -140,13 +140,19 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
             )}
           </Formik>
         )}
-        {/* after creation succeeds*/}
         {tenantInfo && userDid?.data?.alias && !userDid.loading && (
           <>
             <br />
             <Divider />
             <Success />
             <GotoIdentifier tenantInfo={tenantInfo} alias={userDid.data.alias} />
+          </>
+        )}
+        {tenantInfo && userDid?.error && !userDid.loading && (
+          <>
+            <br />
+            <Divider />
+            <Error error={userDid.error} />
           </>
         )}
       </Main>

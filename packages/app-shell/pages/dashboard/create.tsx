@@ -1,12 +1,10 @@
 import Button from '@material-ui/core/Button';
-import Divider from '@material-ui/core/Divider';
-import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import { withAuth } from 'components';
 import Layout from 'components/Layout';
 import LowerCaseTextField from 'components/LowerCaseTextField';
 import Main from 'components/Main';
-import Success from 'components/Success';
+import Result from 'components/Result';
 import { Form, Field, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
@@ -88,15 +86,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
             </Form>
           )}
         </Formik>
-        <Divider />
-        {val.data && !val.loading && (
-          <>
-            <Success />
-            <Typography variant="caption" color="primary">
-              id: {val.data.id}
-            </Typography>
-          </>
-        )}
+        <Result isTenantExist={true} result={val} />
       </Main>
     </Layout>
   );

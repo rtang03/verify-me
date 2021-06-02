@@ -36,7 +36,7 @@ const useSelectedCredentials = (sdr: any) => {
 
   useEffect(() => {
     if (sdr) {
-      let defaultSelected: ValidationState = {};
+      const defaultSelected: ValidationState = {};
       sdr.map((sdr: any) => {
         if (sdr && sdr.essential) {
           if (sdr.credentials.length) {

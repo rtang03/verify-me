@@ -1,14 +1,16 @@
-import { TAgent } from '@veramo/core'
-import { ICredentialIssuer } from '@veramo/credential-w3c'
+import { TAgent } from '@veramo/core';
+import { ICredentialIssuer, ICreateVerifiableCredentialArgs } from '@veramo/credential-w3c';
 
-const shortId = (did: string) => `${did.slice(0, 15)}...${did.slice(-4)}`
+interface Claim {
+  type: string;
+  value: any;
+}
+
+const shortId = (did: string) => `${did.slice(0, 15)}...${did.slice(-4)}`;
 
 const claimToObject = (arr: any[]) => {
-  return arr.reduce(
-    (obj, item) => Object.assign(obj, { [item.type]: item.value }),
-    {},
-  )
-}
+  return arr.reduce((obj, item) => Object.assign(obj, { [item.type]: item.value }), {});
+};
 
 const issueCredential = async (
   agent: any,
@@ -17,7 +19,7 @@ const issueCredential = async (
   claims: any[],
   proofFormat: string,
   customContext?: string,
-  type?: string,
+  type?: string
 ) => {
   return await agent?.createVerifiableCredential({
     credential: {
@@ -31,15 +33,15 @@ const issueCredential = async (
     },
     proofFormat,
     save: true,
-  })
-}
+  });
+};
 
 const signVerifiablePresentation = async (
   agent: any,
   did: string,
   verifier: string[],
   selected: any,
-  proofFormat: string,
+  proofFormat: string
 ) => {
   return await agent?.createVerifiablePresentation({
     presentation: {
@@ -50,7 +52,31 @@ const signVerifiablePresentation = async (
     },
     proofFormat,
     save: true,
-  })
-}
+  });
+};
 
-export { claimToObject, shortId, issueCredential, signVerifiablePresentation }
+const getCreateVerifiableCredentialArgs: (option: {
+  credentialType: string;
+  issuer: string;
+  subject: string;
+  claims: Claim[];
+}) => ICreateVerifiableCredentialArgs = ({ credentialType, issuer, subject, claims }) => ({
+  credential: {
+    type: ['VerifiableCredential', credentialType],
+    issuer: { id: issuer },
+    credentialSubject: {
+      id: subject,
+      ...claimToObject(claims),
+    },
+  },
+  proofFormat: 'jwt',
+  save: true,
+});
+
+export {
+  claimToObject,
+  shortId,
+  issueCredential,
+  signVerifiablePresentation,
+  getCreateVerifiableCredentialArgs,
+};
