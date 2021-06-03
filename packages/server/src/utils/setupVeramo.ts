@@ -20,7 +20,7 @@ import { MessageHandler } from '@veramo/message-handler';
 import { SdrMessageHandler, SelectiveDisclosure } from '@veramo/selective-disclosure';
 import { Resolver } from 'did-resolver';
 import { Connection } from 'typeorm';
-import { getResolver as webDidResolver } from 'web-did-resolver';
+import { getResolver } from 'web-did-resolver';
 
 export type TTAgent = TAgent<
   IDIDManager & IKeyManager & IDataStore & IResolver & ICredentialIssuer & IMessageHandler
@@ -56,7 +56,7 @@ export const setupVeramo = (connection: Promise<Connection>) =>
       }),
       new DIDResolverPlugin({
         resolver: new Resolver({
-          web: webDidResolver().web,
+          ...getResolver(),
         }),
       }),
       new MessageHandler({

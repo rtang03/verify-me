@@ -18,11 +18,9 @@ import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import { useRouter } from 'next/router';
 import React, { ChangeEvent, useState } from 'react';
 import { mutate } from 'swr';
-import type { PaginatedTenant } from 'types';
-import { useReSWR, useFetcher, getTenantInfo } from 'utils';
+import { useFetcher, useTenant } from 'utils';
 import * as yup from 'yup';
 
 const baseUrl = '/api/tenants';
@@ -41,15 +39,8 @@ const useStyles = makeStyles((theme: Theme) =>
 type PsqlUpdated = { affected: number };
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
-  const router = useRouter();
   const classes = useStyles();
-  const tenantId = router.query.tenant as string;
-
-  // Query TenantInfo
-  const { data, isError, isLoading, error } = useReSWR<PaginatedTenant>(
-    `/api/tenants?id=${tenantId}`
-  );
-  const tenantInfo = getTenantInfo(data);
+  const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
   // Update Tenant
   const { val: updateResult, updater } = useFetcher<PsqlUpdated>();
@@ -63,13 +54,13 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   return (
     <Layout title="Tenant">
       <Main
-        title={data?.items?.[0].slug || 'Tenant details'}
-        subtitle={data?.items?.[0].name || ''}
+        title={slug || 'Tenant details'}
+        subtitle={tenantInfo?.name || ''}
         session={session}
         parentText="Dashboard"
         parentUrl="/dashboard"
-        isLoading={isLoading}>
-        {isError && !isLoading && <Error error={error} />}
+        isLoading={tenantLoading}>
+        {tenantError && !tenantLoading && <Error error={tenantError} />}
         <Divider />
         {/* IF NOT ACTIVATE */}
         {!!tenantInfo && !tenantInfo.activated && <Activation tenantInfo={tenantInfo} />}

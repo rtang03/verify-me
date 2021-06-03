@@ -67,9 +67,7 @@ export const createHttpServer: (option: {
   app.use('/tenants', createTenantRoute(tenantRepo, usersRepo, envVariables));
   app.use('/users', createUserRoute(usersRepo));
   app.use('/accounts', createAccountRoute(accountsRepo));
-  // app.use(vhost('*.*.*', createVirualHostRouter(commonConnections, tenantManager)));
   app.use('/actions', createActionsRouter(commonConnections, tenantManager));
-  // app.use('/slug', createAgentRouter(commonConnections, tenantManager));
 
   // /issuers/did:web:example.com/credentials
   // app.use('/issuers', createIssuerRoute(credentialRepo));

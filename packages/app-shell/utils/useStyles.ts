@@ -29,11 +29,12 @@ export const useStyles = makeStyles((theme: Theme) => ({
    * used by Layout/Drawer
    * **/
   appBar: {
-    zIndex: theme.zIndex.drawer + 10,
+    zIndex: theme.zIndex.drawer + 10000,
     // width: `calc(100% - ${drawerWidth}px)`,
     // marginLeft: drawerWidth,
   },
   drawer: {
+    zIndex: theme.zIndex.drawer,
     width: drawerWidth,
     flexShrink: 0,
   },

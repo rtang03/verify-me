@@ -11,11 +11,12 @@ const handler: (agentMethod: string) => NextApiHandler = (agentMethod) => async 
   if (method === 'POST') {
     const slug = req.query.slug as string;
     const domain = process.env.NEXT_PUBLIC_DOMAIN;
+    const secure = process.env.NEXT_PUBLIC_DOMAIN_SECURE === 'true';
 
     if (!slug) return res.status(Status.OK).send({ status: 'ERROR', error: MISSING_SLUG });
     if (!domain) return res.status(Status.OK).send({ status: 'ERROR', error: MISSING_DOMAIN });
 
-    const url = `${getTenantUrl(slug, domain)}/agent/${agentMethod}`;
+    const url = `${getTenantUrl(slug, domain, secure)}/agent/${agentMethod}`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', authorization: `Bearer jklj;kljkl` },

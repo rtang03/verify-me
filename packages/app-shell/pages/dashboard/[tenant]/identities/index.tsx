@@ -1,9 +1,11 @@
 import Button from '@material-ui/core/Button';
+import Card from '@material-ui/core/Card';
+import CardContent from '@material-ui/core/CardContent';
+import CardHeader from '@material-ui/core/CardHeader';
 import Typography from '@material-ui/core/Typography';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
 import { withAuth } from 'components';
-import Error from 'components/Error';
 import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
@@ -11,12 +13,10 @@ import Result from 'components/Result';
 import { Form, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import { useRouter } from 'next/router';
 import React from 'react';
 import JSONTree from 'react-json-tree';
 import { mutate } from 'swr';
-import type { PaginatedTenant } from 'types';
-import { getTenantInfo, getTenantUrl, useFetcher, useReSWR } from 'utils';
+import { getTenantUrl, useFetcher, useReSWR, useTenant } from 'utils';
 
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const useStyles = makeStyles((theme: Theme) =>
@@ -27,18 +27,8 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
-  const router = useRouter();
   const classes = useStyles();
-  const tenantId = router.query.tenant as string;
-
-  // Query TenantInfo
-  const {
-    data: tenant,
-    isError: tenantError,
-    isLoading: tenantLoading,
-  } = useReSWR<PaginatedTenant>(`/api/tenants?id=${tenantId}`, tenantId !== '0');
-  const tenantInfo = getTenantInfo(tenant);
-  const slug = tenantInfo?.slug;
+  const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
   const fqUrl = tenantInfo?.slug && domain && getTenantUrl(tenantInfo?.slug, domain);
   const nonFqUrl = fqUrl?.replace('https://', '').replace('http://', '');
 
@@ -59,8 +49,9 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         subtitle="Setup decentralized identity for web. Each tenant can have only one web did-document."
         parentText={`Dashboard/${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
-        isLoading={tenantLoading || isLoading}>
-        {(tenantError || didError) && <Error />}
+        isLoading={tenantLoading || isLoading}
+        isError={tenantError || didError}
+      >
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
         {tenantInfo?.activated && !data && !didError && (
           <>
@@ -88,7 +79,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                     <Button
                       className={classes.submit}
                       variant="contained"
-                      color="primary"
+                      color="secondary"
                       size="small"
                       disabled={isSubmitting || !fqUrl || !!webDid?.data}
                       type="submit">
@@ -103,10 +94,12 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         {tenantInfo?.activated && data && (
           <>
             <br />
-            <Typography variant="body2">Tenant&apos;s URL: {fqUrl}</Typography>
-            <br />
-            <Typography variant="h5">Identity</Typography>
-            <JSONTree theme="bright" data={data} hideRoot={true} />
+            <Card>
+              <CardHeader title="Did Document" subheader={<>Your URL: {fqUrl}</>} />
+              <CardContent>
+                <JSONTree data={data} hideRoot={true} />
+              </CardContent>
+            </Card>
           </>
         )}
         <Result isTenantExist={!!tenantInfo} result={webDid} />

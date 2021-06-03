@@ -9,7 +9,7 @@ const QuickActionComponent: React.FC<{ label: string; link: string; disabled: bo
 }) => (
   <>
     <Link href={link}>
-      <Button color="primary" size="small" variant="contained" disabled={disabled}>
+      <Button color="secondary" size="small" variant="contained" disabled={disabled}>
         {label}
       </Button>
     </Link>

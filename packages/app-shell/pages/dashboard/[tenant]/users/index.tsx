@@ -22,10 +22,9 @@ import QuickAction from 'components/QuickAction';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
 import React, { Fragment, useState } from 'react';
-import type { PaginatedIIdentifier, PaginatedTenant } from 'types';
-import { getTenantInfo, useReSWR } from 'utils';
+import type { PaginatedIIdentifier } from 'types';
+import { useReSWR, useTenant } from 'utils';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
@@ -41,22 +40,12 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
-  const router = useRouter();
-  const tenantId = router.query.tenant as string;
+  const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
   // handle PageChange upon pagination
   const [pageIndex, setPageIndex] = useState(0);
   const handlePageChange = (event: React.ChangeEvent<unknown>, pagenumber: number) =>
     setPageIndex((pagenumber - 1) * PAGESIZE);
-
-  // Query TenantInfo
-  const {
-    data: tenant,
-    isError: tenantError,
-    isLoading: tenantLoading,
-  } = useReSWR<PaginatedTenant>(`/api/tenants?id=${tenantId}`, tenantId !== '0');
-  const tenantInfo = getTenantInfo(tenant);
-  const slug = tenantInfo?.slug;
 
   // Query IIdentifiers
   const url = slug
@@ -74,13 +63,13 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         subtitle="Setup decentralized identity for users. Learn more"
         parentText={`Dashboard/${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
-        isLoading={tenantLoading || isLoading}>
+        isLoading={tenantLoading || isLoading}
+        isError={tenantError && !tenantLoading}>
         <QuickAction
           link={`/dashboard/${tenantInfo?.id}/users/create`}
           label="+ CREATE IDENTIFIER"
           disabled={!tenantInfo?.id}
         />
-        {tenantError && !tenantLoading && <Error />}
         {isError && !isLoading && <Error error={error} />}
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
         <br />

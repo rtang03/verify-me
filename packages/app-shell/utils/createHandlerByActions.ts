@@ -11,6 +11,7 @@ const handler: (domain: string, methods: string[]) => NextApiHandler = (domain, 
 ) => {
   const method = req.method as string;
   const domain = process.env.NEXT_PUBLIC_DOMAIN;
+  const secure = process.env.NEXT_PUBLIC_DOMAIN_SECURE === 'true';
   const slug = req.query.slug as string;
   const action = req.query.action;
   const id = req.query.id as string;
@@ -20,7 +21,7 @@ const handler: (domain: string, methods: string[]) => NextApiHandler = (domain, 
   if (!slug) return res.status(Status.OK).send({ status: 'ERROR', error: MISSING_SLUG });
   if (!domain) return res.status(Status.OK).send({ status: 'ERROR', error: MISSING_DOMAIN });
 
-  const url = `${getTenantUrl(slug, domain)}/actions/${id}/${action}`;
+  const url = `${getTenantUrl(slug, domain, secure)}/actions/${id}/${action}`;
 
   return (
     {

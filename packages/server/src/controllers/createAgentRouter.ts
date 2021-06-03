@@ -53,6 +53,8 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
     router.post(`/agent/${method}`, async (req: RequestWithAgent, res: Response) => {
       if (!req.agent) return res.status(Status.BAD_GATEWAY).send({ error: 'agent not found' });
 
+      debug(req.body);
+
       try {
         const result = await req.agent.execute(method, req.body);
 
@@ -100,10 +102,13 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
 
     try {
       const identifier = await req.agent.didManagerGet({
-        did: 'did:web:' + getAliasForRequest(req) + ':' + req.params[1].replace('/', ':'),
-        // did: 'did:web:' + getAliasForRequest(req) + ':' + req.params[0].replace('/', ':'),
+        did: 'did:web:' + getAliasForRequest(req) + ':' + req.params[0].replace('/', ':'),
       });
+      debug('identifier', identifier);
+
       const didDoc = createDidDocument(identifier);
+      debug(didDoc);
+
       res.status(Status.OK).json(didDoc);
     } catch (e) {
       res.status(Status.NOT_FOUND).send(e);

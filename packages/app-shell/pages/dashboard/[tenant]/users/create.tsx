@@ -16,15 +16,13 @@ import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import LowerCaseTextField from 'components/LowerCaseTextField';
 import Main from 'components/Main';
-import Success from 'components/Success';
+import Result from 'components/Result';
 import { Form, Field, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import { useRouter } from 'next/router';
 import React from 'react';
 import { mutate } from 'swr';
-import type { PaginatedTenant } from 'types';
-import { getTenantInfo, getTenantUrl, useFetcher, useReSWR } from 'utils';
+import { getTenantUrl, useFetcher, useTenant } from 'utils';
 import * as yup from 'yup';
 
 const domain = process.env.NEXT_PUBLIC_BACKEND?.split(':')[1].replace('//', '');
@@ -53,17 +51,7 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
-  const router = useRouter();
-  const tenantId = router.query.tenant as string;
-
-  // Query TenantInfo
-  const {
-    data: tenant,
-    isError: tenantError,
-    isLoading: tenantLoading,
-  } = useReSWR<PaginatedTenant>(`/api/tenants?id=${tenantId}`, tenantId !== '0');
-  const tenantInfo = getTenantInfo(tenant);
-  const slug = tenantInfo?.slug;
+  const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
   const fqUrl = slug && domain && getTenantUrl(slug, domain);
   const nonFqUrl = fqUrl?.replace('https://', '').replace('http://', '');
 
@@ -77,10 +65,11 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         title="Create User Identifier"
         parentUrl={`/dashboard/${tenantInfo?.id}/users`}
         parentText={`User-Identifiers`}
-        isLoading={tenantLoading || userDid.loading}>
-        {tenantError && <Error />}
+        isLoading={tenantLoading || userDid.loading}
+        isError={tenantError && !tenantLoading}>
         {userDid.error && <Error error={userDid.error} />}
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
+        <br />
         {tenantInfo?.activated && (
           <Formik
             initialValues={{ username: '' }}
@@ -97,7 +86,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
             }}>
             {({ values: { username }, isSubmitting, errors }) => (
               <Form>
-                <br />
                 <Card className={classes.root}>
                   <CardHeader
                     title="User identifier"
@@ -140,20 +128,9 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
             )}
           </Formik>
         )}
+        <Result isTenantExist={!!tenantInfo} result={userDid} />
         {tenantInfo && userDid?.data?.alias && !userDid.loading && (
-          <>
-            <br />
-            <Divider />
-            <Success />
-            <GotoIdentifier tenantInfo={tenantInfo} alias={userDid.data.alias} />
-          </>
-        )}
-        {tenantInfo && userDid?.error && !userDid.loading && (
-          <>
-            <br />
-            <Divider />
-            <Error error={userDid.error} />
-          </>
+          <GotoIdentifier tenantInfo={tenantInfo} alias={userDid.data.alias} />
         )}
       </Main>
     </Layout>

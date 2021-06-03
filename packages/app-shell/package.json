@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "app-shell:dev": "nodemon",
+    "app-shell:dev": "NODE_TLS_REJECT_UNAUTHORIZED=\"0\" nodemon",
     "clean": "rimraf dist && rimraf build",
     "build": "npm run clean && next build && tsc --project ./tsconfig.server.json",
     "start": "NODE_ENV=production node dist/server/index.js",

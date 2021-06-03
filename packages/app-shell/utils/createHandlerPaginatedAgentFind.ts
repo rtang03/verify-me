@@ -13,11 +13,12 @@ const handler: (agentMethod: string, agentCountMethod: string) => NextApiHandler
     const pagesize = req.query.pagesize as string;
     const take = (pagesize && parseInt(pagesize, 10)) || 50;
     const domain = process.env.NEXT_PUBLIC_DOMAIN;
+    const secure = process.env.NEXT_PUBLIC_DOMAIN_SECURE === 'true';
 
     if (!slug) return res.status(Status.OK).send({ status: 'ERROR', error: MISSING_SLUG });
     if (!domain) return res.status(Status.OK).send({ status: 'ERROR', error: MISSING_DOMAIN });
 
-    const getUrl = (method: string) => `${getTenantUrl(slug, domain)}/agent/${method}`;
+    const getUrl = (method: string) => `${getTenantUrl(slug, domain, secure)}/agent/${method}`;
 
     // Query Result
     // @see https://veramo.io/docs/api/data-store.where

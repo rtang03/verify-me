@@ -5,6 +5,7 @@ import { Session } from 'next-auth';
 import Link from 'next/link';
 import React from 'react';
 import AccessDenied from './AccessDenied';
+import Error from './Error';
 
 const Main: React.FC<{
   session: Session;
@@ -13,7 +14,8 @@ const Main: React.FC<{
   title: string;
   subtitle?: string;
   isLoading: boolean;
-}> = ({ children, session, parentUrl, parentText, title, subtitle, isLoading }) => {
+  isError?: boolean;
+}> = ({ children, session, parentUrl, parentText, title, subtitle, isLoading, isError }) => {
   return (
     <>
       {session && (
@@ -34,6 +36,7 @@ const Main: React.FC<{
           <br />
           <br />
           {isLoading ? <LinearProgress /> : <Divider />}
+          {isError && <Error />}
           {children}
         </>
       )}
