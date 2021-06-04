@@ -97,7 +97,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
             </CardContent>
           </Card>
         )}
-        {tenantInfo && !data?.items?.length && <NoRecord />}
+        {tenantInfo && !data?.items?.length && !isLoading && <NoRecord />}
       </Main>
     </Layout>
   );

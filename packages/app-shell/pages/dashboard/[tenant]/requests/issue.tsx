@@ -8,30 +8,23 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import MuiTextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
-import DoneIcon from '@material-ui/icons/Done';
 import type {
-  ISendMessageDIDCommAlpha1Args,
-  IMessage,
   Issuer,
   ICredentialRequestInput,
   ICreateSelectiveDisclosureRequestArgs,
 } from '@verify/server';
 import { withAuth } from 'components';
-import Error from 'components/Error';
 import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
-import MessageHeader from 'components/MessageHeader';
 import Result from 'components/Result';
 import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
-import jwt_decode from 'jwt-decode';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import JSONTree from 'react-json-tree';
 import { useFetcher, useTenant } from 'utils';
-import * as yup from 'yup';
 
 interface AddClaimArgs {
   claimType: string;
@@ -40,23 +33,13 @@ interface AddClaimArgs {
   essential: boolean;
   reason?: string;
 }
-const validation = yup.object({
-  replyUrl: yup.string().url(),
-  issuer: yup.string().required('Issuer is required'),
-  subject: yup.string().required('Subject is required'),
-});
+
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { flexWrap: 'wrap', width: '70ch', backgroundColor: theme.palette.background.paper },
     textField: { width: '40ch' },
     longTextField: { width: '60ch' },
     submit: { margin: theme.spacing(3, 3, 2) },
-    muiTextField: {
-      '& .MuiTextField-root': {
-        margin: theme.spacing(0.5),
-        width: '50ch',
-      },
-    },
   })
 );
 
@@ -64,15 +47,10 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
-  // Create SDR request
-  const { val: sdrResult, poster } = useFetcher<string>();
+  // Create request
+  const { val: result, poster } = useFetcher<any>();
   const newRequest = (body: ICreateSelectiveDisclosureRequestArgs) =>
     poster(`/api/requests/create?slug=${slug}`, body);
-
-  // Send Message
-  const { val: result, poster: send } = useFetcher<IMessage>();
-  const sendMessage = (body: ISendMessageDIDCommAlpha1Args) =>
-    send(`/api/credentials/send?slug=${slug}`, body);
 
   // form state
   const [claimType, setClaimType] = useState<string>('');
@@ -103,17 +81,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
     setRequiredIssuers([]);
   };
 
-  // parse SDR
-  let iss = '';
-  let sub = '';
-  let iat = '';
-  if (sdrResult?.data) {
-    const sdr: any = jwt_decode(sdrResult.data);
-    iss = sdr.iss;
-    sub = sdr.iss;
-    iat = new Date(sdr.iat * 1000).toISOString();
-  }
-
   return (
     <Layout title="Request">
       <Main
@@ -127,36 +94,31 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
         <br />
         {tenantInfo?.activated && (
-          <Card className={classes.root}>
-            {/* Step 1 Create SDR */}
-            <Formik
-              initialValues={{
-                issuer: '',
-                subject: '',
-                replyUrl: '',
-              }}
-              validateOnChange={true}
-              validationSchema={validation}
-              onSubmit={async ({ issuer, subject, replyUrl }, { setSubmitting }) => {
-                setSubmitting(true);
-                await newRequest({
-                  data: {
-                    issuer,
-                    subject,
-                    claims: claims || [],
-                    replyUrl,
-                  },
-                });
-                setSubmitting(false);
-              }}>
-              {({ values, isSubmitting }) => (
-                <Form>
-                  {/* Requester Info */}
+          <Formik
+            initialValues={{
+              issuer: '',
+              subject: '',
+              replyUrl: '',
+            }}
+            onSubmit={async ({ issuer, subject, replyUrl }, { setSubmitting }) => {
+              setSubmitting(true);
+              await newRequest({
+                data: {
+                  issuer,
+                  subject,
+                  claims: claims || [],
+                  replyUrl,
+                },
+              });
+              setSubmitting(false);
+            }}>
+            {({ isSubmitting }) => (
+              <Form>
+                <Card className={classes.root}>
                   <CardHeader title="Requester Info" />
                   <CardContent>
                     <Field
-                      disabled={!!sdrResult?.data}
-                      className={classes.longTextField}
+                      className={classes.textField}
                       label="Issuer"
                       size="small"
                       component={TextField}
@@ -169,8 +131,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                     />
                     <br />
                     <Field
-                      disabled={!!sdrResult?.data}
-                      className={classes.longTextField}
+                      className={classes.textField}
                       label="Subject"
                       size="small"
                       component={TextField}
@@ -182,7 +143,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                     />
                     <br />
                     <Field
-                      disabled={!!sdrResult?.data}
                       className={classes.longTextField}
                       label="Reply url"
                       size="small"
@@ -194,7 +154,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                       fullwidth="true"
                     />
                   </CardContent>
-                  {/* Claim Details */}
                   <CardContent>
                     <Card variant="outlined">
                       <CardHeader subheader="Claim Details" />
@@ -208,7 +167,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                         <Typography variant="caption">Add one claim type</Typography>
                         <div>
                           <MuiTextField
-                            disabled={!!sdrResult?.data}
                             className={classes.textField}
                             label="Claim Type"
                             size="small"
@@ -220,7 +178,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                             onChange={({ target: { value } }) => setClaimType(value)}
                           />{' '}
                           <MuiTextField
-                            disabled={!!sdrResult?.data}
                             className={classes.textField}
                             label="Reason"
                             size="small"
@@ -233,7 +190,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                           />
                         </div>
                         <br />
-                        {/* Required issuers */}
                         <Card variant="outlined">
                           <CardHeader subheader="Required issuers" />
                           <CardContent>
@@ -247,8 +203,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                               <Typography variant="caption">Add one issuer</Typography>
                             </div>
                             <MuiTextField
-                              disabled={!!sdrResult?.data}
-                              className={classes.longTextField}
+                              className={classes.textField}
                               label="Required Issuer"
                               size="small"
                               name={'requiredIssuer'}
@@ -259,8 +214,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                               onChange={({ target: { value } }) => setRequiredIssuer(value)}
                             />{' '}
                             <MuiTextField
-                              disabled={!!sdrResult?.data}
-                              className={classes.longTextField}
+                              className={classes.textField}
                               label="Required Issuer Url"
                               size="small"
                               name={'requiredIssuerUrl'}
@@ -286,7 +240,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                       </CardContent>
                       <CardActions>
                         <Button
-                          disabled={!claimType || !requiredIssuers}
+                          disabled={!claimType}
                           className={classes.submit}
                           variant="contained"
                           color="primary"
@@ -304,7 +258,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                         <FormControlLabel
                           control={
                             <Checkbox
-                              disabled={!!sdrResult?.data}
                               checked={claimRequired}
                               onChange={({ target: { checked } }) => setClaimRequired(checked)}
                             />
@@ -321,81 +274,15 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                       color="primary"
                       size="small"
                       type="submit"
-                      disabled={
-                        isSubmitting ||
-                        !!sdrResult?.data ||
-                        !claims ||
-                        !values.issuer ||
-                        !values.subject ||
-                        !values.replyUrl
-                      }>
+                      disabled={isSubmitting || !!result?.data}>
                       + Selective Disclosure Request
                     </Button>
                   </CardActions>
-                </Form>
-              )}
-            </Formik>
-            {/* Step 2 Send SDR */}
-            <CardContent>
-              {sdrResult?.error && !sdrResult?.loading && <Error error={sdrResult.error} />}
-              {sdrResult?.data && !sdrResult?.loading && (
-                <Card variant="outlined">
-                  <CardHeader
-                    avatar={<DoneIcon color="primary" />}
-                    title={
-                      <Typography variant="body2" color="primary">
-                        Selective Disclosure Request successfully created
-                      </Typography>
-                    }
-                    subheader={
-                      <Typography variant="caption">Send the SDR to the subject</Typography>
-                    }
-                  />
-                  <CardContent className={classes.muiTextField}>
-                    {iss && sub && <MessageHeader from={iss} to={sub} issuanceDate={iat} />}
-                  </CardContent>
-                  <CardContent>
-                    <Typography variant="caption">Raw Selective Disclosure Request</Typography>
-                    <JSONTree hideRoot={true} data={jwt_decode(sdrResult.data)} />
-                  </CardContent>
-                  <Formik
-                    initialValues={{}}
-                    onSubmit={async (_, { setSubmitting }) => {
-                      setSubmitting(true);
-                      await sendMessage({
-                        data: {
-                          to: sub,
-                          from: iss,
-                          type: 'jwt',
-                          body: sdrResult.data as string,
-                        },
-                        save: false,
-                      });
-                      setSubmitting(false);
-                    }}>
-                    {({ isSubmitting }) => (
-                      <Form>
-                        <CardActions>
-                          <Button
-                            className={classes.submit}
-                            variant="contained"
-                            color="primary"
-                            type="submit"
-                            disabled={isSubmitting || !!result.data}>
-                            Send
-                          </Button>
-                        </CardActions>
-                        <Result isTenantExist={!!tenantInfo} result={result} />
-                        {result?.data && !result.loading && (
-                          <JSONTree hideRoot={true} data={result.data} />
-                        )}
-                      </Form>
-                    )}
-                  </Formik>
+                  <Result isTenantExist={!!tenantInfo} result={result} />
                 </Card>
-              )}
-            </CardContent>
-          </Card>
+              </Form>
+            )}
+          </Formik>
         )}
       </Main>
     </Layout>

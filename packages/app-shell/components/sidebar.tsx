@@ -27,7 +27,7 @@ export const sideBar: (tenantId: string) => { text: string; icon: any; link: str
     link: id === '0' ? `/dashboard` : `/dashboard/${id}/messages`,
   },
   {
-    text: 'Request',
+    text: 'SD-Request',
     icon: <ScreenShareIcon />,
     link: id === '0' ? `/dashboard` : `/dashboard/${id}/requests`,
   },

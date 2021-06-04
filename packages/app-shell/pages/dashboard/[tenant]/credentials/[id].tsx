@@ -9,11 +9,8 @@ import MuiTextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import { green } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import AccountCircle from '@material-ui/icons/AccountCircle';
 import KeyboardArrowRightIcon from '@material-ui/icons/KeyboardArrowRight';
-import LocationCityIcon from '@material-ui/icons/LocationCity';
 import SendIcon from '@material-ui/icons/Send';
-import TodayIcon from '@material-ui/icons/Today';
 import type { VerifiableCredential, IMessage } from '@veramo/core';
 import type { ISendMessageDIDCommAlpha1Args } from '@veramo/did-comm';
 import { withAuth } from 'components';
@@ -22,6 +19,7 @@ import Error from 'components/Error';
 import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
+import MessageHeader from 'components/MessageHeader';
 import Result from 'components/Result';
 import { Form, Formik } from 'formik';
 import omit from 'lodash/omit';
@@ -119,46 +117,10 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                       />
                       <Divider />
                       <CardContent className={classes.muiTextField}>
-                        <MuiTextField
-                          disabled={true}
-                          size="small"
-                          label="From"
-                          defaultValue={data?.issuer.id}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <LocationCityIcon />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <br />
-                        <MuiTextField
-                          disabled={true}
-                          size="small"
-                          label="To"
-                          defaultValue={data?.credentialSubject.id}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <AccountCircle />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <br />
-                        <MuiTextField
-                          disabled={true}
-                          size="small"
-                          label="Issuance date"
-                          defaultValue={data?.issuanceDate}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <TodayIcon />
-                              </InputAdornment>
-                            ),
-                          }}
+                        <MessageHeader
+                          from={data?.issuer.id}
+                          to={data?.credentialSubject?.id}
+                          issuanceDate={data?.issuanceDate}
                         />
                       </CardContent>
                       <CardContent>

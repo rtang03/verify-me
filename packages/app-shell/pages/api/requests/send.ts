@@ -1,5 +1,5 @@
 import { createHandlerByAgentMethod } from '../../../utils';
 
-const handler = createHandlerByAgentMethod('createSelectiveDisclosureRequest');
+const handler = createHandlerByAgentMethod('sendMessageDIDCommAlpha1');
 
 export default handler;

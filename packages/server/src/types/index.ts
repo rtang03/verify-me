@@ -9,7 +9,12 @@ import type {
   UniqueVerifiableCredential,
 } from '@veramo/data-store';
 import type { ISendMessageDIDCommAlpha1Args } from '@veramo/did-comm';
-import type { ICredentialRequestInput, Issuer } from '@veramo/selective-disclosure';
+import type {
+  ICredentialRequestInput,
+  ICreateSelectiveDisclosureRequestArgs,
+  Issuer,
+  ISelectiveDisclosure,
+} from '@veramo/selective-disclosure';
 import type { CommonResponse } from './commonResponse';
 import type { DidDocument } from './didDocument';
 import type { Paginated } from './paginated';
@@ -43,4 +48,6 @@ export {
   Issuer,
   IDIDManagerAddServiceArgs,
   IDIDManagerGetOrCreateArgs,
+  ICreateSelectiveDisclosureRequestArgs,
+  ISelectiveDisclosure,
 };
