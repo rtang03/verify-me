@@ -17,10 +17,10 @@ import omit from 'lodash/omit';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React from 'react';
 import JSONTree from 'react-json-tree';
 import type { PaginatedVerifiableCredential } from 'types';
-import { useReSWR, useTenant } from 'utils';
+import { usePagination, useReSWR, useTenant } from 'utils';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
@@ -37,11 +37,7 @@ const useStyles = makeStyles((theme: Theme) =>
 const Page: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
-
-  // handle PageChange upon pagination
-  const [pageIndex, setPageIndex] = useState(0);
-  const handlePageChange = (event: React.ChangeEvent<unknown>, pagenumber: number) =>
-    setPageIndex((pagenumber - 1) * PAGESIZE);
+  const { pageIndex, pageChange } = usePagination(PAGESIZE);
 
   // Query Credentials
   const url = slug
@@ -72,7 +68,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         {tenantInfo?.activated && !!data?.items?.length && (
           <Card className={classes.root}>
             <CardHeader title="Active credentials" subheader={<>Total: {data?.total || 0}</>} />
-            <Pagination count={count} showFirstButton showLastButton onChange={handlePageChange} />
+            <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
             <br />
             <CardContent>
               <List className={classes.root}>

@@ -1,66 +1,101 @@
-import Avatar from '@material-ui/core/Avatar';
-import Divider from '@material-ui/core/Divider';
-import LinearProgress from '@material-ui/core/LinearProgress';
+import Card from '@material-ui/core/Card';
+import CardContent from '@material-ui/core/CardContent';
+import CardHeader from '@material-ui/core/CardHeader';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
-import Typography from '@material-ui/core/Typography';
-import type { IMessage, Paginated } from '@verify/server';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import Pagination from '@material-ui/lab/Pagination';
 import { withAuth } from 'components';
-import AccessDenied from 'components/AccessDenied';
+import AvatarMd5 from 'components/AvatarMd5';
+import Error from 'components/Error';
+import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
-import md5 from 'md5';
+import Main from 'components/Main';
+import NoRecord from 'components/NoRecord';
+import omit from 'lodash/omit';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
-import React, { Fragment, useEffect } from 'react';
+import React from 'react';
 import JSONTree from 'react-json-tree';
-import { useFetcher } from 'utils';
+import type { PaginatedMessage } from 'types';
+import { usePagination, useReSWR, useTenant } from 'utils';
 
-const GRAVATAR_URI = 'https://www.gravatar.com/avatar/';
-const uri = (did: string) => GRAVATAR_URI + md5(did) + '?s=200&d=retro';
+const PAGESIZE = 5;
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    root: {
+      width: '100%',
+      maxWidth: '100ch',
+      backgroundColor: theme.palette.background.paper,
+    },
+    inline: { display: 'inline' },
+  })
+);
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
-  const { val, fetcher } = useFetcher<Paginated<IMessage>>();
+  const classes = useStyles();
+  const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+  const { pageIndex, pageChange } = usePagination(PAGESIZE);
 
-  useEffect(() => {
-    fetcher(`/api/messages`).finally(() => true);
-  }, [session]);
+  // Query Messages
+  const url = slug
+    ? `/api/messages?slug=${slug}&cursor=${pageIndex * PAGESIZE}&pagesize=${PAGESIZE}`
+    : null;
+  const { data, isLoading, isError, error } = useReSWR<PaginatedMessage>(url, !!slug);
+  let count;
+  data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
 
   return (
     <Layout title="Messages">
-      {session && (
-        <>
-          <Typography variant="h4">Inbox</Typography>
-          <Typography variant="caption">Incoming messages. Learn more</Typography>
-          <br />
-          <br />
-          {val.loading ? <LinearProgress /> : <Divider />}
-          {val?.data?.items?.length ? (
-            <>
-              <br />
-              <Typography variant="h5">Messages</Typography>
-              <Typography variant="caption">total: {val.data.total}</Typography>
-              <List dense>
-                {val.data.items.map((item: any, index) => (
-                  <ListItem key={index}>
-                    <Avatar src={uri(item?.data?.iss || '')} />
-                    <Link href={`/dashboard/1/messages/${item.id}`}>
-                      <a>
-                        <ListItemText primary={`From: ${item.from}`} secondary={`To: ${item.to}`} />
-                        <Typography variant="caption">Type: {item.type} - created at {item.createdAt}</Typography>
-                      </a>
-                    </Link>
-                  </ListItem>
-                ))}
+      <Main
+        session={session}
+        title="Inbox"
+        subtitle="Incoming messages. Learn more"
+        parentText={`Dashboard/${slug}`}
+        parentUrl={`/dashboard/${tenantInfo?.id}`}
+        isLoading={tenantLoading}
+        isError={tenantError && !tenantLoading}>
+        {isError && !isLoading && <Error error={error} />}
+        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
+        <br />
+        {tenantInfo?.activated && !!data?.items?.length && (
+          <Card className={classes.root}>
+            <CardHeader title="Messages" subheader={<>Total: {data?.total || 0}</>} />
+            <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
+            <br />
+            <CardContent>
+              <List dense className={classes.root}>
+                {data &&
+                  data.items.map((item, index) => (
+                    <ListItem key={index}>
+                      <Card className={classes.root} variant="outlined">
+                        <Link href={`/dashboard/${tenantInfo.id}/messages/${item.id}`}>
+                          <a>
+                            <CardHeader
+                              avatar={<AvatarMd5 subject={item.id} />}
+                              title={`subject: ${item.to}`}
+                              subheader={`Type: "${item.type}" at ${item.createdAt} `}
+                            />
+                          </a>
+                        </Link>
+                        <CardContent>
+                          <JSONTree
+                            hideRoot={true}
+                            data={item?.credentials?.map((cred) =>
+                              omit(cred, '@context', 'proof', 'type')
+                            )}
+                          />
+                        </CardContent>
+                      </Card>
+                    </ListItem>
+                  ))}
               </List>
-            </>
-          ) : (
-            <Typography variant="h6">No record</Typography>
-          )}
-        </>
-      )}
-      {!session && <AccessDenied />}
+            </CardContent>
+          </Card>
+        )}
+        {tenantInfo && !data?.items?.length && <NoRecord />}
+      </Main>
     </Layout>
   );
 };

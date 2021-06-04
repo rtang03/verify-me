@@ -1,53 +1,61 @@
-import Divider from '@material-ui/core/Divider';
-import LinearProgress from '@material-ui/core/LinearProgress';
-import Typography from '@material-ui/core/Typography';
+import Card from '@material-ui/core/Card';
+import CardContent from '@material-ui/core/CardContent';
+import CardHeader from '@material-ui/core/CardHeader';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import type { IMessage } from '@verify/server';
 import { withAuth } from 'components';
-import AccessDenied from 'components/AccessDenied';
+import AvatarMd5 from 'components/AvatarMd5';
+import Error from 'components/Error';
+import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
+import Main from 'components/Main';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
-import React, { useEffect } from 'react';
-import { useFetcher } from 'utils';
+import React from 'react';
+import JSONTree from 'react-json-tree';
+import { useReSWR, useTenant } from 'utils';
+
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    root: { flexWrap: 'wrap', backgroundColor: theme.palette.background.paper },
+  })
+);
 
 const Page: NextPage<{ session: Session }> = ({ session }) => {
+  const classes = useStyles();
   const router = useRouter();
-  const { val, fetcher } = useFetcher<IMessage>();
+  const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
-  useEffect(() => {
-    fetcher(`/api/messages/${router.query.id}`).finally(() => true);
-  }, [session]);
-  // useEffect(() => {
-  //   if (val.data && !val.loading) {
-  //     fetcher(`/api/credentialSdr`, {
-  //       method: 'POST',
-  //       headers: { 'Content-type': 'application/json' },
-  //       body: JSON.stringify({}),
-  //     }).finally(() => true);
-  //   }
-  // }, [val]);
+  // Query Message
+  const id = router.query.id as string; // hash
+  const url = slug ? `/api/messages/${id}?slug=${slug}&id=${id}` : null;
+  const { data, isLoading, isError, error } = useReSWR<IMessage>(url, !!slug);
 
   return (
-    <Layout title="Messages">
-      {session && (
-        <>
-          <Link href="/dashboard/1/messages">
-            <a>
-              <Typography variant="caption">← Back to Messages</Typography>
-            </a>
-          </Link>
-          <br />
-          <br />
-          <Typography variant="h4">Message</Typography>
-          <br />
-          <br />
-          {val.loading ? <LinearProgress /> : <Divider />}
-          {val.data && <pre>{JSON.stringify(val.data, null, 2)}</pre>}
-        </>
-      )}
-      {!session && <AccessDenied />}
+    <Layout title="Message">
+      <Main
+        session={session}
+        title="Message"
+        parentText="Messages"
+        parentUrl={`/dashboard/${tenantInfo?.id}/messages`}
+        isLoading={tenantLoading}
+        isError={tenantError && !tenantLoading}>
+        {isError && !isLoading && <Error error={error} />}
+        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
+        {tenantInfo?.activated && data && (
+          <Card className={classes.root}>
+            <CardHeader
+              avatar={<AvatarMd5 subject={id || 'idle'} />}
+              title={data.type}
+              subheader={data.createdAt}
+            />
+            <CardContent>
+              <JSONTree hideRoot={true} data={data} />
+            </CardContent>
+          </Card>
+        )}
+      </Main>
     </Layout>
   );
 };

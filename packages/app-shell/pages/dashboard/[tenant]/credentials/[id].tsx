@@ -6,6 +6,7 @@ import Divider from '@material-ui/core/Divider';
 import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import MuiTextField from '@material-ui/core/TextField';
+import Typography from '@material-ui/core/Typography';
 import { green } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import AccountCircle from '@material-ui/icons/AccountCircle';
@@ -30,7 +31,6 @@ import { useRouter } from 'next/router';
 import React from 'react';
 import JSONTree from 'react-json-tree';
 import { useFetcher, useReSWR, useTenant } from 'utils';
-import Typography from '@material-ui/core/Typography';
 
 const getSendMessageDIDCommAlpha1Args: (
   vc: VerifiableCredential

@@ -13,3 +13,4 @@ export * from './prettyLog';
 export * from './getTenantInfo';
 export * from './createHandlerPaginatedAgentFind';
 export * from './useTenant';
+export * from './usePagination';
