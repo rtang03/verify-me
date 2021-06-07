@@ -38,7 +38,7 @@ const useStyles = makeStyles((theme: Theme) =>
 
 type PsqlUpdated = { affected: number };
 
-const Page: NextPage<{ session: Session }> = ({ session }) => {
+const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
@@ -142,4 +142,4 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default Page;
+export default TenantIndexPage;

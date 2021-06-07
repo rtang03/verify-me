@@ -1,14 +1,20 @@
+import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
+import Divider from '@material-ui/core/Divider';
 import Typography from '@material-ui/core/Typography';
+import { green } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import ReceiptIcon from '@material-ui/icons/Receipt';
 import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
+import type { DidDocument } from '@verify/server';
 import { withAuth } from 'components';
 import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
+import NoRecord from 'components/NoRecord';
 import Result from 'components/Result';
 import { Form, Formik } from 'formik';
 import type { NextPage } from 'next';
@@ -23,10 +29,14 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { maxWidth: 550, margin: theme.spacing(3, 1, 2) },
     submit: { margin: theme.spacing(3, 2, 2) },
+    green: {
+      color: '#fff',
+      backgroundColor: green[500],
+    },
   })
 );
 
-const Page: NextPage<{ session: Session }> = ({ session }) => {
+const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
   const fqUrl = tenantInfo?.slug && domain && getTenantUrl(tenantInfo?.slug, domain);
@@ -34,7 +44,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 
   // Query Web Did
   const url = slug ? `/api/identifiers/did-json?slug=${slug}` : null;
-  const { data, isLoading, error: didError } = useReSWR(url, !!slug);
+  const { data, isLoading, error: didError } = useReSWR<DidDocument>(url, !!slug);
 
   // Create Web Did
   const { val: webDid, poster } = useFetcher<IIdentifier>();
@@ -50,12 +60,10 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         parentText={`Dashboard/${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
         isLoading={tenantLoading || isLoading}
-        isError={tenantError || didError}
-      >
+        isError={tenantError || didError}>
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
-        {tenantInfo?.activated && !data && !didError && (
+        {tenantInfo?.activated && !data && !isLoading && !didError && (
           <>
-            <br />
             <Typography variant="body2">Web-identifier URL: {nonFqUrl}</Typography>
             {!webDid?.data && (
               <>
@@ -80,7 +88,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                       className={classes.submit}
                       variant="contained"
                       color="secondary"
-                      size="small"
                       disabled={isSubmitting || !fqUrl || !!webDid?.data}
                       type="submit">
                       + Create Web Identifier
@@ -92,15 +99,43 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
           </>
         )}
         {tenantInfo?.activated && data && (
-          <>
-            <br />
-            <Card>
-              <CardHeader title="Did Document" subheader={<>Your URL: {fqUrl}</>} />
-              <CardContent>
-                <JSONTree data={data} hideRoot={true} />
-              </CardContent>
-            </Card>
-          </>
+          <Card>
+            <CardHeader
+              avatar={
+                <Avatar className={classes.green}>
+                  <ReceiptIcon />
+                </Avatar>
+              }
+              title="Did Document"
+              subheader={<>Your URL: {fqUrl}</>}
+            />
+            <CardContent>
+              <Typography variant="body2">DID</Typography>
+              <Typography variant="body2">{data?.id}</Typography>
+            </CardContent>
+            <CardContent>
+              <Typography variant="body2">Verification method</Typography>
+              {data?.verificationMethod && (
+                <Typography variant="body2">
+                  {data?.verificationMethod?.length} record(s) found.
+                </Typography>
+              )}
+            </CardContent>
+            <CardContent>
+              <Typography variant="body2">Authentication</Typography>
+              {data?.authentication?.map((item, index) => (
+                <Typography variant="caption" key={index}>
+                  {(item as string).substring(0, 40)}......
+                </Typography>
+              ))}
+            </CardContent>
+            {!data?.service?.length && <NoRecord title="Service" />}
+            <Divider />
+            <CardContent>
+              <Typography variant="body2">Raw Document</Typography>
+              <JSONTree data={data} hideRoot={true} />
+            </CardContent>
+          </Card>
         )}
         <Result isTenantExist={!!tenantInfo} result={webDid} />
       </Main>
@@ -110,4 +145,4 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default Page;
+export default IdentifiersIndexPage;

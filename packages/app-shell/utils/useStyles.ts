@@ -1,4 +1,5 @@
 import { makeStyles, Theme } from '@material-ui/core/styles';
+import { green } from '@material-ui/core/colors';
 
 const drawerWidth = 240;
 

@@ -4,12 +4,14 @@ import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
 import Divider from '@material-ui/core/Divider';
+import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import type { IIdentifier, IDIDManagerAddServiceArgs } from '@veramo/core';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import Error from 'components/Error';
 import GotoTenant from 'components/GotoTenant';
+import Identifier from 'components/Identifier';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import Result from 'components/Result';
@@ -32,7 +34,7 @@ const validation = yup.object({
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
-      display: 'flex',
+      width: '100%',
       flexWrap: 'wrap',
     },
     typeTextField: { width: '15ch' },
@@ -41,7 +43,7 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const Page: NextPage<{ session: Session }> = ({ session }) => {
+const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const router = useRouter();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
@@ -70,86 +72,94 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         isError={tenantError && !tenantLoading}>
         {isError && !isLoading && <Error error={error} />}
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
-        <br />
         {tenantInfo?.activated && data && (
           <Card>
             <CardHeader
               avatar={<AvatarMd5 subject={data.alias || 'idle'} />}
-              title="Active document"
+              title="Active User Identifier"
               subheader={data.did}
             />
             <CardContent>
-              <Divider />
-              <JSONTree data={data} hideRoot={true} />
+              <Formik
+                initialValues={{ type: 'Messaging', serviceEndpoint }}
+                validateOnChange={true}
+                validationSchema={validation}
+                onSubmit={async ({ type, serviceEndpoint }, { setSubmitting }) => {
+                  setSubmitting(true);
+                  const numberOfServiceEndpoint = data?.services?.length ?? 0;
+                  const id = `service#${numberOfServiceEndpoint + 1}`;
+                  await newService({
+                    did: data.did,
+                    // provider: 'web',
+                    service: { id, type, serviceEndpoint, description: '' },
+                  }).then(() => setSubmitting(false));
+                }}>
+                {({ values: { serviceEndpoint }, isSubmitting, errors }) => (
+                  <Form>
+                    <Card variant="outlined" className={classes.root}>
+                      <CardContent>
+                        <Identifier identifier={data} />
+                      </CardContent>
+                      {!isMessagingExist && (
+                        <CardContent>
+                          <Card variant="outlined">
+                            <CardHeader subheader="Add Messaging Service" />
+                            <CardContent>
+                              <Field
+                                disabled={true}
+                                className={classes.typeTextField}
+                                label="Type"
+                                size="small"
+                                component={TextField}
+                                name={'type'}
+                                placeholder={'Messaging'}
+                                variant="outlined"
+                                margin="normal"
+                                fullwidth="20%"
+                              />{' '}
+                              <Field
+                                disabled={!!addServiceEP.data}
+                                className={classes.serviceTextField}
+                                label="Service endpoint"
+                                size="small"
+                                component={TextField}
+                                name={'serviceEndpoint'}
+                                placeholder={'e.g. http://example.com'}
+                                variant="outlined"
+                                margin="normal"
+                                fullwidth="50%"
+                                autoFocus={true}
+                              />
+                            </CardContent>
+                            <CardActions>
+                              <Button
+                                className={classes.submit}
+                                variant="contained"
+                                color="primary"
+                                type="submit"
+                                disabled={
+                                  isSubmitting ||
+                                  !!errors?.serviceEndpoint ||
+                                  !serviceEndpoint ||
+                                  !!addServiceEP?.data
+                                }>
+                                Add Service
+                              </Button>
+                            </CardActions>
+                          </Card>
+                        </CardContent>
+                      )}
+                      <Result isTenantExist={!!tenantInfo} result={addServiceEP} />
+                    </Card>
+                  </Form>
+                )}
+              </Formik>
             </CardContent>
             <CardContent>
-              {!isMessagingExist && (
-                <Formik
-                  initialValues={{ type: 'Messaging', serviceEndpoint }}
-                  validateOnChange={true}
-                  validationSchema={validation}
-                  onSubmit={async ({ type, serviceEndpoint }, { setSubmitting }) => {
-                    setSubmitting(true);
-                    const numberOfServiceEndpoint = data?.services?.length ?? 0;
-                    const id = `service#${numberOfServiceEndpoint + 1}`;
-                    await newService({
-                      did: data.did,
-                      // provider: 'web',
-                      service: { id, type, serviceEndpoint, description: '' },
-                    }).then(() => setSubmitting(false));
-                  }}>
-                  {({ values: { serviceEndpoint }, isSubmitting, errors }) => (
-                    <Form>
-                      <Card>
-                        <CardHeader subheader="Add Messaging Service" />
-                        <CardContent>
-                          <Field
-                            disabled={true}
-                            className={classes.typeTextField}
-                            label="Type"
-                            size="small"
-                            component={TextField}
-                            name={'type'}
-                            placeholder={'Messaging'}
-                            variant="outlined"
-                            margin="normal"
-                            fullwidth="20%"
-                          />{' '}
-                          <Field
-                            disabled={!!addServiceEP.data}
-                            className={classes.serviceTextField}
-                            label="Service endpoint"
-                            size="small"
-                            component={TextField}
-                            name={'serviceEndpoint'}
-                            placeholder={'e.g. http://example.com'}
-                            variant="outlined"
-                            margin="normal"
-                            fullwidth="50%"
-                            autoFocus={true}
-                          />
-                        </CardContent>
-                        <CardActions>
-                          <Button
-                            className={classes.submit}
-                            variant="contained"
-                            color="primary"
-                            type="submit"
-                            disabled={
-                              isSubmitting ||
-                              !!errors?.serviceEndpoint ||
-                              !serviceEndpoint ||
-                              !!addServiceEP?.data
-                            }>
-                            Add Service
-                          </Button>
-                        </CardActions>
-                        <Result isTenantExist={!!tenantInfo} result={addServiceEP} />
-                      </Card>
-                    </Form>
-                  )}
-                </Formik>
-              )}
+              <Divider />
+              <br />
+              <Typography variant="body2">Raw Document</Typography>
+              <JSONTree data={data} hideRoot={true} />
             </CardContent>
           </Card>
         )}
@@ -160,4 +170,4 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default Page;
+export default UsersEditPage;

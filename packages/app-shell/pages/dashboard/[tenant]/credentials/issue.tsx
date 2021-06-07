@@ -42,7 +42,7 @@ const validation = yup.object({
   subject: yup.string().required('Subject is required'),
 });
 
-const Page: NextPage<{ session: Session }> = ({ session }) => {
+const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
@@ -79,7 +79,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         isLoading={tenantLoading}
         isError={tenantError && !tenantLoading}>
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
-        <br />
         {tenantInfo && tenantInfo.activated && (
           <Formik
             initialValues={{
@@ -232,4 +231,4 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default Page;
+export default CredentialsIssuePage;

@@ -67,3 +67,5 @@ openssl req -new -x509 -nodes -sha1 -days 3650 -key host.key > host.crt
 
 https://stackoverflow.com/questions/7450940/automatic-https-connection-redirect-with-node-js-express
 https://github.com/node-fetch/node-fetch/issues/19
+https://developer.uport.me/flows/selectivedisclosure
+https://developer.uport.me/messages/sharereq

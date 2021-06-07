@@ -1,5 +1,5 @@
 import { createHandlerByAgentMethod } from '../../../utils';
 
-const handler = createHandlerByAgentMethod('didManagerCreate');
+const handler = createHandlerByAgentMethod('getVerifiableCredentialsForSdr');
 
 export default handler;

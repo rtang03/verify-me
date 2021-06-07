@@ -1,5 +1,5 @@
 import { createHandlerByAgentMethod } from '../../../utils';
 
-const handler = createHandlerByAgentMethod('didManagerGetOrCreate');
+const handler = createHandlerByAgentMethod('didManagerCreate');
 
 export default handler;

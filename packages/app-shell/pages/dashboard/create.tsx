@@ -33,7 +33,7 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const Page: NextPage<{ session: Session }> = ({ session }) => {
+const TenantCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { val, poster } = useFetcher<PartialTenant>();
   const user_id = (session as any)?.user?.id;
@@ -94,4 +94,4 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default Page;
+export default TenantCreatePage;

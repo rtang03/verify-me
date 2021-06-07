@@ -7,7 +7,7 @@ interface ValidationState {
   };
 }
 
-const useSelectedCredentials = (sdr: any) => {
+export const useSelectedCredentials = (sdr: any) => {
   const [selected, setSelected] = useState<ValidationState>({});
   const [valid, setValid] = useState<boolean>(true);
 
@@ -26,13 +26,14 @@ const useSelectedCredentials = (sdr: any) => {
       if (selected[key].required && !selected[key].vc) {
         valid = false;
       }
+      return key;
     });
     setValid(valid);
   }, [selected]);
 
   useEffect(() => {
     checkValidity();
-  }, [selected]);
+  }, [selected, checkValidity]);
 
   useEffect(() => {
     if (sdr) {
@@ -52,6 +53,7 @@ const useSelectedCredentials = (sdr: any) => {
             setValid(false);
           }
         }
+        return sdr;
       });
       setSelected(defaultSelected);
     }
@@ -59,5 +61,3 @@ const useSelectedCredentials = (sdr: any) => {
 
   return { selected, valid, onSelect };
 };
-
-export default useSelectedCredentials;

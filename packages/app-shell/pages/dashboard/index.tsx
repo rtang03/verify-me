@@ -18,30 +18,28 @@ import Main from 'components/Main';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
-import React, { Fragment, useState } from 'react';
+import React, { Fragment } from 'react';
 import type { PaginatedTenant } from 'types';
-import { useReSWR } from 'utils';
+import { usePagination, useReSWR } from 'utils';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       width: '100%',
-      maxWidth: '60ch',
+      maxWidth: '80ch',
       backgroundColor: theme.palette.background.paper,
     },
     inline: { display: 'inline' },
   })
 );
 
-const Page: NextPage<{ session: Session }> = ({ session }) => {
+const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
-  const [pageIndex, setPageIndex] = useState(0);
+  const { pageIndex, pageChange } = usePagination(PAGESIZE);
   const { data, isError, isLoading } = useReSWR<PaginatedTenant>(
     `/api/tenants?cursor=${pageIndex * PAGESIZE}&pagesize=${PAGESIZE}`
   );
-  const handlePageChange = (event: React.ChangeEvent<unknown>, pagenumber: number) =>
-    setPageIndex((pagenumber - 1) * PAGESIZE);
 
   let count;
   if (data && !isLoading) count = Math.ceil(data.total / PAGESIZE);
@@ -62,7 +60,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                 count={count}
                 showFirstButton
                 showLastButton
-                onChange={handlePageChange}
+                onChange={pageChange}
               />
               <br />
               <List className={classes.root}>
@@ -83,9 +81,8 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                                   variant="caption"
                                   className={classes.inline}
                                   color="textPrimary">
-                                  {item.id}
+                                  {item.name || 'No content'}
                                 </Typography>
-                                {item.name}
                               </Fragment>
                             }
                           />
@@ -122,4 +119,4 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default Page;
+export default DashboardIndexPage;

@@ -33,7 +33,7 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const Page: NextPage<{ session: Session }> = ({ session }) => {
+const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
   const { pageIndex, pageChange } = usePagination(PAGESIZE);
@@ -54,11 +54,10 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         subtitle="Incoming messages. Learn more"
         parentText={`Dashboard/${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
-        isLoading={tenantLoading}
+        isLoading={tenantLoading || isLoading}
         isError={tenantError && !tenantLoading}>
         {isError && !isLoading && <Error error={error} />}
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
-        <br />
         {tenantInfo?.activated && !!data?.items?.length && (
           <Card className={classes.root}>
             <CardHeader title="Messages" subheader={<>Total: {data?.total || 0}</>} />
@@ -79,14 +78,24 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                             />
                           </a>
                         </Link>
-                        <CardContent>
-                          <JSONTree
-                            hideRoot={true}
-                            data={item?.credentials?.map((cred) =>
-                              omit(cred, '@context', 'proof', 'type')
-                            )}
-                          />
-                        </CardContent>
+                        {item.type === 'w3c.vc' && (
+                          <CardContent>
+                            <JSONTree
+                              hideRoot={true}
+                              data={item?.credentials?.map((cred) =>
+                                omit(cred, '@context', 'proof', 'type')
+                              )}
+                            />
+                          </CardContent>
+                        )}
+                        {item.type === 'sdr' && (
+                          <CardContent>
+                            <JSONTree
+                              hideRoot={true}
+                              data={omit(item, 'type', 'raw', 'id', 'metaData', 'createdAt')}
+                            />
+                          </CardContent>
+                        )}
                       </Card>
                     </ListItem>
                   ))}
@@ -102,4 +111,4 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default Page;
+export default MessagesIndexPage;

@@ -37,6 +37,7 @@ const Main: React.FC<{
           <br />
           {isLoading ? <LinearProgress /> : <Divider />}
           {isError && <Error />}
+          <br />
           {children}
         </>
       )}

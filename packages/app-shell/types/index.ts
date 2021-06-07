@@ -1,6 +1,11 @@
 import type { IIdentifier } from '@veramo/core';
-import type { Paginated, Tenant } from '@verify/server';
-import { IMessage, UniqueVerifiableCredential } from '@verify/server';
+import type {
+  Paginated,
+  Tenant,
+  IMessage,
+  ISelectiveDisclosureRequest,
+  UniqueVerifiableCredential,
+} from '@verify/server';
 
 export * from './userInfo';
 export * from './commonResponse';
@@ -11,3 +16,4 @@ export type PartialTenant = Partial<Tenant>;
 export type PaginatedIIdentifier = Paginated<IIdentifier>;
 export type PaginatedVerifiableCredential = Paginated<UniqueVerifiableCredential>;
 export type PaginatedMessage = Paginated<IMessage>;
+export type SDRMessage = IMessage & { data: ISelectiveDisclosureRequest };

@@ -13,7 +13,8 @@ import type {
   ICredentialRequestInput,
   ICreateSelectiveDisclosureRequestArgs,
   Issuer,
-  ISelectiveDisclosure,
+  IGetVerifiableCredentialsForSdrArgs,
+  ICredentialsForSdr,
 } from '@veramo/selective-disclosure';
 import type { CommonResponse } from './commonResponse';
 import type { DidDocument } from './didDocument';
@@ -41,6 +42,7 @@ export type DataStoreORMGetVerifiablePresentationsArgs = FindArgs<TPresentationC
 export type DataStoreORMGetVerifiablePresentationsCountArgs = FindArgs<TPresentationColumns>;
 
 export {
+  DidDocument,
   UniqueVerifiableCredential,
   ISendMessageDIDCommAlpha1Args,
   IMessage,
@@ -49,5 +51,16 @@ export {
   IDIDManagerAddServiceArgs,
   IDIDManagerGetOrCreateArgs,
   ICreateSelectiveDisclosureRequestArgs,
-  ISelectiveDisclosure,
+  IGetVerifiableCredentialsForSdrArgs,
+  ICredentialsForSdr,
+};
+
+// workaround: the original ISelectiveDisclosureRequest is incorrectly typed.
+export type ISelectiveDisclosureRequest = {
+  iat: number;
+  iss: string;
+  type: string;
+  subject?: string;
+  replyUrl?: string;
+  claims: ICredentialRequestInput[];
 };

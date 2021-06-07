@@ -8,6 +8,7 @@ import Divider from '@material-ui/core/Divider';
 import Typography from '@material-ui/core/Typography';
 import { red } from '@material-ui/core/colors';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
+import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
 import { withAuth } from 'components';
 import Error from 'components/Error';
@@ -25,7 +26,8 @@ import { mutate } from 'swr';
 import { getTenantUrl, useFetcher, useTenant } from 'utils';
 import * as yup from 'yup';
 
-const domain = process.env.NEXT_PUBLIC_BACKEND?.split(':')[1].replace('//', '');
+// const domain = process.env.NEXT_PUBLIC_BACKEND?.split(':')[1].replace('//', '');
+const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const validation = yup.object({
   username: yup
     .string()
@@ -37,9 +39,7 @@ const validation = yup.object({
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
-      display: 'flex',
       flexWrap: 'wrap',
-      maxWidth: '60ch',
     },
     textField: { width: '40ch' },
     submit: { margin: theme.spacing(3, 2, 2) },
@@ -49,7 +49,7 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const Page: NextPage<{ session: Session }> = ({ session }) => {
+const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
   const fqUrl = slug && domain && getTenantUrl(slug, domain);
@@ -69,7 +69,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         isError={tenantError && !tenantLoading}>
         {userDid.error && <Error error={userDid.error} />}
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
-        <br />
         {tenantInfo?.activated && (
           <Formik
             initialValues={{ username: '' }}
@@ -89,12 +88,21 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
                 <Card className={classes.root}>
                   <CardHeader
                     title="User identifier"
-                    subheader="Only lower-case and numeric are allowed; special characters and space disabled."
-                    avatar={<Avatar className={classes.avatar}>{username.slice(0, 2)}</Avatar>}
+                    subheader={
+                      <Typography variant="caption">
+                        Only lower-case and numeric are allowed; special characters and space
+                        disabled
+                      </Typography>
+                    }
+                    avatar={
+                      <Avatar className={classes.avatar}>
+                        <PersonAddIcon />
+                      </Avatar>
+                    }
                   />
                   <CardContent>
                     <Typography variant="caption">You are </Typography>
-                    <Typography variant="caption" color="primary">
+                    <Typography variant="body2" color="primary">
                       {username ? `"did:web:${nonFqUrl}:users:${username}"` : '...'}
                     </Typography>
                     <Divider />
@@ -139,4 +147,4 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default Page;
+export default UsersCreatePage;

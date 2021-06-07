@@ -57,7 +57,7 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const Page: NextPage<{ session: Session }> = ({ session }) => {
+const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const router = useRouter();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
@@ -85,7 +85,6 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         isError={tenantError && !tenantLoading}>
         {isError && !isLoading && <Error error={error} />}
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
-        <br />
         {tenantInfo?.activated && data && (
           <Card className={classes.root}>
             <CardHeader
@@ -169,4 +168,4 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default Page;
+export default CredentialsEditPage;

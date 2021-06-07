@@ -9,6 +9,7 @@ import Error from 'components/Error';
 import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
+import QuickAction from 'components/QuickAction';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
@@ -22,7 +23,7 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const Page: NextPage<{ session: Session }> = ({ session }) => {
+const MessagesEditPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const router = useRouter();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
@@ -39,12 +40,19 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         title="Message"
         parentText="Messages"
         parentUrl={`/dashboard/${tenantInfo?.id}/messages`}
-        isLoading={tenantLoading}
+        isLoading={tenantLoading || isLoading}
         isError={tenantError && !tenantLoading}>
         {isError && !isLoading && <Error error={error} />}
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
         {tenantInfo?.activated && data && (
           <Card className={classes.root}>
+            {data.type === 'sdr' && (
+              <QuickAction
+                link={`/dashboard/${tenantInfo?.id}/messages/${id}/response`}
+                label="SELECTIVE DISCLOSURE RESPONSE"
+                disabled={!tenantInfo?.id}
+              />
+            )}
             <CardHeader
               avatar={<AvatarMd5 subject={id || 'idle'} />}
               title={data.type}
@@ -62,4 +70,4 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default Page;
+export default MessagesEditPage;

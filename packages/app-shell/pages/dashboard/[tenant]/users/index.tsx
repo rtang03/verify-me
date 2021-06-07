@@ -31,14 +31,13 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       width: '100%',
-      maxWidth: '60ch',
       backgroundColor: theme.palette.background.paper,
     },
     inline: { display: 'inline' },
   })
 );
 
-const Page: NextPage<{ session: Session }> = ({ session }) => {
+const UsersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
   const { pageIndex, pageChange } = usePagination(PAGESIZE);
@@ -63,7 +62,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         isError={tenantError && !tenantLoading}>
         <QuickAction
           link={`/dashboard/${tenantInfo?.id}/users/create`}
-          label="+ CREATE IDENTIFIER"
+          label="IDENTIFIER"
           disabled={!tenantInfo?.id}
         />
         {isError && !isLoading && <Error error={error} />}
@@ -119,4 +118,4 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default Page;
+export default UsersIndexPage;
