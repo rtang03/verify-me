@@ -52,8 +52,8 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
   exposedMethods.forEach((method) =>
     router.post(`/agent/${method}`, async (req: RequestWithAgent, res: Response) => {
       if (!req.agent) return res.status(Status.BAD_GATEWAY).send({ error: 'agent not found' });
-
-      debug(req.body);
+      debug('method: ', method);
+      debug('body: %O', req.body);
 
       try {
         const result = await req.agent.execute(method, req.body);

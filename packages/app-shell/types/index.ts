@@ -10,6 +10,7 @@ import type {
 export * from './userInfo';
 export * from './commonResponse';
 export * from './tenantInfo';
+export * from './claim';
 
 export type PaginatedTenant = Paginated<Partial<Tenant>>;
 export type PartialTenant = Partial<Tenant>;

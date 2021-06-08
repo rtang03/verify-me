@@ -4,7 +4,9 @@ import InputAdornment from '@material-ui/core/InputAdornment';
 import MuiTextField from '@material-ui/core/TextField';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import AccountCircle from '@material-ui/icons/AccountCircle';
+import LanguageIcon from '@material-ui/icons/Language';
 import LocationCityIcon from '@material-ui/icons/LocationCity';
+import MailOutlineIcon from '@material-ui/icons/MailOutline';
 import TodayIcon from '@material-ui/icons/Today';
 import React from 'react';
 
@@ -19,62 +21,89 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const MessageHeader: React.FC<{ from?: string; to?: string; createdAt?: string }> = ({
+const MessageHeader: React.FC<{ from?: string; to?: string; createdAt?: string; url?: string }> = ({
   from,
   to,
   createdAt,
+  url,
 }) => {
   const classes = useStyles();
+
   return (
     <>
-      <CardHeader subheader="Message details" />
+      <CardHeader avatar={<MailOutlineIcon />} title="Message details" />
       <CardContent className={classes.muiTextField}>
         {from && (
-          <MuiTextField
-            disabled={true}
-            size="small"
-            label="From"
-            defaultValue={from}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LocationCityIcon />
-                </InputAdornment>
-              ),
-            }}
-          />
+          <>
+            <MuiTextField
+              disabled={true}
+              size="small"
+              label="From"
+              value={from}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LocationCityIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <br />
+          </>
         )}
-        <br />
         {to && (
-          <MuiTextField
-            disabled={true}
-            size="small"
-            label="To"
-            defaultValue={to}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <AccountCircle />
-                </InputAdornment>
-              ),
-            }}
-          />
+          <>
+            <MuiTextField
+              disabled={true}
+              size="small"
+              label="To"
+              value={to}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <AccountCircle />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <br />
+          </>
         )}
-        <br />
         {createdAt && (
-          <MuiTextField
-            disabled={true}
-            size="small"
-            label="Date / Time"
-            defaultValue={createdAt}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <TodayIcon />
-                </InputAdornment>
-              ),
-            }}
-          />
+          <>
+            <MuiTextField
+              disabled={true}
+              size="small"
+              label="Date / Time"
+              value={createdAt}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <TodayIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <br />
+          </>
+        )}
+        {url && (
+          <>
+            <MuiTextField
+              disabled={true}
+              size="small"
+              label="Url"
+              value={url}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LanguageIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <br />
+          </>
         )}
       </CardContent>
     </>

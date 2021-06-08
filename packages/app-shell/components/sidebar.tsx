@@ -1,4 +1,3 @@
-import CallReceivedIcon from '@material-ui/icons/CallReceived';
 import FolderSharedIcon from '@material-ui/icons/FolderShared';
 import LanguageIcon from '@material-ui/icons/Language';
 import MailIcon from '@material-ui/icons/Mail';
@@ -22,18 +21,13 @@ export const sideBar: (tenantId: string) => { text: string; icon: any; link: str
     link: id === '0' ? `/dashboard` : `/dashboard/${id}/credentials`,
   },
   {
-    text: 'Inbox',
-    icon: <MailIcon />,
-    link: id === '0' ? `/dashboard` : `/dashboard/${id}/messages`,
-  },
-  {
-    text: 'SD-Request',
+    text: 'Request',
     icon: <ScreenShareIcon />,
     link: id === '0' ? `/dashboard` : `/dashboard/${id}/requests`,
   },
   {
-    text: 'Response',
-    icon: <CallReceivedIcon />,
-    link: id === '0' ? `/dashboard` : `/dashboard/${id}/responses`,
+    text: 'Inbox',
+    icon: <MailIcon />,
+    link: id === '0' ? `/dashboard` : `/dashboard/${id}/messages`,
   },
 ];

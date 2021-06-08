@@ -1,3 +1,4 @@
+import util from 'util';
 import Status from 'http-status';
 import type { NextApiHandler } from 'next';
 import { catchHandlerErrors } from './catchHandlerError';
@@ -28,7 +29,11 @@ const handler: (agentMethod: string) => NextApiHandler = (agentMethod) => async 
 
     if (status === Status.OK || status === Status.CREATED)
       result = { status: 'OK', data: await response.json() };
-    else result = { status: 'ERROR', message: OOPS, error: await response.text() };
+    else {
+      const error = await response.text();
+      console.error(util.format('error: %s, %j', agentMethod, error));
+      result = { status: 'ERROR', message: OOPS, error };
+    }
 
     res.status(Status.OK).send(result);
   } else res.status(Status.METHOD_NOT_ALLOWED).send({ status: 'ERROR', message: OOPS });

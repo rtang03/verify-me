@@ -1,18 +1,9 @@
-import { TAgent } from '@veramo/core';
-import { ICredentialIssuer, ICreateVerifiableCredentialArgs } from '@veramo/credential-w3c';
+export const shortId = (did: string) => `${did.slice(0, 15)}...${did.slice(-4)}`;
 
-interface Claim {
-  type: string;
-  value: any;
-}
+export const claimToObject = (arr: any[]) =>
+  arr.reduce((obj, item) => Object.assign(obj, { [item.type]: item.value }), {});
 
-const shortId = (did: string) => `${did.slice(0, 15)}...${did.slice(-4)}`;
-
-const claimToObject = (arr: any[]) => {
-  return arr.reduce((obj, item) => Object.assign(obj, { [item.type]: item.value }), {});
-};
-
-const issueCredential = async (
+export const issueCredential = async (
   agent: any,
   iss: string | undefined,
   sub: string | undefined,
@@ -34,49 +25,4 @@ const issueCredential = async (
     proofFormat,
     save: true,
   });
-};
-
-const signVerifiablePresentation = async (
-  agent: any,
-  did: string,
-  verifier: string[],
-  selected: any,
-  proofFormat: string
-) => {
-  return await agent?.createVerifiablePresentation({
-    presentation: {
-      holder: did,
-      verifier,
-      '@context': ['https://www.w3.org/2018/credentials/v1'],
-      verifiableCredential: selected,
-    },
-    proofFormat,
-    save: true,
-  });
-};
-
-const getCreateVerifiableCredentialArgs: (option: {
-  credentialType: string;
-  issuer: string;
-  subject: string;
-  claims: Claim[];
-}) => ICreateVerifiableCredentialArgs = ({ credentialType, issuer, subject, claims }) => ({
-  credential: {
-    type: ['VerifiableCredential', credentialType],
-    issuer: { id: issuer },
-    credentialSubject: {
-      id: subject,
-      ...claimToObject(claims),
-    },
-  },
-  proofFormat: 'jwt',
-  save: true,
-});
-
-export {
-  claimToObject,
-  shortId,
-  issueCredential,
-  signVerifiablePresentation,
-  getCreateVerifiableCredentialArgs,
 };

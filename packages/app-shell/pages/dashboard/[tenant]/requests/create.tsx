@@ -22,6 +22,7 @@ import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import MessageHeader from 'components/MessageHeader';
+import RawContent from 'components/RawContent';
 import Result from 'components/Result';
 import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
@@ -72,7 +73,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   // Send Message
   const { val: result, poster: send } = useFetcher<IMessage>();
   const sendMessage = (body: ISendMessageDIDCommAlpha1Args) =>
-    send(`/api/credentials/send?slug=${slug}`, body);
+    send(`/api/tenants/sendMessageDIDCommAlpha1?slug=${slug}`, body);
 
   // form state
   const [claimType, setClaimType] = useState<string>('');
@@ -196,14 +197,11 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                   {/* Claim Details */}
                   <CardContent>
                     <Card variant="outlined">
-                      <CardHeader subheader="Claim Details" />
+                      <CardHeader title="Claim Details" />
+                      {claims.length > 0 && (
+                        <RawContent content={claims} title="Preview claim details" />
+                      )}
                       <CardContent>
-                        {claims && (
-                          <>
-                            <Typography variant="body2">Preview claim details</Typography>
-                            <JSONTree data={claims} hideRoot={true} />
-                          </>
-                        )}
                         <Typography variant="caption">Add one claim type</Typography>
                         <div>
                           <MuiTextField
@@ -235,13 +233,10 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                         {/* Required issuers */}
                         <Card variant="outlined">
                           <CardHeader subheader="Required issuers" />
+                          {requiredIssuers?.length > 0 && (
+                            <RawContent content={requiredIssuers} title="Preview issuers" />
+                          )}
                           <CardContent>
-                            {requiredIssuers?.length > 0 && (
-                              <>
-                                <Typography variant="body2">Preview issuers</Typography>
-                                <JSONTree data={requiredIssuers} hideRoot={true} />
-                              </>
-                            )}
                             <div>
                               <Typography variant="caption">Add one issuer</Typography>
                             </div>
@@ -285,7 +280,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                       </CardContent>
                       <CardActions>
                         <Button
-                          disabled={!claimType || !requiredIssuers}
+                          disabled={!claimType || requiredIssuers.length === 0}
                           className={classes.submit}
                           variant="contained"
                           color="primary"
@@ -323,10 +318,11 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                       disabled={
                         isSubmitting ||
                         !!sdrResult?.data ||
-                        !claims ||
                         !values.issuer ||
                         !values.subject ||
-                        !values.replyUrl
+                        !values.replyUrl ||
+                        claims.length === 0 ||
+                        sdrResult?.error
                       }>
                       + Selective Disclosure Request
                     </Button>
@@ -338,60 +334,62 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
             <CardContent>
               {sdrResult?.error && !sdrResult?.loading && <Error error={sdrResult.error} />}
               {sdrResult?.data && !sdrResult?.loading && (
-                <Card variant="outlined">
-                  <CardHeader
-                    avatar={<DoneIcon color="primary" />}
-                    title={
-                      <Typography variant="body2" color="primary">
-                        Selective Disclosure Request successfully created
-                      </Typography>
-                    }
-                    subheader={
-                      <Typography variant="caption">Send the SDR to the subject</Typography>
-                    }
-                  />
-                  {iss && sub && <MessageHeader from={iss} to={sub} createdAt={iat} />}
-                  <CardContent>
-                    <Typography variant="caption">Raw Selective Disclosure Request</Typography>
-                    <JSONTree hideRoot={true} data={jwt_decode(sdrResult.data)} />
-                  </CardContent>
-                  <Formik
-                    initialValues={{}}
-                    onSubmit={async (_, { setSubmitting }) => {
-                      setSubmitting(true);
-                      await sendMessage({
-                        data: {
-                          to: sub,
-                          from: iss,
-                          type: 'jwt',
-                          body: sdrResult.data as string,
-                        },
-                        // save: true,
-                      });
-                      setSubmitting(false);
-                    }}>
-                    {({ isSubmitting }) => (
-                      <Form>
-                        <CardActions>
-                          <Button
-                            className={classes.submit}
-                            variant="contained"
-                            color="primary"
-                            type="submit"
-                            disabled={isSubmitting || !!result.data}>
-                            Send
-                          </Button>
-                        </CardActions>
+                <Formik
+                  initialValues={{}}
+                  onSubmit={async (_, { setSubmitting }) => {
+                    setSubmitting(true);
+                    await sendMessage({
+                      data: {
+                        to: sub,
+                        from: iss,
+                        type: 'jwt',
+                        body: sdrResult.data as string,
+                      },
+                      save: false,
+                    });
+                    setSubmitting(false);
+                  }}>
+                  {({ isSubmitting }) => (
+                    <Form>
+                      <Card variant="outlined">
+                        <CardHeader
+                          avatar={<DoneIcon color="primary" />}
+                          title={
+                            <Typography variant="body2" color="primary">
+                              Selective Disclosure Request successfully created
+                            </Typography>
+                          }
+                          subheader={
+                            <Typography variant="caption">Send the SDR to the subject</Typography>
+                          }
+                          action={
+                            <Button
+                              className={classes.submit}
+                              variant="contained"
+                              color="primary"
+                              type="submit"
+                              disabled={isSubmitting || !!result.data}>
+                              Send
+                            </Button>
+                          }
+                        />
+                        {iss && sub && <MessageHeader from={iss} to={sub} createdAt={iat} />}
+                        <CardContent>
+                          <Typography variant="caption">
+                            Raw Selective Disclosure Request
+                          </Typography>
+                          <JSONTree hideRoot={true} data={jwt_decode(sdrResult?.data || '')} />
+                        </CardContent>
                         <Result isTenantExist={!!tenantInfo} result={result} />
                         {result?.data && !result.loading && (
                           <CardContent>
                             <JSONTree hideRoot={true} data={result.data} />
                           </CardContent>
                         )}
-                      </Form>
-                    )}
-                  </Formik>
-                </Card>
+                      </Card>
+                    </Form>
+                  )}
+                </Formik>
               )}
             </CardContent>
           </Card>

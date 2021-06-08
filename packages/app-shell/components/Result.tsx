@@ -1,5 +1,4 @@
 import CardContent from '@material-ui/core/CardContent';
-import Divider from '@material-ui/core/Divider';
 import React from 'react';
 import Error from './Error';
 import Success from './Success';
@@ -16,13 +15,13 @@ const ResultComponent: React.FC<{ isTenantExist: boolean; result: Result }> = ({
   <>
     {isTenantExist && !result?.loading && result?.data && (
       <CardContent>
-        <Divider />
+        <br />
         <Success />
       </CardContent>
     )}
     {isTenantExist && !result?.loading && result?.error && (
       <CardContent>
-        <Divider />
+        <br />
         <Error error={result.error} />
       </CardContent>
     )}

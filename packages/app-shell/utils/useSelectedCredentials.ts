@@ -1,9 +1,10 @@
+import type { ICredentialsForSdr, VerifiableCredential } from '@verify/server';
 import { useState, useEffect, useCallback } from 'react';
 
 interface ValidationState {
   [index: string]: {
     required: boolean;
-    vc: string | null;
+    vc:  string | null;
   };
 }
 
@@ -44,6 +45,7 @@ export const useSelectedCredentials = (sdr: any) => {
             defaultSelected[sdr.claimType] = {
               required: true,
               vc: sdr.credentials[0],
+              // vc: sdr.credentials[0].credentialSubject[sdr.claimType],
             };
           } else {
             defaultSelected[sdr.claimType] = {

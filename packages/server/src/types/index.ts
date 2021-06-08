@@ -1,4 +1,11 @@
-import type { IMessage, IDIDManagerAddServiceArgs, IDIDManagerGetOrCreateArgs } from '@veramo/core';
+import type {
+  IMessage,
+  IDIDManagerAddServiceArgs,
+  IDIDManagerGetOrCreateArgs,
+  VerifiablePresentation,
+  VerifiableCredential,
+} from '@veramo/core';
+import { ICreateVerifiablePresentationArgs } from '@veramo/credential-w3c';
 import type {
   FindArgs,
   TClaimsColumns,
@@ -53,6 +60,9 @@ export {
   ICreateSelectiveDisclosureRequestArgs,
   IGetVerifiableCredentialsForSdrArgs,
   ICredentialsForSdr,
+  ICreateVerifiablePresentationArgs,
+  VerifiablePresentation,
+  VerifiableCredential,
 };
 
 // workaround: the original ISelectiveDisclosureRequest is incorrectly typed.

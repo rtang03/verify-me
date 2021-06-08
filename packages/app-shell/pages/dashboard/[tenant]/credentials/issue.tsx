@@ -21,12 +21,9 @@ import React, { useState } from 'react';
 import JSONTree from 'react-json-tree';
 import { claimToObject, useFetcher, getCreateVerifiableCredentialArgs, useTenant } from 'utils';
 import * as yup from 'yup';
+import { Claim } from '../../../../types';
 
 // @see https://github.com/veramolabs/agent-explorer/blob/next/src/components/widgets/IssueCredential.tsx
-interface Claim {
-  type: string;
-  value: any;
-}
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -194,30 +191,40 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
                           </Typography>
                         )}
                       </CardActions>
-                      <CardContent>
-                        <Card variant="outlined">
-                          <CardContent>
-                            <Typography variant="body2">Claims preview</Typography>
-                            <JSONTree hideRoot={true} theme="bright" data={claimToObject(claims)} />
-                          </CardContent>
-                          <CardActions>
-                            {!!claims.length && (
-                              <Button
-                                disabled={!!result?.data}
-                                variant="outlined"
-                                size="small"
-                                onClick={() => updateClaims([])}>
-                                X Remove all claims
-                              </Button>
-                            )}
-                          </CardActions>
-                        </Card>
-                      </CardContent>
+                      {!!claims?.length && (
+                        <CardContent>
+                          <Card variant="outlined">
+                            <CardHeader
+                              subheader="Claims Preview"
+                              action={
+                                !!claims.length && (
+                                  <Button
+                                    disabled={!!result?.data}
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() => updateClaims([])}>
+                                    X Reset
+                                  </Button>
+                                )
+                              }
+                            />
+                            <CardContent>
+                              <JSONTree
+                                hideRoot={true}
+                                theme="bright"
+                                data={claimToObject(claims)}
+                              />
+                            </CardContent>
+                          </Card>
+                        </CardContent>
+                      )}
                     </Card>
                   </CardContent>
                   <Result isTenantExist={!!tenantInfo} result={result} />
                   {result?.data && !result.loading && (
-                    <JSONTree hideRoot={true} data={result.data} />
+                    <CardContent>
+                      <JSONTree hideRoot={true} data={result.data} />
+                    </CardContent>
                   )}
                 </Card>
               </Form>

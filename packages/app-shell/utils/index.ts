@@ -15,3 +15,4 @@ export * from './createHandlerPaginatedAgentFind';
 export * from './useTenant';
 export * from './usePagination';
 export * from './useSelectedCredentials';
+export * from './getCreateVerifiableCredentialArgs';

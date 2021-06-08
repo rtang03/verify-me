@@ -29,6 +29,7 @@ import { useRouter } from 'next/router';
 import React from 'react';
 import JSONTree from 'react-json-tree';
 import { useFetcher, useReSWR, useTenant } from 'utils';
+import RawContent from '../../../../components/RawContent';
 
 const getSendMessageDIDCommAlpha1Args: (
   vc: VerifiableCredential
@@ -71,7 +72,7 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
   // Send Message
   const { val: result, poster } = useFetcher<IMessage>();
   const sendMessage = (body: ISendMessageDIDCommAlpha1Args) =>
-    poster(`/api/credentials/send?slug=${slug}`, body);
+    poster(`/api/tenants/sendMessageDIDCommAlpha1?slug=${slug}`, body);
 
   return (
     <Layout title="Credential">
@@ -114,12 +115,11 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
                         title="Send Credential"
                         subheader="Click me to send to Subject's service endpoint"
                       />
-                      <Divider />
                       <CardContent className={classes.muiTextField}>
                         <MessageHeader
                           from={data?.issuer.id}
                           to={data?.credentialSubject?.id}
-                          issuanceDate={data?.issuanceDate}
+                          createdAt={data?.issuanceDate}
                         />
                       </CardContent>
                       <CardContent>
@@ -146,10 +146,7 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
                           </CardContent>
                         </Card>
                       </CardContent>
-                      <CardContent>
-                        <Typography variant="body2">Raw Credential Details</Typography>
-                        <JSONTree hideRoot={true} data={data} />
-                      </CardContent>
+                      <RawContent content={data} title="Raw Credential Details" />
                       <Result isTenantExist={!!tenantInfo} result={result} />
                       {result?.data && !result.loading && (
                         <JSONTree hideRoot={true} data={result.data} />
