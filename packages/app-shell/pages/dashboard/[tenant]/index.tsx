@@ -13,7 +13,7 @@ import AvatarMd5 from 'components/AvatarMd5';
 import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
-import Success from 'components/Success';
+import Result from 'components/Result';
 import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
 import type { NextPage } from 'next';
@@ -27,7 +27,7 @@ const baseUrl = '/api/tenants';
 const validation = yup.object({ name: yup.string().nullable() });
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: { maxWidth: 550, margin: theme.spacing(3, 1, 2) },
+    root: { margin: theme.spacing(3, 1, 2) },
     textField: { width: '45ch' },
     submit: { margin: theme.spacing(3, 2, 2) },
     activate: {
@@ -61,7 +61,6 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         parentUrl="/dashboard"
         isLoading={tenantLoading}>
         {tenantError && !tenantLoading && <Error error={tenantError} />}
-        <Divider />
         {/* IF NOT ACTIVATE */}
         {!!tenantInfo && !tenantInfo.activated && <Activation tenantInfo={tenantInfo} />}
         {/* IF ACTIVATE */}
@@ -81,8 +80,8 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                 <Card className={classes.root}>
                   <CardHeader
                     avatar={<AvatarMd5 subject={tenantInfo.id || 'no id'} />}
-                    title={tenantInfo.slug}
-                    subheader={`Last: ${tenantInfo.updated_at}`}
+                    title={tenantInfo.slug?.toUpperCase()}
+                    subheader={`Last updated: ${tenantInfo.updated_at}`}
                     action={
                       <FormControlLabel
                         control={<Switch checked={editMode} onChange={handleEdit} name="edit" />}
@@ -114,22 +113,7 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                       Save
                     </Button>
                   </CardActions>
-                  <CardContent>
-                    {updateResult?.data?.affected === 1 && !updateResult.loading && (
-                      <>
-                        <Divider />
-                        <br />
-                        <Success />
-                      </>
-                    )}
-                    {updateResult?.error && !updateResult.loading && (
-                      <>
-                        <Divider />
-                        <br />
-                        <Error />
-                      </>
-                    )}
-                  </CardContent>
+                  <Result isTenantExist={!!tenantInfo} result={updateResult} />
                 </Card>
               </Form>
             )}

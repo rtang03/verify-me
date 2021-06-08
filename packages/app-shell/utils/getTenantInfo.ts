@@ -3,4 +3,4 @@ import type { PaginatedTenant, TenantInfo } from '../types';
 
 export const getTenantInfo: (tenant: PaginatedTenant | null | undefined) => TenantInfo | null = (
   tenant
-) => (tenant ? pick(tenant.items[0], 'id', 'slug', 'name', 'activated', 'members') : null);
+) => (tenant ? pick(tenant.items[0], 'id', 'slug', 'name', 'activated', 'members', 'created_at', 'updated_at') : null);

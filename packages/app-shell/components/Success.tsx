@@ -3,8 +3,8 @@ import React from 'react';
 
 const SuccessComponent: React.FC<any> = () => (
   <div>
-    <Typography variant="h6" color="primary">
-      Successfuly done.
+    <Typography variant="body1" color="inherit">
+      Successfully done.
     </Typography>
   </div>
 );

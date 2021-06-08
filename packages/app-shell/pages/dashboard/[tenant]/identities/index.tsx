@@ -1,9 +1,9 @@
 import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
+import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
-import Divider from '@material-ui/core/Divider';
 import Typography from '@material-ui/core/Typography';
 import { green } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
@@ -14,13 +14,13 @@ import { withAuth } from 'components';
 import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
-import NoRecord from 'components/NoRecord';
+import QuickAction from 'components/QuickAction';
+import RawContent from 'components/RawContent';
 import Result from 'components/Result';
 import { Form, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React from 'react';
-import JSONTree from 'react-json-tree';
 import { mutate } from 'swr';
 import { getTenantUrl, useFetcher, useReSWR, useTenant } from 'utils';
 
@@ -63,40 +63,39 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         isError={tenantError || didError}>
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
         {tenantInfo?.activated && !data && !isLoading && !didError && (
-          <>
-            <Typography variant="body2">Web-identifier URL: {nonFqUrl}</Typography>
-            {!webDid?.data && (
-              <>
-                <br />
-                <Typography variant="caption">
-                  ⚠️ No Decentralized Identity Document Found. You are about to create one, with
-                  web-method.
-                </Typography>
-                <br />
-              </>
+          <Formik
+            initialValues={{}}
+            onSubmit={async (_, { setSubmitting }) => {
+              setSubmitting(true);
+              await newDid({ alias: nonFqUrl as string }).then(() => setSubmitting(false));
+            }}>
+            {({ isSubmitting }) => (
+              <Form>
+                <Typography variant="body2">Web-identifier URL: {nonFqUrl}</Typography>
+                {!webDid?.data && (
+                  <>
+                    <br />
+                    <Typography variant="body2">
+                      ⚠️ No Decentralized Identity Document Found. You are about to create one, with
+                      web-method.
+                    </Typography>
+                    <br />
+                  </>
+                )}
+                <p>
+                  <Button
+                    className={classes.submit}
+                    variant="contained"
+                    color="secondary"
+                    size="large"
+                    disabled={isSubmitting || !fqUrl || !!webDid?.data}
+                    type="submit">
+                    + Create Web Identifier
+                  </Button>
+                </p>
+              </Form>
             )}
-            <Formik
-              initialValues={{}}
-              onSubmit={async (_, { setSubmitting }) => {
-                setSubmitting(true);
-                await newDid({ alias: nonFqUrl as string }).then(() => setSubmitting(false));
-              }}>
-              {({ isSubmitting }) => (
-                <Form>
-                  <p>
-                    <Button
-                      className={classes.submit}
-                      variant="contained"
-                      color="secondary"
-                      disabled={isSubmitting || !fqUrl || !!webDid?.data}
-                      type="submit">
-                      + Create Web Identifier
-                    </Button>
-                  </p>
-                </Form>
-              )}
-            </Formik>
-          </>
+          </Formik>
         )}
         {tenantInfo?.activated && data && (
           <Card>
@@ -110,31 +109,34 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
               subheader={<>Your URL: {fqUrl}</>}
             />
             <CardContent>
-              <Typography variant="body2">DID</Typography>
-              <Typography variant="body2">{data?.id}</Typography>
+              <CardHeader title="DID" subheader={data?.id} />
+              <CardHeader
+                title="Verification method"
+                subheader={`${data?.verificationMethod?.length} record(s) found`}
+              />
+              <CardHeader
+                title="Service endpoint"
+                subheader={
+                  data?.service?.length === 0 ? (
+                    <>No records found</>
+                  ) : (
+                    <>{`${data?.service?.length} record(s) found`}</>
+                  )
+                }
+              />
             </CardContent>
-            <CardContent>
-              <Typography variant="body2">Verification method</Typography>
-              {data?.verificationMethod && (
-                <Typography variant="body2">
-                  {data?.verificationMethod?.length} record(s) found.
-                </Typography>
-              )}
-            </CardContent>
-            <CardContent>
-              <Typography variant="body2">Authentication</Typography>
-              {data?.authentication?.map((item, index) => (
-                <Typography variant="caption" key={index}>
-                  {(item as string).substring(0, 40)}......
-                </Typography>
-              ))}
-            </CardContent>
-            {!data?.service?.length && <NoRecord title="Service" />}
-            <Divider />
-            <CardContent>
-              <Typography variant="body2">Raw Document</Typography>
-              <JSONTree data={data} hideRoot={true} />
-            </CardContent>
+            {data?.service?.length === 0 && (
+              <CardContent>
+                <CardActions>
+                  <QuickAction
+                    label="Service endpoint"
+                    link={`/dashboard/${tenantInfo.id}/identifiers/service`}
+                    disabled={false}
+                  />
+                </CardActions>
+              </CardContent>
+            )}
+            <RawContent title="Raw Did Document" content={data} />
           </Card>
         )}
         <Result isTenantExist={!!tenantInfo} result={webDid} />

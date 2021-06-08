@@ -21,6 +21,7 @@ import Link from 'next/link';
 import React, { Fragment } from 'react';
 import type { PaginatedTenant } from 'types';
 import { usePagination, useReSWR } from 'utils';
+import QuickAction from '../../components/QuickAction';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
@@ -51,17 +52,11 @@ const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         title="Tenants"
         subtitle="List of tenants. Learn more"
         isLoading={isLoading}>
-        <br />
         {!!data?.items?.length && !isLoading && (
           <Card className={classes.root}>
             <CardHeader subheader={<>Total: {data?.total || 0}</>} />
             <CardContent>
-              <Pagination
-                count={count}
-                showFirstButton
-                showLastButton
-                onChange={pageChange}
-              />
+              <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
               <br />
               <List className={classes.root}>
                 {data.items.map((item, index) => (
@@ -100,16 +95,11 @@ const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         {/* WHEN NO TENTANT */}
         {data?.items?.length === 0 && !isLoading && (
           <>
-            <Typography variant="caption" color="secondary">
+            <QuickAction link="/dashboard/create" label="CREATE TENANT" disabled={false} />
+            <br />
+            <Typography variant="body2" color="primary">
               ‼️ No tenant found. You must create first tenant to proceed.
             </Typography>
-            <br />
-            <br />
-            <Link href="/dashboard/create">
-              <Button size="small" variant="contained">
-                + CREATE TENANT
-              </Button>
-            </Link>
           </>
         )}
       </Main>

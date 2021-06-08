@@ -11,12 +11,13 @@ import { mutate } from 'swr';
 import type { TenantInfo } from '../types';
 import { useFetcher } from '../utils';
 import Error from './Error';
+import Result from './Result';
 import Success from './Success';
 
 const baseUrl = '/api/tenants/actions';
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: { maxWidth: 550, margin: theme.spacing(3, 1, 2) },
+    root: { margin: theme.spacing(3, 1, 2) },
     submit: { margin: theme.spacing(3, 2, 2) },
   })
 );
@@ -40,7 +41,7 @@ const Activation: React.FC<{ tenantInfo: TenantInfo }> = ({ tenantInfo }) => {
       }}>
       {({ isSubmitting }) => (
         <Form>
-          <Card className={classes.root} variant="outlined">
+          <Card className={classes.root}>
             <CardContent>
               <Typography variant="body1" color="textSecondary" component="p">
                 This tenant is not activated. Please sign below term-and-conditions to activate. You
@@ -57,21 +58,7 @@ const Activation: React.FC<{ tenantInfo: TenantInfo }> = ({ tenantInfo }) => {
                 Activate
               </Button>
             </CardActions>
-            <CardContent>
-              {val?.data === true && (
-                <>
-                  <Link href={`/dashboard/${tenantInfo.id}`}>
-                    <a>
-                      <Typography variant="body1">Go to {tenantInfo.slug}</Typography>
-                    </a>
-                  </Link>
-                  <br />
-                  <Success />
-                </>
-              )}
-              {val?.data && <Success />}
-              {val?.error && <Error />}
-            </CardContent>
+            <Result isTenantExist={true} result={val} />
           </Card>
         </Form>
       )}

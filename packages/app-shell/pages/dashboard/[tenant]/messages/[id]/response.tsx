@@ -345,7 +345,14 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
                                 subheader="Click icon to send"
                                 avatar={
                                   <Avatar className={classes.large}>
-                                    <IconButton className={classes.green}>
+                                    <IconButton
+                                      className={classes.green}
+                                      type="submit"
+                                      disabled={
+                                        isSubmitting ||
+                                        !!sendMessageResult?.data ||
+                                        !!sendMessageResult?.error
+                                      }>
                                       <SendIcon />
                                     </IconButton>
                                   </Avatar>
@@ -353,8 +360,13 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
                               />
                               <CardContent>
                                 {/*** Review presentation before sending ***/}
-                                <MessageHeader from={presenter} to={message.from} url={sdr?.replyUrl}/>
+                                <MessageHeader
+                                  from={presenter}
+                                  to={message.from}
+                                  url={sdr?.replyUrl}
+                                />
                               </CardContent>
+                              <Result isTenantExist={!!tenantInfo} result={sendMessageResult} />
                             </Card>
                           </CardContent>
                         </Card>

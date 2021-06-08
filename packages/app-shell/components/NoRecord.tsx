@@ -7,7 +7,7 @@ const NoRecord: React.FC<{ title?: string }> = ({ title }) => {
     <CardContent>
       {title && <Typography variant="body2">{title}</Typography>}
       <br />
-      <Typography variant="body1" color="primary">
+      <Typography variant="body1" color="inherit">
         No record found.
       </Typography>
     </CardContent>

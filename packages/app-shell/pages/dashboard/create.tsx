@@ -66,7 +66,7 @@ const TenantCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                 size="small"
                 component={LowerCaseTextField}
                 name={'slug'}
-                placeholder={'issuer'}
+                placeholder={'verifier'}
                 variant="outlined"
                 margin="normal"
                 fullwidth="true"
@@ -77,7 +77,6 @@ const TenantCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                   className={classes.submit}
                   variant="contained"
                   color="primary"
-                  size="small"
                   disabled={isSubmitting || !!val.data}
                   type="submit">
                   Submit
