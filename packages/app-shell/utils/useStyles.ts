@@ -1,3 +1,4 @@
+import { green, grey } from '@material-ui/core/colors';
 import { makeStyles, Theme } from '@material-ui/core/styles';
 
 const drawerWidth = 240;
@@ -56,4 +57,13 @@ export const useStyles = makeStyles((theme: Theme) => ({
   nested: {
     paddingLeft: theme.spacing(4),
   },
+  green: {
+    color: '#fff',
+    backgroundColor: green[500],
+  },
+  grey: {
+    color: '#fff',
+    backgroundColor: grey[500],
+  },
+  submit: { width: '15ch', margin: theme.spacing(3, 3, 3) },
 }));

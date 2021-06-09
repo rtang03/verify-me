@@ -39,10 +39,14 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const { pageIndex, pageChange } = usePagination(PAGESIZE);
 
   // Query Credentials
+  const shouldFetch = !!slug && !!tenantInfo?.activated;
   const url = slug
     ? `/api/credentials?slug=${slug}&cursor=${pageIndex * PAGESIZE}&pagesize=${PAGESIZE}`
     : null;
-  const { data, isLoading, isError, error } = useReSWR<PaginatedVerifiableCredential>(url, !!slug);
+  const { data, isLoading, isError, error } = useReSWR<PaginatedVerifiableCredential>(
+    url,
+    shouldFetch
+  );
   let count;
   data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
 
@@ -52,48 +56,50 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         session={session}
         title="Credentials"
         subtitle="Issue verifiable credentials"
-        parentText={`Dashboard/${slug}`}
+        parentText={`Dashboard | ${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
-        isLoading={tenantLoading || isLoading}
+        isLoading={tenantLoading || (isLoading && shouldFetch)}
         isError={tenantError && !tenantLoading}>
-        <QuickAction
-          link={`/dashboard/${tenantInfo?.id}/credentials/issue`}
-          label="Credential"
-          disabled={!tenantInfo?.id}
-        />
         {isError && !isLoading && <Error error={error} />}
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
         {tenantInfo?.activated && !!data?.items?.length && (
-          <Card className={classes.root}>
-            <CardHeader title="Active credentials" subheader={<>Total: {data?.total || 0}</>} />
-            <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
-            <br />
-            <CardContent>
-              <List className={classes.root}>
-                {data.items.map(({ verifiableCredential, hash }, index) => (
-                  <ListItem key={index}>
-                    <Card className={classes.root} variant="outlined">
-                      <Link href={`/dashboard/${tenantInfo.id}/credentials/${hash}`}>
-                        <a>
-                          <CardHeader
-                            avatar={<AvatarMd5 subject={hash} />}
-                            title={verifiableCredential.credentialSubject.id}
-                            subheader={verifiableCredential.issuanceDate}
+          <>
+            <QuickAction
+              link={`/dashboard/${tenantInfo?.id}/credentials/issue`}
+              label="Credential"
+              disabled={!tenantInfo?.id}
+            />
+            <Card className={classes.root}>
+              <CardHeader title="Active credentials" subheader={<>Total: {data?.total || 0}</>} />
+              <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
+              <br />
+              <CardContent>
+                <List className={classes.root}>
+                  {data.items.map(({ verifiableCredential, hash }, index) => (
+                    <ListItem key={index}>
+                      <Card className={classes.root} variant="outlined">
+                        <Link href={`/dashboard/${tenantInfo.id}/credentials/${hash}`}>
+                          <a>
+                            <CardHeader
+                              avatar={<AvatarMd5 subject={hash} />}
+                              title={verifiableCredential.credentialSubject.id}
+                              subheader={verifiableCredential.issuanceDate}
+                            />
+                          </a>
+                        </Link>
+                        <CardContent>
+                          <JSONTree
+                            data={omit(verifiableCredential, 'proof', '@context', 'type')}
+                            hideRoot={true}
                           />
-                        </a>
-                      </Link>
-                      <CardContent>
-                        <JSONTree
-                          data={omit(verifiableCredential, 'proof', '@context', 'type')}
-                          hideRoot={true}
-                        />
-                      </CardContent>
-                    </Card>
-                  </ListItem>
-                ))}
-              </List>
-            </CardContent>
-          </Card>
+                        </CardContent>
+                      </Card>
+                    </ListItem>
+                  ))}
+                </List>
+              </CardContent>
+            </Card>
+          </>
         )}
         {tenantInfo && !data?.items?.length && !isLoading && <NoRecord />}
       </Main>

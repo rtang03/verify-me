@@ -26,12 +26,11 @@ import { mutate } from 'swr';
 import { getTenantUrl, useFetcher, useTenant } from 'utils';
 import * as yup from 'yup';
 
-// const domain = process.env.NEXT_PUBLIC_BACKEND?.split(':')[1].replace('//', '');
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const validation = yup.object({
   username: yup
     .string()
-    .min(3, 'Must be at least 3 characters')
+    .min(5, 'Must be at least 3 characters')
     .max(20, 'Must be less  than 20 characters')
     .required('Alias is required')
     .matches(/^[a-zA-Z0-9]+$/, 'Cannot contain special characters or spaces'),
@@ -42,7 +41,7 @@ const useStyles = makeStyles((theme: Theme) =>
       flexWrap: 'wrap',
     },
     textField: { width: '40ch' },
-    submit: { margin: theme.spacing(3, 2, 2) },
+    submit: { margin: theme.spacing(3, 3, 3) },
     avatar: {
       backgroundColor: red[500],
     },
@@ -95,15 +94,14 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                       </Typography>
                     }
                     avatar={
-                      <Avatar className={classes.avatar}>
+                      <Avatar variant="rounded" className={classes.avatar}>
                         <PersonAddIcon />
                       </Avatar>
                     }
                   />
                   <CardContent>
-                    <Typography variant="caption">You are </Typography>
-                    <Typography variant="body2" color="primary">
-                      {username ? `"did:web:${nonFqUrl}:users:${username}"` : '...'}
+                    <Typography variant="caption" color="inherit">
+                      You are {username ? `"did:web:${nonFqUrl}:users:${username}"` : '...'}
                     </Typography>
                     <Divider />
                     <br />
@@ -124,8 +122,9 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                   <CardActions>
                     <Button
                       className={classes.submit}
-                      variant="contained"
-                      color="primary"
+                      variant="outlined"
+                      color="inherit"
+                      size="large"
                       type="submit"
                       disabled={isSubmitting || !!errors?.username || !username || !!userDid?.data}>
                       Submit

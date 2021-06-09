@@ -13,18 +13,20 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
+import MenuItem from '@material-ui/core/MenuItem';
 import MenuList from '@material-ui/core/MenuList';
 import Paper from '@material-ui/core/Paper';
 import Popper from '@material-ui/core/Popper';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
+import { grey } from '@material-ui/core/colors';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
-import useMediaQuery from '@material-ui/core/useMediaQuery';
 import Brightness4Icon from '@material-ui/icons/Brightness4';
 import Brightness5Icon from '@material-ui/icons/Brightness5';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import NotificationsIcon from '@material-ui/icons/Notifications';
 import UserProfileIcon from '@material-ui/icons/PermContactCalendar';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import QueueIcon from '@material-ui/icons/Queue';
@@ -153,30 +155,11 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
             <Button color="inherit">
               <Link href="/">
                 <a>
-                  <Typography variant="body2" noWrap>
-                    Home
-                  </Typography>
+                  <Typography variant="h4">/</Typography>
                 </a>
               </Link>
             </Button>
             <div className={classes.root} />
-            {dark ? (
-              <IconButton
-                onClick={() => {
-                  setDark(!dark);
-                  isClient() && localStorage.setItem('dark', 'light');
-                }}>
-                <Brightness5Icon />
-              </IconButton>
-            ) : (
-              <IconButton
-                onClick={() => {
-                  setDark(!dark);
-                  isClient() && localStorage.setItem('dark', 'dark');
-                }}>
-                <Brightness4Icon />
-              </IconButton>
-            )}
             {session ? (
               <>
                 {/*** POP MENU FOR TENANT ***/}
@@ -211,7 +194,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                                 <AvatarMd5 subject={tenantIdLocal || 'idle'} />
                               </ListItemAvatar>
                               <Typography variant="inherit" color="secondary">
-                                {slugLocal || 'No tenant'}
+                                {slugLocal?.toUpperCase() || 'No tenant'}
                               </Typography>
                             </ListItem>
                             <Divider />
@@ -219,22 +202,22 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                             {tenantIdLocal && (
                               <Link href={`/dashboard/${tenantIdLocal}`}>
                                 <a>
-                                  <ListItem onClick={handleCloseTenant}>
+                                  <MenuItem onClick={handleCloseTenant}>
                                     <ListItemIcon>
                                       <SettingsIcon />
                                     </ListItemIcon>
                                     <ListItemText secondary="Settings" />
-                                  </ListItem>
+                                  </MenuItem>
                                 </a>
                               </Link>
                             )}
                             {tenantIdLocal && (
-                              <ListItem onClick={handleCloseTenant}>
+                              <MenuItem onClick={handleCloseTenant}>
                                 <ListItemIcon>
                                   <PersonAddIcon />
                                 </ListItemIcon>
                                 <ListItemText secondary="Invite member" />
-                              </ListItem>
+                              </MenuItem>
                             )}
                             {tenantIdLocal && (
                               <ListItem button onClick={handleSwitchTenant}>
@@ -253,7 +236,10 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                                         button
                                         className={classes.nested}
                                         onClick={handleCloseTenant}>
-                                        <ListItemIcon>
+                                        <ListItemIcon
+                                          onClick={() =>
+                                            setActiveTenant(item.id || '', item.slug || '')
+                                          }>
                                           <AvatarMd5 subject={item.id || 'idle'} size="small" />
                                         </ListItemIcon>
                                         <ListItemText
@@ -268,16 +254,15 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                                 </List>
                               </Collapse>
                             )}
-
                             <Divider />
                             <Link href="/dashboard/create">
                               <a>
-                                <ListItem onClick={handleCloseTenant}>
+                                <MenuItem onClick={handleCloseTenant}>
                                   <ListItemIcon>
                                     <QueueIcon />
                                   </ListItemIcon>
                                   <ListItemText secondary="Create tenant" />
-                                </ListItem>
+                                </MenuItem>
                               </a>
                             </Link>
                           </MenuList>
@@ -287,6 +272,10 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                   )}
                 </Popper>
                 {/*** END OF POP MENU FOR TENANT ***/}
+                {/*** NOTIFICATIONS ***/}
+                <IconButton>
+                  <NotificationsIcon style={{ color: grey[100] }} />
+                </IconButton>
                 {/*** POP MENU FOR ACCOUNT ***/}
                 <span
                   style={{ backgroundImage: `url(${session?.user?.image})` }}
@@ -330,15 +319,15 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                             </ListItem>
                             <Link href="/profile">
                               <a>
-                                <ListItem onClick={handleCloseAccount}>
+                                <MenuItem onClick={handleCloseAccount}>
                                   <ListItemIcon>
                                     <UserProfileIcon />
                                   </ListItemIcon>
                                   <ListItemText secondary="User profile" />
-                                </ListItem>
+                                </MenuItem>
                               </a>
                             </Link>
-                            <ListItem onClick={handleCloseAccount}>
+                            <MenuItem onClick={handleCloseAccount}>
                               <ListItemIcon>
                                 <ExitToAppIcon />
                               </ListItemIcon>
@@ -350,7 +339,7 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                                 }}>
                                 <ListItemText secondary="Sign out" />
                               </a>
-                            </ListItem>
+                            </MenuItem>
                           </MenuList>
                         </ClickAwayListener>
                       </Paper>
@@ -370,6 +359,24 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                   Sign In
                 </a>
               </Button>
+            )}
+            {/*** DARK MODE ***/}
+            {dark ? (
+              <IconButton
+                onClick={() => {
+                  setDark(!dark);
+                  isClient() && localStorage.setItem('dark', 'light');
+                }}>
+                <Brightness5Icon style={{ color: grey[100] }} />
+              </IconButton>
+            ) : (
+              <IconButton
+                onClick={() => {
+                  setDark(!dark);
+                  isClient() && localStorage.setItem('dark', 'dark');
+                }}>
+                <Brightness4Icon style={{ color: grey[100] }} />
+              </IconButton>
             )}
           </Toolbar>
         </AppBar>

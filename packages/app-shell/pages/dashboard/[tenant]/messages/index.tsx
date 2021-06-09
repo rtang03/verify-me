@@ -39,10 +39,11 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const { pageIndex, pageChange } = usePagination(PAGESIZE);
 
   // Query Messages
+  const shouldFetch = !!slug && !!tenantInfo?.activated;
   const url = slug
     ? `/api/messages?slug=${slug}&cursor=${pageIndex * PAGESIZE}&pagesize=${PAGESIZE}`
     : null;
-  const { data, isLoading, isError, error } = useReSWR<PaginatedMessage>(url, !!slug);
+  const { data, isLoading, isError, error } = useReSWR<PaginatedMessage>(url, shouldFetch);
   let count;
   data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
 
@@ -52,9 +53,9 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         session={session}
         title="Inbox"
         subtitle="Incoming messages. Learn more"
-        parentText={`Dashboard/${slug}`}
+        parentText={`Dashboard | ${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
-        isLoading={tenantLoading || isLoading}
+        isLoading={tenantLoading || (isLoading && shouldFetch)}
         isError={tenantError && !tenantLoading}>
         {isError && !isLoading && <Error error={error} />}
         {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
@@ -62,7 +63,6 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
           <Card className={classes.root}>
             <CardHeader title="Messages" subheader={<>Total: {data?.total || 0}</>} />
             <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
-            <br />
             <CardContent>
               <List dense className={classes.root}>
                 {data &&

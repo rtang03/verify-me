@@ -29,7 +29,7 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
     textField: { width: '45ch' },
-    submit: { margin: theme.spacing(3, 2, 2) },
+    submit: { margin: theme.spacing(3, 3, 3) },
     activate: {
       marginLeft: 'auto',
     },
@@ -106,10 +106,11 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                   <CardActions disableSpacing>
                     <Button
                       className={classes.submit}
-                      color="primary"
+                      color="inherit"
+                      size="large"
                       disabled={!editMode || isSubmitting || !!errors?.name || !values.name}
                       type="submit"
-                      variant="contained">
+                      variant="outlined">
                       Save
                     </Button>
                   </CardActions>

@@ -6,9 +6,9 @@ import ScreenShareIcon from '@material-ui/icons/ScreenShare';
 
 export const sideBar: (tenantId: string) => { text: string; icon: any; link: string }[] = (id) => [
   {
-    text: 'Web Identifier',
+    text: 'Did Document',
     icon: <LanguageIcon />,
-    link: id === '0' ? `/dashboard` : `/dashboard/${id}/identities`,
+    link: id === '0' ? `/dashboard` : `/dashboard/${id}/identifiers`,
   },
   {
     text: 'User Identifier',

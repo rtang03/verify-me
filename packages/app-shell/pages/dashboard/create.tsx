@@ -1,9 +1,13 @@
 import Button from '@material-ui/core/Button';
+import Card from '@material-ui/core/Card';
+import CardActions from '@material-ui/core/CardActions';
+import CardContent from '@material-ui/core/CardContent';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import { withAuth } from 'components';
 import Layout from 'components/Layout';
 import LowerCaseTextField from 'components/LowerCaseTextField';
 import Main from 'components/Main';
+import ProTip from 'components/ProTip';
 import Result from 'components/Result';
 import { Form, Field, Formik } from 'formik';
 import type { NextPage } from 'next';
@@ -29,7 +33,7 @@ const useStyles = makeStyles((theme: Theme) =>
       flexWrap: 'wrap',
     },
     textField: { width: '40ch' },
-    submit: { margin: theme.spacing(3, 0, 2) },
+    submit: { width: '15ch', margin: theme.spacing(3, 3, 3) },
   })
 );
 
@@ -57,35 +61,43 @@ const TenantCreatePage: NextPage<{ session: Session }> = ({ session }) => {
             await newTenant({ slug, user_id });
             setSubmitting(false);
           }}>
-          {({ isSubmitting }) => (
+          {({ values, isSubmitting }) => (
             <Form>
-              <Field
-                disabled={!!val.data}
-                className={classes.textField}
-                label="Short memorable name"
-                size="small"
-                component={LowerCaseTextField}
-                name={'slug'}
-                placeholder={'verifier'}
-                variant="outlined"
-                margin="normal"
-                fullwidth="true"
-                autoFocus={true}
-              />
-              <p>
-                <Button
-                  className={classes.submit}
-                  variant="contained"
-                  color="primary"
-                  disabled={isSubmitting || !!val.data}
-                  type="submit">
-                  Submit
-                </Button>
-              </p>
+              <Card>
+                <CardContent>
+                  <ProTip text="Tenant's name must be globally unique, and in lowercase." />
+                </CardContent>
+                <CardContent>
+                  <Field
+                    disabled={!!val.data}
+                    className={classes.textField}
+                    label="Short memorable name"
+                    size="small"
+                    component={LowerCaseTextField}
+                    name={'slug'}
+                    placeholder={'verifier'}
+                    variant="outlined"
+                    margin="normal"
+                    fullwidth="true"
+                    autoFocus={true}
+                  />
+                </CardContent>
+                <CardActions>
+                  <Button
+                    className={classes.submit}
+                    variant="outlined"
+                    color="inherit"
+                    size="large"
+                    disabled={isSubmitting || !!val.data || !values.slug}
+                    type="submit">
+                    Submit
+                  </Button>
+                </CardActions>
+                <Result isTenantExist={true} result={val} />
+              </Card>
             </Form>
           )}
         </Formik>
-        <Result isTenantExist={true} result={val} />
       </Main>
     </Layout>
   );

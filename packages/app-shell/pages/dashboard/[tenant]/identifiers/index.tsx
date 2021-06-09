@@ -4,16 +4,16 @@ import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
-import Typography from '@material-ui/core/Typography';
-import { green } from '@material-ui/core/colors';
+import { grey } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import ReceiptIcon from '@material-ui/icons/Receipt';
+import ReceiptOutlinedIcon from '@material-ui/icons/ReceiptOutlined';
 import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
 import type { DidDocument } from '@verify/server';
 import { withAuth } from 'components';
 import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
+import ProTip from 'components/ProTip';
 import QuickAction from 'components/QuickAction';
 import RawContent from 'components/RawContent';
 import Result from 'components/Result';
@@ -27,11 +27,11 @@ import { getTenantUrl, useFetcher, useReSWR, useTenant } from 'utils';
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: { maxWidth: 550, margin: theme.spacing(3, 1, 2) },
-    submit: { margin: theme.spacing(3, 2, 2) },
-    green: {
-      color: '#fff',
-      backgroundColor: green[500],
+    root: { margin: theme.spacing(3, 1, 2) },
+    submit: { margin: theme.spacing(3, 3, 3) },
+    cardHeaderAvatar: {
+      color: grey[900],
+      backgroundColor: '#fff',
     },
   })
 );
@@ -55,9 +55,9 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
     <Layout title="Identifiers">
       <Main
         session={session}
-        title="Web Identifier"
+        title="Did Document"
         subtitle="Setup decentralized identity for web. Each tenant can have only one web did-document."
-        parentText={`Dashboard/${slug}`}
+        parentText={`Dashboard | ${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
         isLoading={tenantLoading || isLoading}
         isError={tenantError || didError}>
@@ -71,28 +71,23 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             }}>
             {({ isSubmitting }) => (
               <Form>
-                <Typography variant="body2">Web-identifier URL: {nonFqUrl}</Typography>
-                {!webDid?.data && (
-                  <>
-                    <br />
-                    <Typography variant="body2">
-                      ⚠️ No Decentralized Identity Document Found. You are about to create one, with
-                      web-method.
-                    </Typography>
-                    <br />
-                  </>
-                )}
-                <p>
-                  <Button
-                    className={classes.submit}
-                    variant="contained"
-                    color="secondary"
-                    size="large"
-                    disabled={isSubmitting || !fqUrl || !!webDid?.data}
-                    type="submit">
-                    + Create Web Identifier
-                  </Button>
-                </p>
+                <Card>
+                  <CardHeader subheader={`Web-identifier URL: ${nonFqUrl}`} />
+                  <CardContent>
+                    <ProTip text="No Decentralized Identity Document Found. You are about to create one" />
+                  </CardContent>
+                  <CardActions>
+                    <Button
+                      className={classes.submit}
+                      variant="outlined"
+                      color="inherit"
+                      size="large"
+                      disabled={isSubmitting || !fqUrl || !!webDid?.data}
+                      type="submit">
+                      + Create Identifier
+                    </Button>
+                  </CardActions>
+                </Card>
               </Form>
             )}
           </Formik>
@@ -101,8 +96,8 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
           <Card>
             <CardHeader
               avatar={
-                <Avatar className={classes.green}>
-                  <ReceiptIcon />
+                <Avatar variant="rounded" className={classes.cardHeaderAvatar}>
+                  <ReceiptOutlinedIcon />
                 </Avatar>
               }
               title="Did Document"
@@ -127,6 +122,9 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             </CardContent>
             {data?.service?.length === 0 && (
               <CardContent>
+                <CardContent>
+                  <ProTip text="A service endpoint is required to send messages. You are about to create one." />
+                </CardContent>
                 <CardActions>
                   <QuickAction
                     label="Service endpoint"

@@ -56,6 +56,7 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
     ?.map(({ type }) => type === 'Messaging')
     .reduce((prev, curr) => prev || curr, false);
 
+  // Add new service endpoint
   const { val: addServiceEP, poster } = useFetcher<{ success: boolean }>();
   const newService = (body: IDIDManagerAddServiceArgs) =>
     mutate(url, poster(`/api/users/${router.query.id}/services?slug=${slug}`, body));

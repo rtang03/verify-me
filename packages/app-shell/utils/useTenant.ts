@@ -1,9 +1,15 @@
 import { useRouter } from 'next/router';
-import type { PaginatedTenant } from '../types';
+import type { PaginatedTenant, TenantInfo } from '../types';
 import { getTenantInfo } from './getTenantInfo';
 import { useReSWR } from './useReSWR';
 
-export const useTenant = () => {
+export const useTenant: () => {
+  tenantInfo: TenantInfo | null;
+  slug: string | undefined;
+  tenantError: any;
+  tenantLoading: boolean;
+  isTenantError: boolean;
+} = () => {
   const router = useRouter();
   const tenantId = router.query.tenant as string;
 

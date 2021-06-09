@@ -2,23 +2,20 @@ import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
-import Typography from '@material-ui/core/Typography';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import { Form, Formik } from 'formik';
-import Link from 'next/link';
 import React from 'react';
 import { mutate } from 'swr';
 import type { TenantInfo } from '../types';
 import { useFetcher } from '../utils';
-import Error from './Error';
+import ProTip from './ProTip';
 import Result from './Result';
-import Success from './Success';
 
 const baseUrl = '/api/tenants/actions';
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
-    submit: { margin: theme.spacing(3, 2, 2) },
+    submit: { width: '15ch', margin: theme.spacing(3, 3, 3) },
   })
 );
 
@@ -43,18 +40,17 @@ const Activation: React.FC<{ tenantInfo: TenantInfo }> = ({ tenantInfo }) => {
         <Form>
           <Card className={classes.root}>
             <CardContent>
-              <Typography variant="body1" color="textSecondary" component="p">
-                This tenant is not activated. Please sign below term-and-conditions to activate. You
-                are about to use no-fee beta service.
-              </Typography>
+              <ProTip text="This tenant is NOT activated. Please sign below term-and-conditions to activate. You
+                are about to use no-fee beta service." />
             </CardContent>
-            <CardActions disableSpacing>
+            <CardActions>
               <Button
                 className={classes.submit}
-                color="primary"
+                color="inherit"
+                size="large"
                 disabled={isSubmitting || !!val?.data || !!val?.error || !tenantInfo?.id}
                 type="submit"
-                variant="contained">
+                variant="outlined">
                 Activate
               </Button>
             </CardActions>
