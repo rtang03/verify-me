@@ -48,10 +48,10 @@ const validation = yup.object({
 });
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: { flexWrap: 'wrap', backgroundColor: theme.palette.background.paper },
+    root: { flexWrap: 'wrap' },
     textField: { width: '40ch' },
     longTextField: { width: '60ch' },
-    submit: { margin: theme.spacing(3, 3, 2) },
+    submit: { width: '15ch', margin: theme.spacing(3, 3, 3) },
     muiTextField: {
       '& .MuiTextField-root': {
         margin: theme.spacing(0.5),
@@ -121,11 +121,12 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
         session={session}
         title="Selective Disclosure Request"
         subtitle="Create Selective-Disclosure-Request"
-        parentText={`SDR`}
+        parentText={`Request`}
         parentUrl={`/dashboard/${tenantInfo?.id}/requests`}
         isLoading={tenantLoading}
-        isError={tenantError && !tenantLoading}>
-        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
+        isError={tenantError && !tenantLoading}
+        tenantInfo={tenantInfo}
+        shouldActivate={true}>
         {tenantInfo?.activated && (
           <Card className={classes.root}>
             {/* Step 1 Create SDR */}
@@ -269,11 +270,11 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                             <Button
                               disabled={!requiredIssuerUrl || !requiredIssuer}
                               className={classes.submit}
-                              variant="contained"
+                              variant="outlined"
                               color="primary"
                               size="small"
                               onClick={() => addRequiredIssuer(requiredIssuer, requiredIssuerUrl)}>
-                              Add Issuer
+                              + Issuer
                             </Button>
                           </CardActions>
                         </Card>
@@ -282,7 +283,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                         <Button
                           disabled={!claimType || requiredIssuers.length === 0}
                           className={classes.submit}
-                          variant="contained"
+                          variant="outlined"
                           color="primary"
                           size="small"
                           onClick={() =>
@@ -293,7 +294,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                               reason,
                             })
                           }>
-                          Add claim
+                          + claim
                         </Button>
                         <FormControlLabel
                           control={
@@ -303,7 +304,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                               onChange={({ target: { checked } }) => setClaimRequired(checked)}
                             />
                           }
-                          label="Mandatory Claim"
+                          label={<Typography variant="caption">Mandatory</Typography>}
                         />
                       </CardActions>
                     </Card>
@@ -311,9 +312,9 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                   <CardActions>
                     <Button
                       className={classes.submit}
-                      variant="contained"
-                      color="primary"
-                      size="small"
+                      variant="outlined"
+                      color="inherit"
+                      size="large"
                       type="submit"
                       disabled={
                         isSubmitting ||
@@ -324,7 +325,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                         claims.length === 0 ||
                         sdrResult?.error
                       }>
-                      + Selective Disclosure Request
+                      + Request
                     </Button>
                   </CardActions>
                 </Form>

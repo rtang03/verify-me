@@ -6,14 +6,13 @@ import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
 import Divider from '@material-ui/core/Divider';
 import Typography from '@material-ui/core/Typography';
-import { red } from '@material-ui/core/colors';
+import { grey } from '@material-ui/core/colors';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
 import { withAuth } from 'components';
 import Error from 'components/Error';
 import GotoIdentifier from 'components/GotoIdentifier';
-import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import LowerCaseTextField from 'components/LowerCaseTextField';
 import Main from 'components/Main';
@@ -42,8 +41,9 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     textField: { width: '40ch' },
     submit: { margin: theme.spacing(3, 3, 3) },
-    avatar: {
-      backgroundColor: red[500],
+    cardHeaderAvatar: {
+      color: grey[900],
+      backgroundColor: '#fff',
     },
   })
 );
@@ -61,13 +61,14 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
     <Layout title="User">
       <Main
         session={session}
-        title="Create User Identifier"
+        title="Create User"
         parentUrl={`/dashboard/${tenantInfo?.id}/users`}
         parentText={`User-Identifiers`}
         isLoading={tenantLoading || userDid.loading}
-        isError={tenantError && !tenantLoading}>
+        isError={tenantError && !tenantLoading}
+        tenantInfo={tenantInfo}
+        shouldActivate={true}>
         {userDid.error && <Error error={userDid.error} />}
-        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
         {tenantInfo?.activated && (
           <Formik
             initialValues={{ username: '' }}
@@ -94,7 +95,7 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                       </Typography>
                     }
                     avatar={
-                      <Avatar variant="rounded" className={classes.avatar}>
+                      <Avatar variant="rounded" className={classes.cardHeaderAvatar}>
                         <PersonAddIcon />
                       </Avatar>
                     }
@@ -130,14 +131,16 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                       Submit
                     </Button>
                   </CardActions>
+                  <Result isTenantExist={!!tenantInfo} result={userDid} />
+                  {tenantInfo && userDid?.data?.alias && !userDid.loading && (
+                    <CardContent>
+                      <GotoIdentifier tenantInfo={tenantInfo} alias={userDid.data.alias} />{' '}
+                    </CardContent>
+                  )}
                 </Card>
               </Form>
             )}
           </Formik>
-        )}
-        <Result isTenantExist={!!tenantInfo} result={userDid} />
-        {tenantInfo && userDid?.data?.alias && !userDid.loading && (
-          <GotoIdentifier tenantInfo={tenantInfo} alias={userDid.data.alias} />
         )}
       </Main>
     </Layout>

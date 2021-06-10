@@ -1,36 +1,36 @@
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import { withAuth } from 'components';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
-import QuickAction from 'components/QuickAction';
 import type { NextPage } from 'next';
-import type { Session } from 'next-auth';
+import { Session } from 'next-auth';
 import React from 'react';
 import { useTenant } from 'utils';
 
-const RequestIndexPage: NextPage<{ session: Session }> = ({ session }) => {
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    root: { margin: theme.spacing(3, 1, 2) },
+    submit: { margin: theme.spacing(3, 3, 3) },
+  })
+);
+
+const InviteMemberPage: NextPage<{ session: Session }> = ({ session }) => {
+  const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
   return (
-    <Layout title="Request">
+    <Layout title="Tenant">
       <Main
+        title={slug || 'Tenant details'}
+        subtitle={tenantInfo?.name || ''}
         session={session}
-        title="Selective Disclosure Request"
-        subtitle="Send new request"
         parentText={`Dashboard | ${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
         isLoading={tenantLoading}
         isError={tenantError && !tenantLoading}
         tenantInfo={tenantInfo}
         shouldActivate={true}>
-        {tenantInfo?.activated && (
-          <>
-            <QuickAction
-              link={`/dashboard/${tenantInfo?.id}/requests/create`}
-              label="Request"
-              disabled={!tenantInfo?.id}
-            />
-          </>
-        )}
+        {!!tenantInfo && tenantInfo.activated && <>Invite Member</>}
       </Main>
     </Layout>
   );
@@ -38,4 +38,4 @@ const RequestIndexPage: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default RequestIndexPage;
+export default InviteMemberPage;

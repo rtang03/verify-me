@@ -17,6 +17,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
   })
 );
+
 const Identifier: React.FC<{ identifier: IIdentifier }> = ({ identifier }) => {
   const classes = useStyles();
   return (
@@ -26,7 +27,7 @@ const Identifier: React.FC<{ identifier: IIdentifier }> = ({ identifier }) => {
         disabled={true}
         size="small"
         label="Alias"
-        defaultValue={identifier.alias}
+        value={identifier.alias}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -41,7 +42,7 @@ const Identifier: React.FC<{ identifier: IIdentifier }> = ({ identifier }) => {
         disabled={true}
         size="small"
         label="DID"
-        defaultValue={identifier.did}
+        value={identifier.did}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -56,7 +57,7 @@ const Identifier: React.FC<{ identifier: IIdentifier }> = ({ identifier }) => {
         disabled={true}
         size="small"
         label="Provider"
-        defaultValue={identifier.provider}
+        value={identifier.provider}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -73,7 +74,7 @@ const Identifier: React.FC<{ identifier: IIdentifier }> = ({ identifier }) => {
           disabled={true}
           size="small"
           label="Public Key"
-          defaultValue={key.publicKeyHex}
+          value={key.publicKeyHex}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -92,7 +93,7 @@ const Identifier: React.FC<{ identifier: IIdentifier }> = ({ identifier }) => {
             disabled={true}
             size="small"
             label={type}
-            defaultValue={serviceEndpoint}
+            value={serviceEndpoint}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">

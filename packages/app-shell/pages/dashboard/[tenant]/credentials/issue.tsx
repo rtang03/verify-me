@@ -9,9 +9,10 @@ import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import type { VerifiableCredential } from '@veramo/core';
 import type { ICreateVerifiableCredentialArgs } from '@veramo/credential-w3c';
 import { withAuth } from 'components';
-import GotoTenant from 'components/GotoTenant';
+import Credential from 'components/Credential';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
+import RawContent from 'components/RawContent';
 import Result from 'components/Result';
 import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
@@ -19,18 +20,18 @@ import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import JSONTree from 'react-json-tree';
+import type { Claim } from 'types';
 import { claimToObject, useFetcher, getCreateVerifiableCredentialArgs, useTenant } from 'utils';
 import * as yup from 'yup';
-import { Claim } from '../../../../types';
 
 // @see https://github.com/veramolabs/agent-explorer/blob/next/src/components/widgets/IssueCredential.tsx
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: { flexWrap: 'wrap', width: '70ch', backgroundColor: theme.palette.background.paper },
+    root: { flexWrap: 'wrap' },
     textField: { width: '45ch' },
     claimTextField: { width: '30ch' },
-    submit: { margin: theme.spacing(3, 3, 2) },
+    submit: { width: '18ch', margin: theme.spacing(3, 3, 3) },
   })
 );
 const validation = yup.object({
@@ -74,8 +75,9 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
         parentText="Credentials"
         parentUrl={`/dashboard/${tenantInfo?.id}/credentials`}
         isLoading={tenantLoading}
-        isError={tenantError && !tenantLoading}>
-        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
+        isError={tenantError && !tenantLoading}
+        tenantInfo={tenantInfo}
+        shouldActivate={true}>
         {tenantInfo && tenantInfo.activated && (
           <Formik
             initialValues={{
@@ -137,8 +139,9 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
                   <CardActions>
                     <Button
                       className={classes.submit}
-                      variant="contained"
-                      color="primary"
+                      variant="outlined"
+                      color="inherit"
+                      size="large"
                       type="submit"
                       disabled={
                         isSubmitting ||
@@ -148,7 +151,7 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
                         !claims.length ||
                         !!result?.data
                       }>
-                      Issue Credential
+                      + Credential
                     </Button>
                   </CardActions>
                   <CardContent>
@@ -181,9 +184,10 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
                           className={classes.submit}
                           disabled={!claimType || !claimValue}
                           size="small"
-                          variant="contained"
+                          color="inherit"
+                          variant="outlined"
                           onClick={() => updateClaimFields({ type: claimType, value: claimValue })}>
-                          Add Claim
+                          + Claim
                         </Button>
                         {errorMessage && (
                           <Typography variant="caption" color="secondary">
@@ -201,6 +205,7 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
                                   <Button
                                     disabled={!!result?.data}
                                     variant="outlined"
+                                    color="inherit"
                                     size="small"
                                     onClick={() => updateClaims([])}>
                                     X Reset
@@ -209,11 +214,7 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
                               }
                             />
                             <CardContent>
-                              <JSONTree
-                                hideRoot={true}
-                                theme="bright"
-                                data={claimToObject(claims)}
-                              />
+                              <JSONTree hideRoot={true} data={claimToObject(claims)} />
                             </CardContent>
                           </Card>
                         </CardContent>
@@ -222,9 +223,12 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
                   </CardContent>
                   <Result isTenantExist={!!tenantInfo} result={result} />
                   {result?.data && !result.loading && (
-                    <CardContent>
-                      <JSONTree hideRoot={true} data={result.data} />
-                    </CardContent>
+                    <>
+                      <CardContent>
+                        <Credential vc={result.data} />
+                      </CardContent>
+                      <RawContent title="Raw Credential" content={result.data} />
+                    </>
                   )}
                 </Card>
               </Form>

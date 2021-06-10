@@ -1,14 +1,14 @@
+import Avatar from '@material-ui/core/Avatar';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
+import { grey } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import BallotOutlinedIcon from '@material-ui/icons/BallotOutlined';
 import Pagination from '@material-ui/lab/Pagination';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import Error from 'components/Error';
-import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import NoRecord from 'components/NoRecord';
@@ -25,11 +25,11 @@ import { usePagination, useReSWR, useTenant } from 'utils';
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: {
-      width: '100%',
-      backgroundColor: theme.palette.background.paper,
+    root: { margin: theme.spacing(3, 1, 2) },
+    cardHeaderAvatar: {
+      color: grey[900],
+      backgroundColor: '#fff',
     },
-    inline: { display: 'inline' },
   })
 );
 
@@ -59,47 +59,51 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         parentText={`Dashboard | ${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
         isLoading={tenantLoading || (isLoading && shouldFetch)}
-        isError={tenantError && !tenantLoading}>
+        isError={tenantError && !tenantLoading}
+        tenantInfo={tenantInfo}
+        shouldActivate={true}>
         {isError && !isLoading && <Error error={error} />}
-        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
+        {tenantInfo?.activated && (
+          <QuickAction
+            link={`/dashboard/${tenantInfo?.id}/credentials/issue`}
+            label="Credential"
+            disabled={!tenantInfo?.id}
+          />
+        )}
         {tenantInfo?.activated && !!data?.items?.length && (
-          <>
-            <QuickAction
-              link={`/dashboard/${tenantInfo?.id}/credentials/issue`}
-              label="Credential"
-              disabled={!tenantInfo?.id}
+          <Card className={classes.root}>
+            <CardHeader
+              avatar={
+                <Avatar variant="rounded" className={classes.cardHeaderAvatar}>
+                  <BallotOutlinedIcon />
+                </Avatar>
+              }
+              title="Active credentials"
+              subheader={<>Total: {data?.total || 0}</>}
             />
-            <Card className={classes.root}>
-              <CardHeader title="Active credentials" subheader={<>Total: {data?.total || 0}</>} />
-              <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
-              <br />
-              <CardContent>
-                <List className={classes.root}>
-                  {data.items.map(({ verifiableCredential, hash }, index) => (
-                    <ListItem key={index}>
-                      <Card className={classes.root} variant="outlined">
-                        <Link href={`/dashboard/${tenantInfo.id}/credentials/${hash}`}>
-                          <a>
-                            <CardHeader
-                              avatar={<AvatarMd5 subject={hash} />}
-                              title={verifiableCredential.credentialSubject.id}
-                              subheader={verifiableCredential.issuanceDate}
-                            />
-                          </a>
-                        </Link>
-                        <CardContent>
-                          <JSONTree
-                            data={omit(verifiableCredential, 'proof', '@context', 'type')}
-                            hideRoot={true}
-                          />
-                        </CardContent>
-                      </Card>
-                    </ListItem>
-                  ))}
-                </List>
-              </CardContent>
-            </Card>
-          </>
+            <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
+            <CardContent>
+              {data.items.map(({ verifiableCredential, hash }, index) => (
+                <Card key={index} className={classes.root} variant="outlined">
+                  <Link href={`/dashboard/${tenantInfo.id}/credentials/${hash}`}>
+                    <a>
+                      <CardHeader
+                        avatar={<AvatarMd5 subject={hash} />}
+                        title={verifiableCredential.credentialSubject.id}
+                        subheader={verifiableCredential.issuanceDate}
+                      />
+                    </a>
+                  </Link>
+                  <CardContent>
+                    <JSONTree
+                      data={omit(verifiableCredential, 'proof', '@context', 'type')}
+                      hideRoot={true}
+                    />
+                  </CardContent>
+                </Card>
+              ))}
+            </CardContent>
+          </Card>
         )}
         {tenantInfo && !data?.items?.length && !isLoading && <NoRecord />}
       </Main>

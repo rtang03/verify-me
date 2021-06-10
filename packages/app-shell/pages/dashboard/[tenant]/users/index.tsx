@@ -17,7 +17,6 @@ import Pagination from '@material-ui/lab/Pagination';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import Error from 'components/Error';
-import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import NoRecord from 'components/NoRecord';
@@ -33,7 +32,6 @@ const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
-    inline: { display: 'inline' },
     green: {
       color: '#fff',
       backgroundColor: green[500],
@@ -68,64 +66,65 @@ const UsersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         parentText={`Dashboard | ${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
         isLoading={tenantLoading || (isLoading && shouldFetch)}
-        isError={tenantError && !tenantLoading}>
+        isError={tenantError && !tenantLoading}
+        tenantInfo={tenantInfo}
+        shouldActivate={true}>
         {isError && !isLoading && <Error error={error} />}
-        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
+        {tenantInfo?.activated && (
+          <QuickAction
+            link={`/dashboard/${tenantInfo?.id}/users/create`}
+            label="USER"
+            disabled={!tenantInfo?.id}
+          />
+        )}
         {tenantInfo?.activated && !!data?.items?.length && (
-          <>
-            <QuickAction
-              link={`/dashboard/${tenantInfo?.id}/users/create`}
-              label="IDENTIFIER"
-              disabled={!tenantInfo?.id}
+          <Card className={classes.root}>
+            <CardHeader
+              avatar={
+                <Avatar variant="rounded" className={classes.cardHeaderAvatar}>
+                  <PeopleAltOutlinedIcon />
+                </Avatar>
+              }
+              title="Active identifiers"
+              subheader={<>Total: {data?.total || 0}</>}
             />
-            <Card className={classes.root}>
-              <CardHeader
-                avatar={
-                  <Avatar variant="rounded" className={classes.cardHeaderAvatar}>
-                    <PeopleAltOutlinedIcon />
-                  </Avatar>
-                }
-                title="Active identifiers"
-                subheader={<>Total: {data?.total || 0}</>}
-              />
-              <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
-              <CardContent className={classes.root}>
-                <List>
-                  {data.items.map((item, index) => (
-                    <Fragment key={index}>
-                      <ListItem>
-                        {item.did.includes('users:') ? (
-                          <>
-                            <ListItemAvatar>
-                              <AvatarMd5 subject={item.did || 'idle'} />
-                            </ListItemAvatar>
-                            <Link href={`/dashboard/${tenantInfo.id}/users/${item.alias}`}>
-                              <a>
-                                <ListItemText primary={item.alias} secondary={item.did} />
-                              </a>
-                            </Link>
-                            <ListItemSecondaryAction>
-                              <IconButton edge="end" aria-label="settings">
-                                <SettingsIcon />
-                              </IconButton>
-                            </ListItemSecondaryAction>
-                          </>
-                        ) : (
-                          <>
-                            <ListItemAvatar>
-                              <AvatarMd5 subject={item.did || 'idle'} />
-                            </ListItemAvatar>
-                            <ListItemText primary={item.alias} secondary={item.did} />
-                          </>
-                        )}
-                      </ListItem>
-                      <Divider variant="inset" />
-                    </Fragment>
-                  ))}
-                </List>
-              </CardContent>
-            </Card>
-          </>
+            <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
+            <CardContent className={classes.root}>
+              <List>
+                {data.items.map((item, index) => (
+                  <Fragment key={index}>
+                    <ListItem>
+                      {item.did.includes('users:') ? (
+                        <>
+                          <ListItemAvatar>
+                            <AvatarMd5 subject={item.did || 'idle'} />
+                          </ListItemAvatar>
+                          <Link href={`/dashboard/${tenantInfo.id}/users/${item.alias}`}>
+                            <a>
+                              <ListItemText primary={item.alias} secondary={item.did} />
+                            </a>
+                          </Link>
+                          <ListItemSecondaryAction>
+                            <IconButton edge="end" aria-label="settings">
+                              <SettingsIcon />
+                            </IconButton>
+                          </ListItemSecondaryAction>
+                        </>
+                      ) : (
+                        <>
+                          <ListItemAvatar>
+                            <AvatarMd5 subject={item.did || 'idle'} />
+                          </ListItemAvatar>
+                          <ListItemText primary={item.alias} secondary={item.did} />
+                        </>
+                      )}
+                    </ListItem>
+                    <Divider variant="inset" />
+                  </Fragment>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
         )}
         {tenantInfo && !data?.items?.length && !isLoading && <NoRecord />}
       </Main>

@@ -2,24 +2,22 @@ import Avatar from '@material-ui/core/Avatar';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
-import Divider from '@material-ui/core/Divider';
 import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import MuiTextField from '@material-ui/core/TextField';
-import Typography from '@material-ui/core/Typography';
 import { green } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import KeyboardArrowRightIcon from '@material-ui/icons/KeyboardArrowRight';
+import ExtensionIcon from '@material-ui/icons/Extension';
 import SendIcon from '@material-ui/icons/Send';
 import type { VerifiableCredential, IMessage } from '@veramo/core';
 import type { ISendMessageDIDCommAlpha1Args } from '@veramo/did-comm';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import Error from 'components/Error';
-import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import MessageHeader from 'components/MessageHeader';
+import RawContent from 'components/RawContent';
 import Result from 'components/Result';
 import { Form, Formik } from 'formik';
 import omit from 'lodash/omit';
@@ -29,7 +27,6 @@ import { useRouter } from 'next/router';
 import React from 'react';
 import JSONTree from 'react-json-tree';
 import { useFetcher, useReSWR, useTenant } from 'utils';
-import RawContent from '../../../../components/RawContent';
 
 const getSendMessageDIDCommAlpha1Args: (
   vc: VerifiableCredential
@@ -40,24 +37,26 @@ const getSendMessageDIDCommAlpha1Args: (
     type: 'jwt',
     body: vc.proof.jwt,
   },
-  save: false,
+  save: true,
 });
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: { flexWrap: 'wrap', backgroundColor: theme.palette.background.paper },
-    green: {
-      color: '#fff',
-      backgroundColor: green[500],
-    },
+    root: { margin: theme.spacing(3, 1, 2) },
     muiTextField: {
       '& .MuiTextField-root': {
         margin: theme.spacing(0.5),
         width: '50ch',
       },
     },
+    green: {
+      color: '#fff',
+      backgroundColor: green[500],
+    },
   })
 );
 
+// Currently, it is not an Edit page. It is sending VC.
+// TODO: may refactor it with right name.
 const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const router = useRouter();
@@ -66,8 +65,8 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
   // Query Credential
   const id = router.query.id as string; // hash
   const url = slug ? `/api/credentials/${id}?slug=${slug}&id=${id}` : null;
-  const { data, isLoading, isError, error } = useReSWR<VerifiableCredential>(url, !!slug);
-  const claims = data?.credentialSubject && omit(data?.credentialSubject, 'id');
+  const { data: vc, isLoading, isError, error } = useReSWR<VerifiableCredential>(url, !!slug);
+  const claims = vc?.credentialSubject && omit(vc?.credentialSubject, 'id');
 
   // Send Message
   const { val: result, poster } = useFetcher<IMessage>();
@@ -83,15 +82,16 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
         parentText="Credentials"
         parentUrl={`/dashboard/${tenantInfo?.id}/credentials`}
         isLoading={tenantLoading}
-        isError={tenantError && !tenantLoading}>
+        isError={tenantError && !tenantLoading}
+        tenantInfo={tenantInfo}
+        shouldActivate={true}>
         {isError && !isLoading && <Error error={error} />}
-        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
-        {tenantInfo?.activated && data && (
+        {tenantInfo?.activated && vc && (
           <Card className={classes.root}>
             <CardHeader
               avatar={<AvatarMd5 subject={id || 'idle'} />}
-              title={JSON.stringify(data.type, null, 2)}
-              subheader={data.issuanceDate}
+              title={JSON.stringify(vc.type, null, 2)}
+              subheader={vc.issuanceDate}
             />
             <CardContent>
               <Card className={classes.root} variant="outlined">
@@ -99,27 +99,30 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
                   initialValues={{}}
                   onSubmit={async (_, { setSubmitting }) => {
                     setSubmitting(true);
-                    await sendMessage(getSendMessageDIDCommAlpha1Args(data));
+                    await sendMessage(getSendMessageDIDCommAlpha1Args(vc));
                     setSubmitting(false);
                   }}>
                   {({ isSubmitting }) => (
                     <Form>
                       <CardHeader
                         avatar={
-                          <IconButton disabled={isSubmitting || !data || !!result} type="submit">
-                            <Avatar className={result ? undefined : classes.green}>
+                          <Avatar>
+                            <IconButton
+                              className={classes.green}
+                              disabled={isSubmitting || !vc || !!result?.data}
+                              type="submit">
                               <SendIcon />
-                            </Avatar>
-                          </IconButton>
+                            </IconButton>
+                          </Avatar>
                         }
                         title="Send Credential"
-                        subheader="Click me to send to Subject's service endpoint"
+                        subheader="Click icon to send to Subject's service endpoint"
                       />
                       <CardContent className={classes.muiTextField}>
                         <MessageHeader
-                          from={data?.issuer.id}
-                          to={data?.credentialSubject?.id}
-                          createdAt={data?.issuanceDate}
+                          from={vc?.issuer.id}
+                          to={vc?.credentialSubject?.id}
+                          createdAt={vc?.issuanceDate}
                         />
                       </CardContent>
                       <CardContent>
@@ -133,11 +136,11 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
                                   disabled={true}
                                   size="small"
                                   label={key}
-                                  defaultValue={value}
+                                  value={value}
                                   InputProps={{
                                     startAdornment: (
                                       <InputAdornment position="start">
-                                        <KeyboardArrowRightIcon />
+                                        <ExtensionIcon />
                                       </InputAdornment>
                                     ),
                                   }}
@@ -146,7 +149,7 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
                           </CardContent>
                         </Card>
                       </CardContent>
-                      <RawContent content={data} title="Raw Credential Details" />
+                      <RawContent content={vc} title="Raw Credential Details" />
                       <Result isTenantExist={!!tenantInfo} result={result} />
                       {result?.data && !result.loading && (
                         <JSONTree hideRoot={true} data={result.data} />

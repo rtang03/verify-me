@@ -3,25 +3,24 @@ import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
-import Divider from '@material-ui/core/Divider';
-import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import type { IIdentifier, IDIDManagerAddServiceArgs } from '@veramo/core';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import Error from 'components/Error';
-import GotoTenant from 'components/GotoTenant';
 import Identifier from 'components/Identifier';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
+import ProTip from 'components/ProTip';
+import RawContent from 'components/RawContent';
 import Result from 'components/Result';
+import SubmitButton from 'components/SubmitButton';
 import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React from 'react';
-import JSONTree from 'react-json-tree';
 import { mutate } from 'swr';
 import { getTenantUrl, useFetcher, useReSWR, useTenant } from 'utils';
 import * as yup from 'yup';
@@ -39,7 +38,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     typeTextField: { width: '15ch' },
     serviceTextField: { width: '50ch' },
-    submit: { margin: theme.spacing(3, 3, 2) },
+    submit: { width: '15ch', margin: theme.spacing(3, 3, 3) },
   })
 );
 
@@ -70,14 +69,15 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
         parentUrl={`/dashboard/${tenantInfo?.id}/users`}
         parentText="User-Identifiers"
         isLoading={tenantLoading || isLoading}
-        isError={tenantError && !tenantLoading}>
+        isError={tenantError && !tenantLoading}
+        tenantInfo={tenantInfo}
+        shouldActivate={true}>
         {isError && !isLoading && <Error error={error} />}
-        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
         {tenantInfo?.activated && data && (
           <Card>
             <CardHeader
               avatar={<AvatarMd5 subject={data.alias || 'idle'} />}
-              title="Active User Identifier"
+              title="Active User"
               subheader={data.did}
             />
             <CardContent>
@@ -95,7 +95,7 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
                     service: { id, type, serviceEndpoint, description: '' },
                   }).then(() => setSubmitting(false));
                 }}>
-                {({ values: { serviceEndpoint }, isSubmitting, errors }) => (
+                {({ values: { serviceEndpoint }, isSubmitting, submitForm, errors }) => (
                   <Form>
                     <Card variant="outlined" className={classes.root}>
                       <CardContent>
@@ -104,6 +104,9 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
                       {!isMessagingExist && (
                         <CardContent>
                           <Card variant="outlined">
+                            <CardContent>
+                              <ProTip text="A service is required to send / receive message." />
+                            </CardContent>
                             <CardHeader subheader="Add Messaging Service" />
                             <CardContent>
                               <Field
@@ -135,17 +138,31 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
                             <CardActions>
                               <Button
                                 className={classes.submit}
-                                variant="contained"
-                                color="primary"
+                                variant="outlined"
+                                color="inherit"
                                 type="submit"
+                                size="large"
                                 disabled={
                                   isSubmitting ||
                                   !!errors?.serviceEndpoint ||
                                   !serviceEndpoint ||
                                   !!addServiceEP?.data
                                 }>
-                                Add Service
+                                + Service
                               </Button>
+                              <SubmitButton
+                                success={!!addServiceEP?.data}
+                                error={!!addServiceEP?.error}
+                                submitForm={submitForm}
+                                loading={isSubmitting}
+                                disabled={
+                                  isSubmitting ||
+                                  !!errors?.serviceEndpoint ||
+                                  !serviceEndpoint ||
+                                  !!addServiceEP?.data
+                                }
+                                text="+ Service"
+                              />
                             </CardActions>
                           </Card>
                         </CardContent>
@@ -156,12 +173,7 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
                 )}
               </Formik>
             </CardContent>
-            <CardContent>
-              <Divider />
-              <br />
-              <Typography variant="body2">Raw Document</Typography>
-              <JSONTree data={data} hideRoot={true} />
-            </CardContent>
+            <RawContent title="Raw User Identifier" content={data} />
           </Card>
         )}
       </Main>

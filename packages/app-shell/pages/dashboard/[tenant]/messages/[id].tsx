@@ -6,7 +6,6 @@ import type { IMessage } from '@verify/server';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import Error from 'components/Error';
-import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import QuickAction from 'components/QuickAction';
@@ -41,9 +40,10 @@ const MessagesEditPage: NextPage<{ session: Session }> = ({ session }) => {
         parentText="Messages"
         parentUrl={`/dashboard/${tenantInfo?.id}/messages`}
         isLoading={tenantLoading || isLoading}
-        isError={tenantError && !tenantLoading}>
+        isError={tenantError && !tenantLoading}
+        tenantInfo={tenantInfo}
+        shouldActivate={true}>
         {isError && !isLoading && <Error error={error} />}
-        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
         {tenantInfo?.activated && data && (
           <Card className={classes.root}>
             {data.type === 'sdr' && (

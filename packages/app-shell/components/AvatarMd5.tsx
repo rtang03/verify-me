@@ -23,13 +23,13 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 const GRAVATAR_URI = 'https://www.gravatar.com/avatar/';
-const uri = (subject: string, size: number) => `${GRAVATAR_URI}${md5(subject)}?s=${size}&d=retro`;
+const uri = (subject: string, size: number) => `${GRAVATAR_URI}${md5(subject)}?s=${size}&d=wavatar`;
 
 const AvatarMd5: React.FC<{ subject: string; size?: 'small' | 'large' }> = ({ subject, size }) => {
   const classes = useStyles();
 
   if (size === 'small') return <Avatar src={uri(subject, 200)} className={classes.small} />;
-  if (size === 'large') return <Avatar src={uri(subject, 200)} className={classes.large} />;
+  if (size === 'large') return <Avatar src={uri(subject, 400)} className={classes.large} />;
 
   return <Avatar src={uri(subject, 200)} />;
 };

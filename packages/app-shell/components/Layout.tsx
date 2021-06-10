@@ -212,12 +212,16 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                               </Link>
                             )}
                             {tenantIdLocal && (
-                              <MenuItem onClick={handleCloseTenant}>
-                                <ListItemIcon>
-                                  <PersonAddIcon />
-                                </ListItemIcon>
-                                <ListItemText secondary="Invite member" />
-                              </MenuItem>
+                              <Link href={`/dashboard/${tenantIdLocal}/invite`}>
+                                <a>
+                                  <MenuItem onClick={handleCloseTenant}>
+                                    <ListItemIcon>
+                                      <PersonAddIcon />
+                                    </ListItemIcon>
+                                    <ListItemText secondary="Invite member" />
+                                  </MenuItem>
+                                </a>
+                              </Link>
                             )}
                             {tenantIdLocal && (
                               <ListItem button onClick={handleSwitchTenant}>
@@ -277,10 +281,6 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                   <NotificationsIcon style={{ color: grey[100] }} />
                 </IconButton>
                 {/*** POP MENU FOR ACCOUNT ***/}
-                <span
-                  style={{ backgroundImage: `url(${session?.user?.image})` }}
-                  className={classes.avatar}
-                />
                 <Button
                   color="inherit"
                   ref={anchorRefAccount}

@@ -4,8 +4,10 @@ import Typography from '@material-ui/core/Typography';
 import { Session } from 'next-auth';
 import Link from 'next/link';
 import React from 'react';
+import type { TenantInfo } from '../types';
 import AccessDenied from './AccessDenied';
 import Error from './Error';
+import GotoTenant from './GotoTenant';
 
 const Main: React.FC<{
   session: Session;
@@ -15,7 +17,20 @@ const Main: React.FC<{
   subtitle?: string;
   isLoading: boolean;
   isError?: boolean;
-}> = ({ children, session, parentUrl, parentText, title, subtitle, isLoading, isError }) => {
+  shouldActivate?: boolean;
+  tenantInfo?: TenantInfo | null;
+}> = ({
+  children,
+  session,
+  parentUrl,
+  parentText,
+  title,
+  subtitle,
+  isLoading,
+  isError,
+  shouldActivate,
+  tenantInfo,
+}) => {
   return (
     <>
       {session && (
@@ -37,6 +52,9 @@ const Main: React.FC<{
           <br />
           {isLoading ? <LinearProgress /> : <Divider />}
           {isError && <Error />}
+          {shouldActivate && tenantInfo && !tenantInfo.activated && (
+            <GotoTenant tenantInfo={tenantInfo} />
+          )}
           <br />
           {children}
         </>

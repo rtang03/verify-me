@@ -26,7 +26,6 @@ import type {
   ISendMessageDIDCommAlpha1Args,
 } from '@verify/server';
 import { withAuth } from 'components';
-import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import MessageHeader from 'components/MessageHeader';
@@ -65,10 +64,6 @@ const useStyles = makeStyles((theme: Theme) =>
     green: {
       color: '#fff',
       backgroundColor: green[500],
-    },
-    large: {
-      width: theme.spacing(7),
-      height: theme.spacing(7),
     },
   })
 );
@@ -144,8 +139,9 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
           (isMessageError && !isMessageLoading) ||
           (isIdsError && !isIdsLoading) ||
           (requestedClaims.error && !requestedClaims.loading)
-        }>
-        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
+        }
+        tenantInfo={tenantInfo}
+        shouldActivate={true}>
         {tenantInfo?.activated && message?.data && message?.type !== 'sdr' && (
           <Typography variant="body2" color="secondary">
             Invalid type
@@ -344,7 +340,7 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
                                 title="SEND"
                                 subheader="Click icon to send"
                                 avatar={
-                                  <Avatar className={classes.large}>
+                                  <Avatar>
                                     <IconButton
                                       className={classes.green}
                                       type="submit"

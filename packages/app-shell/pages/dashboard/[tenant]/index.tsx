@@ -3,14 +3,12 @@ import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
-import Divider from '@material-ui/core/Divider';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Switch from '@material-ui/core/Switch';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import { withAuth } from 'components';
 import Activation from 'components/Activation';
 import AvatarMd5 from 'components/AvatarMd5';
-import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import Result from 'components/Result';
@@ -59,8 +57,8 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         session={session}
         parentText="Dashboard"
         parentUrl="/dashboard"
-        isLoading={tenantLoading}>
-        {tenantError && !tenantLoading && <Error error={tenantError} />}
+        isLoading={tenantLoading}
+        isError={tenantError && !tenantLoading}>
         {/* IF NOT ACTIVATE */}
         {!!tenantInfo && !tenantInfo.activated && <Activation tenantInfo={tenantInfo} />}
         {/* IF ACTIVATE */}

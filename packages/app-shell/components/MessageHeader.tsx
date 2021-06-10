@@ -1,7 +1,9 @@
+import Avatar from '@material-ui/core/Avatar';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import MuiTextField from '@material-ui/core/TextField';
+import { grey } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import AccountCircle from '@material-ui/icons/AccountCircle';
 import LanguageIcon from '@material-ui/icons/Language';
@@ -31,7 +33,7 @@ const MessageHeader: React.FC<{ from?: string; to?: string; createdAt?: string; 
 
   return (
     <>
-      <CardHeader avatar={<MailOutlineIcon />} title="Message details" />
+      <CardHeader avatar={<MailOutlineIcon />} subheader="Message details" />
       <CardContent className={classes.muiTextField}>
         {from && (
           <>

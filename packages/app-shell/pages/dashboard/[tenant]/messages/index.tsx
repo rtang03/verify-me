@@ -8,7 +8,6 @@ import Pagination from '@material-ui/lab/Pagination';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import Error from 'components/Error';
-import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import NoRecord from 'components/NoRecord';
@@ -56,9 +55,10 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         parentText={`Dashboard | ${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
         isLoading={tenantLoading || (isLoading && shouldFetch)}
-        isError={tenantError && !tenantLoading}>
+        isError={tenantError && !tenantLoading}
+        tenantInfo={tenantInfo}
+        shouldActivate={true}>
         {isError && !isLoading && <Error error={error} />}
-        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
         {tenantInfo?.activated && !!data?.items?.length && (
           <Card className={classes.root}>
             <CardHeader title="Messages" subheader={<>Total: {data?.total || 0}</>} />

@@ -10,7 +10,6 @@ import ReceiptOutlinedIcon from '@material-ui/icons/ReceiptOutlined';
 import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
 import type { DidDocument } from '@verify/server';
 import { withAuth } from 'components';
-import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import ProTip from 'components/ProTip';
@@ -60,8 +59,9 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         parentText={`Dashboard | ${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
         isLoading={tenantLoading || isLoading}
-        isError={tenantError || didError}>
-        {tenantInfo && !tenantInfo.activated && <GotoTenant tenantInfo={tenantInfo} />}
+        isError={tenantError || didError}
+        tenantInfo={tenantInfo}
+        shouldActivate={true}>
         {tenantInfo?.activated && !data && !isLoading && !didError && (
           <Formik
             initialValues={{}}
@@ -71,7 +71,7 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             }}>
             {({ isSubmitting }) => (
               <Form>
-                <Card>
+                <Card className={classes.root}>
                   <CardHeader subheader={`Web-identifier URL: ${nonFqUrl}`} />
                   <CardContent>
                     <ProTip text="No Decentralized Identity Document Found. You are about to create one" />
@@ -93,49 +93,56 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
           </Formik>
         )}
         {tenantInfo?.activated && data && (
-          <Card>
-            <CardHeader
-              avatar={
-                <Avatar variant="rounded" className={classes.cardHeaderAvatar}>
-                  <ReceiptOutlinedIcon />
-                </Avatar>
-              }
-              title="Did Document"
-              subheader={<>Your URL: {fqUrl}</>}
+          <>
+            <QuickAction
+              link={`/dashboard/${tenantInfo?.id}/identifiers/service`}
+              label="Modify"
+              disabled={!tenantInfo?.id}
             />
-            <CardContent>
-              <CardHeader title="DID" subheader={data?.id} />
+            <Card className={classes.root}>
               <CardHeader
-                title="Verification method"
-                subheader={`${data?.verificationMethod?.length} record(s) found`}
-              />
-              <CardHeader
-                title="Service endpoint"
-                subheader={
-                  data?.service?.length === 0 ? (
-                    <>No records found</>
-                  ) : (
-                    <>{`${data?.service?.length} record(s) found`}</>
-                  )
+                avatar={
+                  <Avatar variant="rounded" className={classes.cardHeaderAvatar}>
+                    <ReceiptOutlinedIcon />
+                  </Avatar>
                 }
+                title="Did Document"
+                subheader={<>Your URL: {fqUrl}</>}
               />
-            </CardContent>
-            {data?.service?.length === 0 && (
               <CardContent>
-                <CardContent>
-                  <ProTip text="A service endpoint is required to send messages. You are about to create one." />
-                </CardContent>
-                <CardActions>
-                  <QuickAction
-                    label="Service endpoint"
-                    link={`/dashboard/${tenantInfo.id}/identifiers/service`}
-                    disabled={false}
-                  />
-                </CardActions>
+                <CardHeader title="DID" subheader={data?.id} />
+                <CardHeader
+                  title="Verification method"
+                  subheader={`${data?.verificationMethod?.length} record(s) found`}
+                />
+                <CardHeader
+                  title="Service endpoint"
+                  subheader={
+                    data?.service?.length === 0 ? (
+                      <>No records found</>
+                    ) : (
+                      <>{`${data?.service?.length} record(s) found`}</>
+                    )
+                  }
+                />
               </CardContent>
-            )}
-            <RawContent title="Raw Did Document" content={data} />
-          </Card>
+              {data?.service?.length === 0 && (
+                <CardContent>
+                  <CardContent>
+                    <ProTip text="A service endpoint is required to send messages. You are about to create one." />
+                  </CardContent>
+                  <CardActions>
+                    <QuickAction
+                      label="Service endpoint"
+                      link={`/dashboard/${tenantInfo.id}/identifiers/service`}
+                      disabled={false}
+                    />
+                  </CardActions>
+                </CardContent>
+              )}
+              <RawContent title="Raw Did Document" content={data} />
+            </Card>
+          </>
         )}
         <Result isTenantExist={!!tenantInfo} result={webDid} />
       </Main>

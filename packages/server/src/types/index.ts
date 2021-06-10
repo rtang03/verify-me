@@ -1,6 +1,7 @@
 import type {
   IMessage,
   IDIDManagerAddServiceArgs,
+  IDIDManagerRemoveServiceArgs,
   IDIDManagerGetOrCreateArgs,
   VerifiablePresentation,
   VerifiableCredential,
@@ -56,6 +57,7 @@ export {
   ICredentialRequestInput,
   Issuer,
   IDIDManagerAddServiceArgs,
+  IDIDManagerRemoveServiceArgs,
   IDIDManagerGetOrCreateArgs,
   ICreateSelectiveDisclosureRequestArgs,
   IGetVerifiableCredentialsForSdrArgs,
