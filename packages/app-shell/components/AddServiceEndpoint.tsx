@@ -1,11 +1,9 @@
-import Avatar from '@material-ui/core/Avatar';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
-import { green, grey } from '@material-ui/core/colors';
+import { grey } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import LanguageIcon from '@material-ui/icons/Language';
 import type { IDIDManagerAddServiceArgs } from '@verify/server';
 import ProTip from 'components/ProTip';
 import { Form, Field, Formik } from 'formik';
@@ -64,21 +62,13 @@ const AddServiceEndpoint: React.FC<{ tenantInfo: TenantInfo; did: string; url: s
           setSubmitting(false)
         );
       }}>
-      {({ isSubmitting, submitForm }) => (
+      {({ isSubmitting, submitForm, values: { serviceEndpoint }, errors }) => (
         <Form>
-          <Card>
+          <Card variant="outlined">
             <CardContent>
               <ProTip text="No service endpoint found. Please do create one." />
             </CardContent>
-            <CardHeader
-              avatar={
-                <Avatar variant="rounded" className={classes.cardHeaderAvatar}>
-                  <LanguageIcon />
-                </Avatar>
-              }
-              title="Add Service Endpoint"
-              subheader="Used for Did-Comm Messaging"
-            />
+            <CardHeader title="Add Service Endpoint" subheader="Used for Did-Comm Messaging" />
             <CardContent>
               <Field
                 disabled={true}
@@ -122,9 +112,15 @@ const AddServiceEndpoint: React.FC<{ tenantInfo: TenantInfo; did: string; url: s
               <SubmitButton
                 text="+ Service"
                 submitForm={submitForm}
-                disabled={isSubmitting}
+                disabled={
+                  isSubmitting ||
+                  !!errors?.serviceEndpoint ||
+                  !serviceEndpoint ||
+                  !!addServiceEP?.data
+                }
                 loading={isSubmitting}
                 success={!!addServiceEP?.data}
+                error={!!addServiceEP?.error}
               />
             </CardActions>
             <Result isTenantExist={!!tenantInfo} result={addServiceEP} />

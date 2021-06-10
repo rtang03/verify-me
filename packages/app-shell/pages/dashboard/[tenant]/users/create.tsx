@@ -1,5 +1,4 @@
 import Avatar from '@material-ui/core/Avatar';
-import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
@@ -17,6 +16,7 @@ import Layout from 'components/Layout';
 import LowerCaseTextField from 'components/LowerCaseTextField';
 import Main from 'components/Main';
 import Result from 'components/Result';
+import SubmitButton from 'components/SubmitButton';
 import { Form, Field, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
@@ -36,9 +36,7 @@ const validation = yup.object({
 });
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: {
-      flexWrap: 'wrap',
-    },
+    root: { margin: theme.spacing(3, 1, 2) },
     textField: { width: '40ch' },
     submit: { margin: theme.spacing(3, 3, 3) },
     cardHeaderAvatar: {
@@ -64,7 +62,7 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
         title="Create User"
         parentUrl={`/dashboard/${tenantInfo?.id}/users`}
         parentText={`User-Identifiers`}
-        isLoading={tenantLoading || userDid.loading}
+        isLoading={tenantLoading}
         isError={tenantError && !tenantLoading}
         tenantInfo={tenantInfo}
         shouldActivate={true}>
@@ -83,10 +81,11 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                 setSubmitting(false)
               );
             }}>
-            {({ values: { username }, isSubmitting, errors }) => (
+            {({ values: { username }, isSubmitting, errors, submitForm }) => (
               <Form>
                 <Card className={classes.root}>
                   <CardHeader
+                    className={classes.root}
                     title="User identifier"
                     subheader={
                       <Typography variant="caption">
@@ -121,15 +120,14 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                     />
                   </CardContent>
                   <CardActions>
-                    <Button
-                      className={classes.submit}
-                      variant="outlined"
-                      color="inherit"
-                      size="large"
-                      type="submit"
-                      disabled={isSubmitting || !!errors?.username || !username || !!userDid?.data}>
-                      Submit
-                    </Button>
+                    <SubmitButton
+                      text="+ 1"
+                      submitForm={submitForm}
+                      loading={isSubmitting}
+                      success={!!userDid?.data}
+                      error={!!userDid?.error}
+                      disabled={isSubmitting || !!errors?.username || !username || !!userDid?.data}
+                    />
                   </CardActions>
                   <Result isTenantExist={!!tenantInfo} result={userDid} />
                   {tenantInfo && userDid?.data?.alias && !userDid.loading && (

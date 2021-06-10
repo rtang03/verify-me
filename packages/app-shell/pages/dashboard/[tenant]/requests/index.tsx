@@ -25,6 +25,7 @@ const RequestIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         {tenantInfo?.activated && (
           <>
             <QuickAction
+              icon="send"
               link={`/dashboard/${tenantInfo?.id}/requests/create`}
               label="Request"
               disabled={!tenantInfo?.id}

@@ -1,7 +1,7 @@
+import BallotOutlinedIcon from '@material-ui/icons/BallotOutlined';
 import FolderSharedIcon from '@material-ui/icons/FolderShared';
 import LanguageIcon from '@material-ui/icons/Language';
 import MailIcon from '@material-ui/icons/Mail';
-import PhonelinkIcon from '@material-ui/icons/Phonelink';
 import ScreenShareIcon from '@material-ui/icons/ScreenShare';
 
 export const sideBar: (tenantId: string) => { text: string; icon: any; link: string }[] = (id) => [
@@ -17,7 +17,7 @@ export const sideBar: (tenantId: string) => { text: string; icon: any; link: str
   },
   {
     text: 'Credential',
-    icon: <PhonelinkIcon />,
+    icon: <BallotOutlinedIcon />,
     link: id === '0' ? `/dashboard` : `/dashboard/${id}/credentials`,
   },
   {

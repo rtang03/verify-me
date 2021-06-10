@@ -72,7 +72,10 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             {({ isSubmitting }) => (
               <Form>
                 <Card className={classes.root}>
-                  <CardHeader subheader={`Web-identifier URL: ${nonFqUrl}`} />
+                  <CardHeader
+                    className={classes.root}
+                    subheader={`Web-identifier URL: ${nonFqUrl}`}
+                  />
                   <CardContent>
                     <ProTip text="No Decentralized Identity Document Found. You are about to create one" />
                   </CardContent>
@@ -98,9 +101,11 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
               link={`/dashboard/${tenantInfo?.id}/identifiers/service`}
               label="Modify"
               disabled={!tenantInfo?.id}
+              icon="edit"
             />
             <Card className={classes.root}>
               <CardHeader
+                className={classes.root}
                 avatar={
                   <Avatar variant="rounded" className={classes.cardHeaderAvatar}>
                     <ReceiptOutlinedIcon />

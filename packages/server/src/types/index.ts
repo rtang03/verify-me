@@ -24,6 +24,7 @@ import type {
   IGetVerifiableCredentialsForSdrArgs,
   ICredentialsForSdr,
 } from '@veramo/selective-disclosure';
+import type { ServiceEndpoint } from 'did-resolver';
 import type { CommonResponse } from './commonResponse';
 import type { DidDocument } from './didDocument';
 import type { Paginated } from './paginated';
@@ -65,6 +66,7 @@ export {
   ICreateVerifiablePresentationArgs,
   VerifiablePresentation,
   VerifiableCredential,
+  ServiceEndpoint,
 };
 
 // workaround: the original ISelectiveDisclosureRequest is incorrectly typed.

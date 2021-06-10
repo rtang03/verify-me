@@ -73,6 +73,7 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         {tenantInfo?.activated && !!data?.items?.length && (
           <Card className={classes.root}>
             <CardHeader
+              className={classes.root}
               avatar={
                 <Avatar variant="rounded" className={classes.cardHeaderAvatar}>
                   <BallotOutlinedIcon />

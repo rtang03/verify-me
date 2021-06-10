@@ -1,14 +1,10 @@
-import Avatar from '@material-ui/core/Avatar';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
-import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import MuiTextField from '@material-ui/core/TextField';
-import { green } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import ExtensionIcon from '@material-ui/icons/Extension';
-import SendIcon from '@material-ui/icons/Send';
 import type { VerifiableCredential, IMessage } from '@veramo/core';
 import type { ISendMessageDIDCommAlpha1Args } from '@veramo/did-comm';
 import { withAuth } from 'components';
@@ -19,13 +15,13 @@ import Main from 'components/Main';
 import MessageHeader from 'components/MessageHeader';
 import RawContent from 'components/RawContent';
 import Result from 'components/Result';
+import SendFab from 'components/SendFab';
 import { Form, Formik } from 'formik';
 import omit from 'lodash/omit';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React from 'react';
-import JSONTree from 'react-json-tree';
 import { useFetcher, useReSWR, useTenant } from 'utils';
 
 const getSendMessageDIDCommAlpha1Args: (
@@ -42,15 +38,12 @@ const getSendMessageDIDCommAlpha1Args: (
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
+    mail: { margin: theme.spacing(1, 5, 0) },
     muiTextField: {
       '& .MuiTextField-root': {
         margin: theme.spacing(0.5),
         width: '50ch',
       },
-    },
-    green: {
-      color: '#fff',
-      backgroundColor: green[500],
     },
   })
 );
@@ -89,6 +82,7 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
         {tenantInfo?.activated && vc && (
           <Card className={classes.root}>
             <CardHeader
+              className={classes.root}
               avatar={<AvatarMd5 subject={id || 'idle'} />}
               title={JSON.stringify(vc.type, null, 2)}
               subheader={vc.issuanceDate}
@@ -102,23 +96,23 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
                     await sendMessage(getSendMessageDIDCommAlpha1Args(vc));
                     setSubmitting(false);
                   }}>
-                  {({ isSubmitting }) => (
+                  {({ isSubmitting, submitForm }) => (
                     <Form>
                       <CardHeader
-                        avatar={
-                          <Avatar>
-                            <IconButton
-                              className={classes.green}
-                              disabled={isSubmitting || !vc || !!result?.data}
-                              type="submit">
-                              <SendIcon />
-                            </IconButton>
-                          </Avatar>
-                        }
+                        className={classes.root}
                         title="Send Credential"
                         subheader="Click icon to send to Subject's service endpoint"
                       />
-                      <CardContent className={classes.muiTextField}>
+                      <CardContent className={classes.mail}>
+                        <SendFab
+                          loading={isSubmitting}
+                          disabled={isSubmitting || !vc || !!result?.data}
+                          submitForm={submitForm}
+                          success={!!result?.data}
+                          error={!!result?.error}
+                        />
+                      </CardContent>
+                      <CardContent>
                         <MessageHeader
                           from={vc?.issuer.id}
                           to={vc?.credentialSubject?.id}
@@ -128,7 +122,7 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
                       <CardContent>
                         <Card variant="outlined">
                           <CardHeader subheader="Claims" />
-                          <CardContent className={classes.muiTextField}>
+                          <CardContent>
                             {claims &&
                               Object.entries(claims).map(([key, value], index) => (
                                 <MuiTextField
@@ -149,10 +143,10 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
                           </CardContent>
                         </Card>
                       </CardContent>
-                      <RawContent content={vc} title="Raw Credential Details" />
+                      {vc && <RawContent content={vc} title="Raw Credential Details" />}
                       <Result isTenantExist={!!tenantInfo} result={result} />
-                      {result?.data && !result.loading && (
-                        <JSONTree hideRoot={true} data={result.data} />
+                      {result?.data && (
+                        <RawContent content={result.data} title="Raw Send-message result" />
                       )}
                     </Form>
                   )}

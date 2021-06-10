@@ -1,9 +1,10 @@
-import Button from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import { grey, green } from '@material-ui/core/colors';
+import Fab from '@material-ui/core/Fab';
+import { grey } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/Check';
 import ErrorOutlineOutlinedIcon from '@material-ui/icons/ErrorOutlineOutlined';
+import MailOutlineIcon from '@material-ui/icons/MailOutline';
 import clsx from 'clsx';
 import React from 'react';
 
@@ -16,25 +17,22 @@ const useStyles = makeStyles((theme: Theme) => {
       alignItems: 'center',
     },
     wrapper: {
-      margin: theme.spacing(3, 3, 3),
+      margin: theme.spacing(1),
       position: 'relative',
     },
     buttonDone: {
-      width: '20ch',
-      backgroundColor: grey[500],
-      margin: theme.spacing(3, 1, 3),
+      color: dark ? grey[100] : grey[900],
     },
-    buttonProgress: {
-      color: green[500],
+    fabProgress: {
+      color: grey[600],
       position: 'absolute',
-      top: '50%',
-      left: '50%',
-      marginTop: -12,
-      marginLeft: -12,
+      top: -6,
+      left: -6,
+      zIndex: 1,
     },
     submit: {
-      width: '20ch',
-      margin: theme.spacing(3, 1, 3),
+      color: dark ? grey[100] : grey[900],
+      backgroundColor: dark ? grey[900] : grey[100],
       '&:hover': {
         color: dark ? grey[900] : grey[100],
         backgroundColor: dark ? grey[100] : grey[900],
@@ -43,14 +41,13 @@ const useStyles = makeStyles((theme: Theme) => {
   });
 });
 
-const SubmitButton: React.FC<{
-  text: string;
+const SendFab: React.FC<{
   disabled: boolean;
   loading: boolean;
   submitForm: () => Promise<any>;
   success: boolean;
   error?: boolean;
-}> = ({ text, disabled, loading, submitForm, success, error }) => {
+}> = ({ disabled, loading, submitForm, success, error }) => {
   const classes = useStyles();
 
   const buttonClassname = clsx({
@@ -61,40 +58,28 @@ const SubmitButton: React.FC<{
     <div className={classes.root}>
       <div className={classes.wrapper}>
         {!success && !error && (
-          <Button
-            variant="outlined"
+          <Fab
             color="inherit"
-            size="large"
             className={buttonClassname}
             disabled={disabled}
             onClick={() => !loading && submitForm()}>
-            {text}
-          </Button>
+            <MailOutlineIcon />
+          </Fab>
         )}
         {!!success && !error && (
-          <Button
-            variant="outlined"
-            color="inherit"
-            size="large"
-            className={classes.buttonDone}
-            disabled={disabled}>
+          <Fab color="inherit" className={classes.buttonDone} disabled={disabled}>
             <CheckIcon />
-          </Button>
+          </Fab>
         )}
         {!success && !!error && (
-          <Button
-            variant="outlined"
-            color="inherit"
-            size="large"
-            className={classes.buttonDone}
-            disabled={disabled}>
+          <Fab color="inherit" className={classes.buttonDone} disabled={disabled}>
             <ErrorOutlineOutlinedIcon />
-          </Button>
+          </Fab>
         )}
-        {loading && <CircularProgress size={24} className={classes.buttonProgress} />}
+        {loading && <CircularProgress size={68} className={classes.fabProgress} />}
       </div>
     </div>
   );
 };
 
-export default SubmitButton;
+export default SendFab;
