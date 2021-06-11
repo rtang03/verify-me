@@ -1,4 +1,3 @@
-import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
@@ -10,6 +9,7 @@ import ReceiptOutlinedIcon from '@material-ui/icons/ReceiptOutlined';
 import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
 import type { DidDocument } from '@verify/server';
 import { withAuth } from 'components';
+import CardHeaderAvatar from 'components/CardHeaderAvatar';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import ProTip from 'components/ProTip';
@@ -107,9 +107,9 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
               <CardHeader
                 className={classes.root}
                 avatar={
-                  <Avatar variant="rounded" className={classes.cardHeaderAvatar}>
+                  <CardHeaderAvatar>
                     <ReceiptOutlinedIcon />
-                  </Avatar>
+                  </CardHeaderAvatar>
                 }
                 title="Did Document"
                 subheader={<>Your URL: {fqUrl}</>}

@@ -1,16 +1,16 @@
-import Avatar from '@material-ui/core/Avatar';
 import CardHeader from '@material-ui/core/CardHeader';
 import IconButton from '@material-ui/core/IconButton';
 import { grey } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import DeleteOutlineOutlinedIcon from '@material-ui/icons/DeleteOutlineOutlined';
 import LanguageIcon from '@material-ui/icons/Language';
-import type { ServiceEndpoint, DidDocument, IDIDManagerRemoveServiceArgs } from '@verify/server';
+import type { ServiceEndpoint, IDIDManagerRemoveServiceArgs } from '@verify/server';
 import { Form, Formik } from 'formik';
 import React from 'react';
 import { mutate } from 'swr';
 import type { TenantInfo } from 'types';
 import { useFetcher } from 'utils';
+import CardHeaderAvatar from './CardHeaderAvatar';
 import ConfirmationDialog from './ConfirmationDialog';
 import Result from './Result';
 
@@ -26,10 +26,10 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const RemoveServiceEndpoint: React.FC<{
   service: ServiceEndpoint;
-  didDoc: DidDocument;
+  did: string;
   url: string | null;
   tenantInfo: TenantInfo;
-}> = ({ service, didDoc, url, tenantInfo }) => {
+}> = ({ service, did, url, tenantInfo }) => {
   const classes = useStyles();
   const { slug } = tenantInfo;
 
@@ -48,7 +48,7 @@ const RemoveServiceEndpoint: React.FC<{
       initialValues={{}}
       onSubmit={async (_, { setSubmitting }) => {
         setSubmitting(true);
-        await removeService({ did: didDoc.id, id: service.id });
+        await removeService({ did, id: service.id });
         handleClose();
         setSubmitting(false);
       }}>
@@ -57,9 +57,9 @@ const RemoveServiceEndpoint: React.FC<{
           <CardHeader
             className={classes.root}
             avatar={
-              <Avatar variant="rounded" className={classes.cardHeaderAvatar}>
+              <CardHeaderAvatar>
                 <LanguageIcon />
-              </Avatar>
+              </CardHeaderAvatar>
             }
             title="Service endpoint"
             subheader="Used for Did-Comm Messaging"

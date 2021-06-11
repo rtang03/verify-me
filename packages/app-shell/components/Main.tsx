@@ -46,7 +46,7 @@ const Main: React.FC<{
               <br />
             </>
           )}
-          <Typography variant="h4">{title}</Typography>
+          <Typography variant="h5">{title}</Typography>
           {subtitle && <Typography variant="caption">{subtitle}</Typography>}
           <br />
           <br />

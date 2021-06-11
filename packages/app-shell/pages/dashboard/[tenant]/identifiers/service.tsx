@@ -48,7 +48,7 @@ const IdentifiersServicePage: NextPage<{ session: Session }> = ({ session }) => 
                 <RemoveServiceEndpoint
                   key={index}
                   service={service}
-                  didDoc={didDoc}
+                  did={didDoc.id}
                   url={url}
                   tenantInfo={tenantInfo}
                 />

@@ -17,6 +17,7 @@ import Pagination from '@material-ui/lab/Pagination';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import Error from 'components/Error';
+import IdentifierCard from 'components/IdentifierCard';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import NoRecord from 'components/NoRecord';
@@ -27,8 +28,9 @@ import Link from 'next/link';
 import React, { Fragment } from 'react';
 import type { PaginatedIIdentifier } from 'types';
 import { usePagination, useReSWR, useTenant } from 'utils';
+import CardHeaderAvatar from '../../../../components/CardHeaderAvatar';
 
-const PAGESIZE = 5;
+const PAGESIZE = 4;
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
@@ -46,13 +48,11 @@ const useStyles = makeStyles((theme: Theme) =>
 const UsersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
-  const { pageIndex, pageChange } = usePagination(PAGESIZE);
+  const { cursor, pageChange } = usePagination(PAGESIZE);
 
   // Query IIdentifiers
   const shouldFetch = !!slug && !!tenantInfo?.activated;
-  const url = slug
-    ? `/api/users?slug=${slug}&cursor=${pageIndex * PAGESIZE}&pagesize=${PAGESIZE}`
-    : null;
+  const url = slug ? `/api/users?slug=${slug}&cursor=${cursor}&pagesize=${PAGESIZE}` : null;
   const { data, isLoading, isError, error } = useReSWR<PaginatedIIdentifier>(url, shouldFetch);
   let count;
   data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
@@ -73,7 +73,7 @@ const UsersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         {tenantInfo?.activated && (
           <QuickAction
             link={`/dashboard/${tenantInfo?.id}/users/create`}
-            label="USER"
+            label="1"
             disabled={!tenantInfo?.id}
           />
         )}
@@ -82,48 +82,18 @@ const UsersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             <CardHeader
               className={classes.root}
               avatar={
-                <Avatar variant="rounded" className={classes.cardHeaderAvatar}>
+                <CardHeaderAvatar>
                   <PeopleAltOutlinedIcon />
-                </Avatar>
+                </CardHeaderAvatar>
               }
               title="Active identifiers"
               subheader={<>Total: {data?.total || 0}</>}
             />
             <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
             <CardContent className={classes.root}>
-              <List>
-                {data.items.map((item, index) => (
-                  <Fragment key={index}>
-                    <ListItem>
-                      {item.did.includes('users:') ? (
-                        <>
-                          <ListItemAvatar>
-                            <AvatarMd5 subject={item.did || 'idle'} />
-                          </ListItemAvatar>
-                          <Link href={`/dashboard/${tenantInfo.id}/users/${item.alias}`}>
-                            <a>
-                              <ListItemText primary={item.alias} secondary={item.did} />
-                            </a>
-                          </Link>
-                          <ListItemSecondaryAction>
-                            <IconButton edge="end" aria-label="settings">
-                              <SettingsIcon />
-                            </IconButton>
-                          </ListItemSecondaryAction>
-                        </>
-                      ) : (
-                        <>
-                          <ListItemAvatar>
-                            <AvatarMd5 subject={item.did || 'idle'} />
-                          </ListItemAvatar>
-                          <ListItemText primary={item.alias} secondary={item.did} />
-                        </>
-                      )}
-                    </ListItem>
-                    <Divider variant="inset" />
-                  </Fragment>
-                ))}
-              </List>
+              {data.items.map((item, index) => (
+                <IdentifierCard key={index} identifier={item} tenantInfo={tenantInfo} />
+              ))}
             </CardContent>
           </Card>
         )}

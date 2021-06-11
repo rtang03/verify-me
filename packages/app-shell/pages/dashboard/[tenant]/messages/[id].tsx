@@ -18,7 +18,7 @@ import { useReSWR, useTenant } from 'utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: { flexWrap: 'wrap', backgroundColor: theme.palette.background.paper },
+    root: { margin: theme.spacing(3, 1, 2) },
   })
 );
 
@@ -54,7 +54,8 @@ const MessagesEditPage: NextPage<{ session: Session }> = ({ session }) => {
               />
             )}
             <CardHeader
-              avatar={<AvatarMd5 subject={id || 'idle'} />}
+              className={classes.root}
+              avatar={<AvatarMd5 subject={data.to || 'idle'} />}
               title={data.type}
               subheader={data.createdAt}
             />

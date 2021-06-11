@@ -11,6 +11,8 @@ import Identifier from 'components/Identifier';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import RawContent from 'components/RawContent';
+import RemoveServiceEndpoint from 'components/RemoveServiceEndpoint';
+import ServiceEndpoint from 'components/ServiceEndpoint';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
@@ -38,6 +40,7 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
   const isMessagingExist = data?.services
     ?.map(({ type }) => type === 'Messaging')
     .reduce((prev, curr) => prev || curr, false);
+  const services = data?.services;
 
   return (
     <Layout title="User">
@@ -64,14 +67,38 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
                 <CardContent>
                   <Identifier identifier={data} />
                 </CardContent>
-                {!isMessagingExist && (
-                  <CardContent>
-                    <AddServiceEndpoint tenantInfo={tenantInfo} did={data.did} url={url} />
-                  </CardContent>
-                )}
+                <RawContent title="Raw User Identifier" content={data} />
               </Card>
+              {/*** Add Service Endpoint ***/}
+              {!isMessagingExist && (
+                <Card className={classes.root}>
+                  <AddServiceEndpoint tenantInfo={tenantInfo} did={data.did} url={url} />
+                </Card>
+              )}
+              {isMessagingExist && (
+                <Card variant="outlined" className={classes.root}>
+                  {/*** Remove Service Endpoint ***/}
+                  {!!services?.length &&
+                    data?.did &&
+                    services.map((service, index) => (
+                      <RemoveServiceEndpoint
+                        key={index}
+                        service={service}
+                        did={data?.did}
+                        url={url}
+                        tenantInfo={tenantInfo}
+                      />
+                    ))}
+                  {!!services?.length && (
+                    <CardContent>
+                      {services.map(({ id, type, serviceEndpoint }, index) => (
+                        <ServiceEndpoint key={index} id={id} type={type} url={serviceEndpoint} />
+                      ))}
+                    </CardContent>
+                  )}
+                </Card>
+              )}
             </CardContent>
-            <RawContent title="Raw User Identifier" content={data} />
           </Card>
         )}
       </Main>

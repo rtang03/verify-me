@@ -39,9 +39,9 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
-  const { pageIndex, pageChange } = usePagination(PAGESIZE);
+  const { cursor, pageChange } = usePagination(PAGESIZE);
   const { data, isError, isLoading } = useReSWR<PaginatedTenant>(
-    `/api/tenants?cursor=${pageIndex * PAGESIZE}&pagesize=${PAGESIZE}`
+    `/api/tenants?cursor=${cursor}&pagesize=${PAGESIZE}`
   );
 
   let count;

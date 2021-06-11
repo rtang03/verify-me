@@ -1,4 +1,3 @@
-import Avatar from '@material-ui/core/Avatar';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
@@ -10,6 +9,7 @@ import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
 import { withAuth } from 'components';
+import CardHeaderAvatar from 'components/CardHeaderAvatar';
 import Error from 'components/Error';
 import GotoIdentifier from 'components/GotoIdentifier';
 import Layout from 'components/Layout';
@@ -94,9 +94,9 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                       </Typography>
                     }
                     avatar={
-                      <Avatar variant="rounded" className={classes.cardHeaderAvatar}>
+                      <CardHeaderAvatar>
                         <PersonAddIcon />
-                      </Avatar>
+                      </CardHeaderAvatar>
                     }
                   />
                   <CardContent>

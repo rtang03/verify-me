@@ -1,4 +1,3 @@
-import Avatar from '@material-ui/core/Avatar';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
@@ -8,6 +7,7 @@ import BallotOutlinedIcon from '@material-ui/icons/BallotOutlined';
 import Pagination from '@material-ui/lab/Pagination';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
+import CardHeaderAvatar from 'components/CardHeaderAvatar';
 import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
@@ -36,13 +36,11 @@ const useStyles = makeStyles((theme: Theme) =>
 const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
-  const { pageIndex, pageChange } = usePagination(PAGESIZE);
+  const { cursor, pageChange } = usePagination(PAGESIZE);
 
   // Query Credentials
   const shouldFetch = !!slug && !!tenantInfo?.activated;
-  const url = slug
-    ? `/api/credentials?slug=${slug}&cursor=${pageIndex * PAGESIZE}&pagesize=${PAGESIZE}`
-    : null;
+  const url = slug ? `/api/credentials?slug=${slug}&cursor=${cursor}&pagesize=${PAGESIZE}` : null;
   const { data, isLoading, isError, error } = useReSWR<PaginatedVerifiableCredential>(
     url,
     shouldFetch
@@ -66,7 +64,7 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         {tenantInfo?.activated && (
           <QuickAction
             link={`/dashboard/${tenantInfo?.id}/credentials/issue`}
-            label="Credential"
+            label="1"
             disabled={!tenantInfo?.id}
           />
         )}
@@ -75,9 +73,9 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             <CardHeader
               className={classes.root}
               avatar={
-                <Avatar variant="rounded" className={classes.cardHeaderAvatar}>
+                <CardHeaderAvatar>
                   <BallotOutlinedIcon />
-                </Avatar>
+                </CardHeaderAvatar>
               }
               title="Active credentials"
               subheader={<>Total: {data?.total || 0}</>}

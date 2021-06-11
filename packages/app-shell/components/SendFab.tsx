@@ -1,6 +1,6 @@
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Fab from '@material-ui/core/Fab';
-import { grey } from '@material-ui/core/colors';
+import { green, grey } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/Check';
 import ErrorOutlineOutlinedIcon from '@material-ui/icons/ErrorOutlineOutlined';
@@ -24,7 +24,7 @@ const useStyles = makeStyles((theme: Theme) => {
       color: dark ? grey[100] : grey[900],
     },
     fabProgress: {
-      color: grey[600],
+      color: green[600],
       position: 'absolute',
       top: -6,
       left: -6,
