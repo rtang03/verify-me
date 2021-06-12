@@ -31,6 +31,8 @@ import UserProfileIcon from '@material-ui/icons/PermContactCalendar';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import QueueIcon from '@material-ui/icons/Queue';
 import SettingsIcon from '@material-ui/icons/Settings';
+import VisibilityOffOutlinedIcon from '@material-ui/icons/VisibilityOffOutlined';
+import VisibilityOutlinedIcon from '@material-ui/icons/VisibilityOutlined';
 import clsx from 'clsx';
 import sortBy from 'lodash/sortBy';
 import { signIn, signOut, useSession } from 'next-auth/client';
@@ -49,7 +51,11 @@ interface State {
 }
 const isClient = () => typeof window !== 'undefined';
 
-const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
+const Layout: FC<{ title?: string; shouldShow?: any }> = ({
+  children,
+  title = 'No Title',
+  shouldShow,
+}) => {
   const [session] = useSession();
   const classes = useStyles();
   const [state, setState] = useState<State>({
@@ -136,6 +142,11 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
     [dark]
   );
   // END of DARK THEME
+
+  // Should Show Payload
+  let show = false;
+  let setShow: (fcn: any) => void;
+  shouldShow && ([show, setShow] = shouldShow);
 
   return (
     <ThemeProvider theme={theme}>
@@ -376,6 +387,16 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
                   isClient() && localStorage.setItem('dark', 'dark');
                 }}>
                 <Brightness4Icon style={{ color: grey[100] }} />
+              </IconButton>
+            )}
+            {shouldShow && show && (
+              <IconButton onClick={() => setShow((value: boolean) => !value)}>
+                <VisibilityOutlinedIcon style={{ color: grey[100] }} />
+              </IconButton>
+            )}
+            {shouldShow && !show && (
+              <IconButton onClick={() => setShow((value: boolean) => !value)}>
+                <VisibilityOffOutlinedIcon style={{ color: grey[100] }} />
               </IconButton>
             )}
           </Toolbar>

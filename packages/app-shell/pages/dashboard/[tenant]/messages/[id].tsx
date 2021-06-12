@@ -1,5 +1,4 @@
 import Card from '@material-ui/core/Card';
-import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import type { IMessage } from '@verify/server';
@@ -9,11 +8,11 @@ import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import QuickAction from 'components/QuickAction';
+import RawContent from 'components/RawContent';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
-import React from 'react';
-import JSONTree from 'react-json-tree';
+import React, { useState } from 'react';
 import { useReSWR, useTenant } from 'utils';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -27,13 +26,16 @@ const MessagesEditPage: NextPage<{ session: Session }> = ({ session }) => {
   const router = useRouter();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
+  // Show Raw Content
+  const [show, setShow] = useState(false);
+
   // Query Message
   const id = router.query.id as string; // hash
   const url = slug ? `/api/messages/${id}?slug=${slug}&id=${id}` : null;
   const { data, isLoading, isError, error } = useReSWR<IMessage>(url, !!slug);
 
   return (
-    <Layout title="Message">
+    <Layout title="Message" shouldShow={[show, setShow]}>
       <Main
         session={session}
         title="Message"
@@ -59,9 +61,7 @@ const MessagesEditPage: NextPage<{ session: Session }> = ({ session }) => {
               title={data.type}
               subheader={data.createdAt}
             />
-            <CardContent>
-              <JSONTree hideRoot={true} data={data} />
-            </CardContent>
+            {show && <RawContent title="Raw Message" content={data} />}
           </Card>
         )}
       </Main>

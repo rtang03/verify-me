@@ -4,6 +4,7 @@ import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
 import { grey } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import PlusOneIcon from '@material-ui/icons/PlusOne';
 import type { IDIDManagerAddServiceArgs } from '@verify/server';
 import ProTip from 'components/ProTip';
 import { Form, Field, Formik } from 'formik';
@@ -66,7 +67,7 @@ const AddServiceEndpoint: React.FC<{ tenantInfo: TenantInfo; did: string; url: s
         <Form>
           <Card variant="outlined">
             <CardContent>
-              <ProTip text="No service endpoint found. Please do create one." />
+              <ProTip text="No service endpoint found. Please create one." />
             </CardContent>
             <CardHeader title="Add Service Endpoint" subheader="Used for Did-Comm Messaging" />
             <CardContent>
@@ -110,7 +111,7 @@ const AddServiceEndpoint: React.FC<{ tenantInfo: TenantInfo; did: string; url: s
             </CardContent>
             <CardActions>
               <SubmitButton
-                text="+ Service"
+                text={<PlusOneIcon />}
                 submitForm={submitForm}
                 disabled={
                   isSubmitting ||

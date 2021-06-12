@@ -19,7 +19,7 @@ import Result from 'components/Result';
 import { Form, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import React from 'react';
+import React, { useState } from 'react';
 import { mutate } from 'swr';
 import { getTenantUrl, useFetcher, useReSWR, useTenant } from 'utils';
 
@@ -41,6 +41,9 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const fqUrl = tenantInfo?.slug && domain && getTenantUrl(tenantInfo?.slug, domain);
   const nonFqUrl = fqUrl?.replace('https://', '').replace('http://', '');
 
+  // Show Raw Content
+  const [show, setShow] = useState(false);
+
   // Query Web Did
   const url = slug ? `/api/identifiers/did-json?slug=${slug}` : null;
   const { data, isLoading, error: didError } = useReSWR<DidDocument>(url, !!slug);
@@ -51,7 +54,7 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
     mutate(url, poster(`/api/identifiers/create?slug=${slug}`, body));
 
   return (
-    <Layout title="Identifiers">
+    <Layout title="Identifiers" shouldShow={[show, setShow]}>
       <Main
         session={session}
         title="Did Document"
@@ -99,7 +102,7 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
           <>
             <QuickAction
               link={`/dashboard/${tenantInfo?.id}/identifiers/service`}
-              label="Modify"
+              label="Edit"
               disabled={!tenantInfo?.id}
               icon="edit"
             />
@@ -145,7 +148,7 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                   </CardActions>
                 </CardContent>
               )}
-              <RawContent title="Raw Did Document" content={data} />
+              {show && <RawContent title="Raw Did Document" content={data} />}
             </Card>
           </>
         )}

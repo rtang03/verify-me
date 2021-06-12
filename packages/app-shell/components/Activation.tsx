@@ -1,4 +1,3 @@
-import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
@@ -10,6 +9,8 @@ import type { TenantInfo } from '../types';
 import { useFetcher } from '../utils';
 import ProTip from './ProTip';
 import Result from './Result';
+import SubmitButton from './SubmitButton';
+import TermsCondition from './TermsCondition';
 
 const baseUrl = '/api/tenants/actions';
 const useStyles = makeStyles((theme: Theme) =>
@@ -36,23 +37,31 @@ const Activation: React.FC<{ tenantInfo: TenantInfo }> = ({ tenantInfo }) => {
           ).then(() => setSubmitting(false))
         );
       }}>
-      {({ isSubmitting }) => (
+      {({ isSubmitting, submitForm }) => (
         <Form>
           <Card className={classes.root}>
-            <CardContent>
-              <ProTip text="This tenant is NOT activated. Please sign below term-and-conditions to activate. You
-                are about to use no-fee beta service." />
+            <CardContent className={classes.root}>
+              <ProTip
+                text={
+                  <>
+                    This tenant is NOT activated. Please read below terms and conditions to
+                    activate. You are about to use no-fee beta service.
+                    <CardContent>
+                      <TermsCondition />
+                    </CardContent>
+                  </>
+                }
+              />
             </CardContent>
             <CardActions>
-              <Button
-                className={classes.submit}
-                color="inherit"
-                size="large"
+              <SubmitButton
+                text={'Activate'}
+                submitForm={submitForm}
+                loading={isSubmitting}
                 disabled={isSubmitting || !!val?.data || !!val?.error || !tenantInfo?.id}
-                type="submit"
-                variant="outlined">
-                Activate
-              </Button>
+                success={!!val?.data}
+                error={!!val?.error}
+              />
             </CardActions>
             <Result isTenantExist={true} result={val} />
           </Card>

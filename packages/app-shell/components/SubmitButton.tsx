@@ -44,7 +44,7 @@ const useStyles = makeStyles((theme: Theme) => {
 });
 
 const SubmitButton: React.FC<{
-  text: string;
+  text: string | React.ReactFragment;
   disabled: boolean;
   loading: boolean;
   submitForm: () => Promise<any>;

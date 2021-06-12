@@ -16,7 +16,7 @@ import ServiceEndpoint from 'components/ServiceEndpoint';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
-import React from 'react';
+import React, { useState } from 'react';
 import { useReSWR, useTenant } from 'utils';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -33,6 +33,9 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
   const router = useRouter();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
+  // Show Raw Content
+  const [show, setShow] = useState(false);
+
   // Query IIdentifier
   const id = router.query.id as string; // this is "IIdentifier.alias"
   const url = slug ? `/api/users/${id}?slug=${slug}&id={id}` : null;
@@ -43,7 +46,7 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
   const services = data?.services;
 
   return (
-    <Layout title="User">
+    <Layout title="User" shouldShow={[show, setShow]}>
       <Main
         session={session}
         title="User Identifier"
@@ -67,7 +70,7 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
                 <CardContent>
                   <Identifier identifier={data} />
                 </CardContent>
-                <RawContent title="Raw User Identifier" content={data} />
+                {show && <RawContent title="Raw User Identifier" content={data} />}
               </Card>
               {/*** Add Service Endpoint ***/}
               {!isMessagingExist && (

@@ -9,6 +9,7 @@ import MuiTextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import DoneIcon from '@material-ui/icons/Done';
+import PlusOneIcon from '@material-ui/icons/PlusOne';
 import type {
   ISendMessageDIDCommAlpha1Args,
   IMessage,
@@ -18,21 +19,22 @@ import type {
 } from '@verify/server';
 import { withAuth } from 'components';
 import Error from 'components/Error';
-import GotoTenant from 'components/GotoTenant';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import MessageHeader from 'components/MessageHeader';
 import RawContent from 'components/RawContent';
 import Result from 'components/Result';
+import SendFab from 'components/SendFab';
+import SubmitButton from 'components/SubmitButton';
 import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
 import jwt_decode from 'jwt-decode';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
-import JSONTree from 'react-json-tree';
 import { useFetcher, useTenant } from 'utils';
 import * as yup from 'yup';
+import { Send } from '@material-ui/icons';
 
 interface AddClaimArgs {
   claimType: string;
@@ -48,7 +50,7 @@ const validation = yup.object({
 });
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: { flexWrap: 'wrap' },
+    root: { margin: theme.spacing(3, 1, 2) },
     textField: { width: '40ch' },
     longTextField: { width: '60ch' },
     submit: { width: '15ch', margin: theme.spacing(3, 3, 3) },
@@ -58,12 +60,16 @@ const useStyles = makeStyles((theme: Theme) =>
         width: '50ch',
       },
     },
+    mail: { margin: theme.spacing(1, 5, 0) },
   })
 );
 
 const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // Show Raw Content
+  const [show, setShow] = useState(false);
 
   // Create SDR request
   const { val: sdrResult, poster } = useFetcher<string>();
@@ -116,7 +122,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   }
 
   return (
-    <Layout title="Request">
+    <Layout title="Request" shouldShow={[show, setShow]}>
       <Main
         session={session}
         title="Selective Disclosure Request"
@@ -150,10 +156,10 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                 });
                 setSubmitting(false);
               }}>
-              {({ values, isSubmitting }) => (
+              {({ values, isSubmitting, submitForm }) => (
                 <Form>
                   {/* Requester Info */}
-                  <CardHeader title="Requester Info" />
+                  <CardHeader className={classes.root} title="Requester Info" />
                   <CardContent>
                     <Field
                       disabled={!!sdrResult?.data}
@@ -198,7 +204,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                   {/* Claim Details */}
                   <CardContent>
                     <Card variant="outlined">
-                      <CardHeader title="Claim Details" />
+                      <CardHeader className={classes.root} title="Claim Details" />
                       {claims.length > 0 && (
                         <RawContent content={claims} title="Preview claim details" />
                       )}
@@ -216,7 +222,8 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                             margin="normal"
                             value={claimType}
                             onChange={({ target: { value } }) => setClaimType(value)}
-                          />{' '}
+                          />
+                          {<br />}
                           <MuiTextField
                             disabled={!!sdrResult?.data}
                             className={classes.textField}
@@ -233,7 +240,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                         <br />
                         {/* Required issuers */}
                         <Card variant="outlined">
-                          <CardHeader subheader="Required issuers" />
+                          <CardHeader className={classes.root} subheader="Required issuers" />
                           {requiredIssuers?.length > 0 && (
                             <RawContent content={requiredIssuers} title="Preview issuers" />
                           )}
@@ -310,12 +317,12 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                     </Card>
                   </CardContent>
                   <CardActions>
-                    <Button
-                      className={classes.submit}
-                      variant="outlined"
-                      color="inherit"
-                      size="large"
-                      type="submit"
+                    <SubmitButton
+                      text={<PlusOneIcon />}
+                      submitForm={submitForm}
+                      loading={isSubmitting}
+                      success={!!sdrResult?.data}
+                      error={!!sdrResult?.error}
                       disabled={
                         isSubmitting ||
                         !!sdrResult?.data ||
@@ -324,10 +331,12 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                         !values.replyUrl ||
                         claims.length === 0 ||
                         sdrResult?.error
-                      }>
-                      + Request
-                    </Button>
+                      }
+                    />
                   </CardActions>
+                  {show && sdrResult?.data && (
+                    <RawContent title="Raw SDR" content={sdrResult.data} />
+                  )}
                 </Form>
               )}
             </Formik>
@@ -350,7 +359,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                     });
                     setSubmitting(false);
                   }}>
-                  {({ isSubmitting }) => (
+                  {({ isSubmitting, submitForm }) => (
                     <Form>
                       <Card variant="outlined">
                         <CardHeader
@@ -363,29 +372,20 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                           subheader={
                             <Typography variant="caption">Send the SDR to the subject</Typography>
                           }
-                          action={
-                            <Button
-                              className={classes.submit}
-                              variant="contained"
-                              color="primary"
-                              type="submit"
-                              disabled={isSubmitting || !!result.data}>
-                              Send
-                            </Button>
-                          }
                         />
-                        {iss && sub && <MessageHeader from={iss} to={sub} createdAt={iat} />}
-                        <CardContent>
-                          <Typography variant="caption">
-                            Raw Selective Disclosure Request
-                          </Typography>
-                          <JSONTree hideRoot={true} data={jwt_decode(sdrResult?.data || '')} />
+                        <CardContent className={classes.mail}>
+                          <SendFab
+                            loading={isSubmitting}
+                            disabled={isSubmitting || !!result.data}
+                            submitForm={submitForm}
+                            success={!!result?.data}
+                            error={!!result?.error}
+                          />
                         </CardContent>
+                        {iss && sub && <MessageHeader from={iss} to={sub} createdAt={iat} />}
                         <Result isTenantExist={!!tenantInfo} result={result} />
-                        {result?.data && !result.loading && (
-                          <CardContent>
-                            <JSONTree hideRoot={true} data={result.data} />
-                          </CardContent>
+                        {show && result?.data && !result.loading && (
+                          <RawContent title="Raw Send result" content={result.data} />
                         )}
                       </Card>
                     </Form>

@@ -7,6 +7,7 @@ import Typography from '@material-ui/core/Typography';
 import { grey } from '@material-ui/core/colors';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
+import PlusOneIcon from '@material-ui/icons/PlusOne';
 import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
 import { withAuth } from 'components';
 import CardHeaderAvatar from 'components/CardHeaderAvatar';
@@ -15,12 +16,13 @@ import GotoIdentifier from 'components/GotoIdentifier';
 import Layout from 'components/Layout';
 import LowerCaseTextField from 'components/LowerCaseTextField';
 import Main from 'components/Main';
+import RawContent from 'components/RawContent';
 import Result from 'components/Result';
 import SubmitButton from 'components/SubmitButton';
 import { Form, Field, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import React from 'react';
+import React, { useState } from 'react';
 import { mutate } from 'swr';
 import { getTenantUrl, useFetcher, useTenant } from 'utils';
 import * as yup from 'yup';
@@ -52,11 +54,14 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const fqUrl = slug && domain && getTenantUrl(slug, domain);
   const nonFqUrl = fqUrl?.replace('https://', '').replace('http://', '');
 
+  // Show Raw Content
+  const [show, setShow] = useState(false);
+
   // Create User Identifier
   const { val: userDid, poster } = useFetcher<IIdentifier>();
 
   return (
-    <Layout title="User">
+    <Layout title="User" shouldShow={[show, setShow]}>
       <Main
         session={session}
         title="Create User"
@@ -121,7 +126,7 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                   </CardContent>
                   <CardActions>
                     <SubmitButton
-                      text="+ 1"
+                      text={<PlusOneIcon />}
                       submitForm={submitForm}
                       loading={isSubmitting}
                       success={!!userDid?.data}
@@ -134,6 +139,9 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                     <CardContent>
                       <GotoIdentifier tenantInfo={tenantInfo} alias={userDid.data.alias} />{' '}
                     </CardContent>
+                  )}
+                  {show && userDid?.data && (
+                    <RawContent title="Raw Create user result" content={userDid?.data} />
                   )}
                 </Card>
               </Form>

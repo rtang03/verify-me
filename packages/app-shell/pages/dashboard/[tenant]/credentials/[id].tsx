@@ -21,7 +21,7 @@ import omit from 'lodash/omit';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
-import React from 'react';
+import React, { useState } from 'react';
 import { useFetcher, useReSWR, useTenant } from 'utils';
 
 const getSendMessageDIDCommAlpha1Args: (
@@ -55,6 +55,9 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
   const router = useRouter();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
+  // Show Raw Content
+  const [show, setShow] = useState(false);
+
   // Query Credential
   const id = router.query.id as string; // hash
   const url = slug ? `/api/credentials/${id}?slug=${slug}&id=${id}` : null;
@@ -67,7 +70,7 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
     poster(`/api/tenants/sendMessageDIDCommAlpha1?slug=${slug}`, body);
 
   return (
-    <Layout title="Credential">
+    <Layout title="Credential" shouldShow={[show, setShow]}>
       <Main
         session={session}
         title="Credential"
@@ -143,9 +146,9 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
                           </CardContent>
                         </Card>
                       </CardContent>
-                      {vc && <RawContent content={vc} title="Raw Credential Details" />}
+                      {show && vc && <RawContent content={vc} title="Raw Credential Details" />}
                       <Result isTenantExist={!!tenantInfo} result={result} />
-                      {result?.data && (
+                      {show && result?.data && (
                         <RawContent content={result.data} title="Raw Send-message result" />
                       )}
                     </Form>

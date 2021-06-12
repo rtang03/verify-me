@@ -13,12 +13,12 @@ import Layout from 'components/Layout';
 import Main from 'components/Main';
 import NoRecord from 'components/NoRecord';
 import QuickAction from 'components/QuickAction';
+import RawContent from 'components/RawContent';
 import omit from 'lodash/omit';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
-import React from 'react';
-import JSONTree from 'react-json-tree';
+import React, { useState } from 'react';
 import type { PaginatedVerifiableCredential } from 'types';
 import { usePagination, useReSWR, useTenant } from 'utils';
 
@@ -38,6 +38,9 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
   const { cursor, pageChange } = usePagination(PAGESIZE);
 
+  // Show Raw Content
+  const [show, setShow] = useState(false);
+
   // Query Credentials
   const shouldFetch = !!slug && !!tenantInfo?.activated;
   const url = slug ? `/api/credentials?slug=${slug}&cursor=${cursor}&pagesize=${PAGESIZE}` : null;
@@ -49,7 +52,7 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
 
   return (
-    <Layout title="Credentials">
+    <Layout title="Credentials" shouldShow={[show, setShow]}>
       <Main
         session={session}
         title="Credentials"
@@ -93,12 +96,12 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                       />
                     </a>
                   </Link>
-                  <CardContent>
-                    <JSONTree
-                      data={omit(verifiableCredential, 'proof', '@context', 'type')}
-                      hideRoot={true}
+                  {show && (
+                    <RawContent
+                      title="Raw Credential"
+                      content={omit(verifiableCredential, 'proof', '@context', 'type')}
                     />
-                  </CardContent>
+                  )}
                 </Card>
               ))}
             </CardContent>

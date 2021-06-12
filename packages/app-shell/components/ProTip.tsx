@@ -30,7 +30,7 @@ const ProTip: React.FC<{ text: string | ReactFragment }> = ({ text }) => {
         avatar={<LightBulbIcon className={classes.lightBulb} />}
         title={
           <Typography className={classes.root} color="inherit">
-            Pro tip: {text}
+            {text}
           </Typography>
         }
       />

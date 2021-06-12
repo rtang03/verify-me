@@ -1,26 +1,31 @@
-import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
+import IconButton from '@material-ui/core/IconButton';
+import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
+import LinkIcon from '@material-ui/icons/ExitToApp';
+import PlusOneIcon from '@material-ui/icons/PlusOne';
 import { withAuth } from 'components';
 import Layout from 'components/Layout';
 import LowerCaseTextField from 'components/LowerCaseTextField';
 import Main from 'components/Main';
 import ProTip from 'components/ProTip';
 import Result from 'components/Result';
+import SubmitButton from 'components/SubmitButton';
 import { Form, Field, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
+import Link from 'next/link';
 import React from 'react';
+import type { PartialTenant } from 'types';
 import { useFetcher } from 'utils';
 import * as yup from 'yup';
-import type { PartialTenant } from '../../types';
 
 const validation = yup.object({
   slug: yup
     .string()
-    .min(5, 'Must be at least 5 characters')
+    .min(3, 'Must be at least 3 characters')
     .max(20, 'Must be less  than 20 characters')
     .required('tenant name is required')
     .matches(/^[a-zA-Z0-9]+$/, 'Cannot contain special characters or spaces'),
@@ -28,12 +33,8 @@ const validation = yup.object({
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: {
-      display: 'flex',
-      flexWrap: 'wrap',
-    },
+    root: { margin: theme.spacing(3, 1, 2) },
     textField: { width: '40ch' },
-    submit: { width: '15ch', margin: theme.spacing(3, 3, 3) },
   })
 );
 
@@ -61,13 +62,12 @@ const TenantCreatePage: NextPage<{ session: Session }> = ({ session }) => {
             await newTenant({ slug, user_id });
             setSubmitting(false);
           }}>
-          {({ values, isSubmitting }) => (
+          {({ values, isSubmitting, submitForm }) => (
             <Form>
-              <Card>
-                <CardContent>
-                  <ProTip text="Tenant's name must be globally unique, and in lowercase." />
-                </CardContent>
-                <CardContent>
+              <Card className={classes.root}>
+                <CardContent className={classes.root}>
+                  <ProTip text="Tenant's name must be globally unique, and cannot be changed." />
+                  <br />
                   <Field
                     disabled={!!val.data}
                     className={classes.textField}
@@ -83,17 +83,32 @@ const TenantCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                   />
                 </CardContent>
                 <CardActions>
-                  <Button
-                    className={classes.submit}
-                    variant="outlined"
-                    color="inherit"
-                    size="large"
+                  <SubmitButton
+                    text={<PlusOneIcon />}
+                    submitForm={submitForm}
+                    loading={isSubmitting}
+                    success={!!val?.data}
+                    error={!!val?.error}
                     disabled={isSubmitting || !!val.data || !values.slug}
-                    type="submit">
-                    Submit
-                  </Button>
+                  />
                 </CardActions>
-                <Result isTenantExist={true} result={val} />
+                {val && <Result isTenantExist={true} result={val} />}
+                {val?.data && (
+                  <CardContent>
+                    <Typography variant="body2">
+                      <>
+                        <Link href={`/dashboard/${val.data.id}`}>
+                          <a>
+                            <IconButton>
+                              <LinkIcon />
+                            </IconButton>
+                          </a>
+                        </Link>
+                        {val.data.slug}
+                      </>
+                    </Typography>
+                  </CardContent>
+                )}
               </Card>
             </Form>
           )}

@@ -1,4 +1,3 @@
-import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
@@ -6,12 +5,14 @@ import CardHeader from '@material-ui/core/CardHeader';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Switch from '@material-ui/core/Switch';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
+import SaveOutlinedIcon from '@material-ui/icons/SaveOutlined';
 import { withAuth } from 'components';
 import Activation from 'components/Activation';
 import AvatarMd5 from 'components/AvatarMd5';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import Result from 'components/Result';
+import SubmitButton from 'components/SubmitButton';
 import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
 import type { NextPage } from 'next';
@@ -52,8 +53,8 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   return (
     <Layout title="Tenant">
       <Main
-        title={slug || 'Tenant details'}
-        subtitle={tenantInfo?.name || ''}
+        title={slug?.toUpperCase() || 'Tenant details'}
+        subtitle={tenantInfo?.name || 'Tenant profile'}
         session={session}
         parentText="Dashboard"
         parentUrl="/dashboard"
@@ -73,10 +74,12 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
               setSubmitting(true);
               setEdit(false);
             }}>
-            {({ values, errors, isSubmitting }) => (
+            {({ values, errors, isSubmitting, submitForm }) => (
               <Form>
                 <Card className={classes.root}>
+                  <CardHeader className={classes.root} title="About" />
                   <CardHeader
+                    className={classes.root}
                     avatar={<AvatarMd5 subject={tenantInfo.id || 'no id'} />}
                     title={tenantInfo.slug?.toUpperCase()}
                     subheader={`Last updated: ${tenantInfo.updated_at}`}
@@ -102,15 +105,14 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                     />
                   </CardContent>
                   <CardActions disableSpacing>
-                    <Button
-                      className={classes.submit}
-                      color="inherit"
-                      size="large"
+                    <SubmitButton
+                      text={<SaveOutlinedIcon />}
+                      submitForm={submitForm}
+                      loading={isSubmitting}
+                      success={!!updateResult?.data}
+                      error={!!updateResult?.error}
                       disabled={!editMode || isSubmitting || !!errors?.name || !values.name}
-                      type="submit"
-                      variant="outlined">
-                      Save
-                    </Button>
+                    />
                   </CardActions>
                   <Result isTenantExist={!!tenantInfo} result={updateResult} />
                 </Card>

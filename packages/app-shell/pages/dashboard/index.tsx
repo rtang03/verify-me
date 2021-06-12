@@ -1,4 +1,3 @@
-import Avatar from '@material-ui/core/Avatar';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
@@ -8,12 +7,12 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import ListItemText from '@material-ui/core/ListItemText';
 import Typography from '@material-ui/core/Typography';
-import { grey } from '@material-ui/core/colors';
 import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
 import StorefrontOutlinedIcon from '@material-ui/icons/StorefrontOutlined';
 import Pagination from '@material-ui/lab/Pagination';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
+import CardHeaderAvatar from 'components/CardHeaderAvatar';
 import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
@@ -28,12 +27,8 @@ import { usePagination, useReSWR } from 'utils';
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: { flexWrap: 'wrap' },
+    root: { margin: theme.spacing(3, 1, 2) },
     inline: { display: 'inline' },
-    cardHeaderAvatar: {
-      color: grey[900],
-      backgroundColor: '#fff',
-    },
   })
 );
 
@@ -57,10 +52,11 @@ const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         {!!data?.items?.length && !isLoading && (
           <Card className={classes.root}>
             <CardHeader
+              className={classes.root}
               avatar={
-                <Avatar variant="rounded" className={classes.cardHeaderAvatar}>
+                <CardHeaderAvatar>
                   <StorefrontOutlinedIcon />
-                </Avatar>
+                </CardHeaderAvatar>
               }
               title="Active tenants"
               subheader={<>Total: {data?.total || 0}</>}
