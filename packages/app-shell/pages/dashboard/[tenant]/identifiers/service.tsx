@@ -10,7 +10,7 @@ import RemoveServiceEndpoint from 'components/RemoveServiceEndpoint';
 import ServiceEndpoint from 'components/ServiceEndpoint';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import React from 'react';
+import React, { useState } from 'react';
 import { useReSWR, useTenant } from 'utils';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -23,13 +23,16 @@ const IdentifiersServicePage: NextPage<{ session: Session }> = ({ session }) => 
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
+  // Show Raw Content
+  const [show, setShow] = useState(false);
+
   // Query Web Did
   const url = slug ? `/api/identifiers/did-json?slug=${slug}` : null;
   const { data: didDoc, isLoading, error: didError } = useReSWR<DidDocument>(url, !!slug);
   const services = didDoc?.service;
 
   return (
-    <Layout title="DID Document">
+    <Layout title="DID Document" shouldShow={[show, setShow]}>
       <Main
         session={session}
         title="DID Document"
@@ -62,7 +65,12 @@ const IdentifiersServicePage: NextPage<{ session: Session }> = ({ session }) => 
             )}
             {/*** Add Service Endpoint ***/}
             {services?.length === 0 && didDoc && (
-              <AddServiceEndpoint tenantInfo={tenantInfo} did={didDoc.id} url={url} />
+              <AddServiceEndpoint
+                showRawContent={show}
+                tenantInfo={tenantInfo}
+                did={didDoc.id}
+                url={url}
+              />
             )}
           </Card>
         )}

@@ -1,10 +1,10 @@
-import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
 import { grey } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import PlusOneIcon from '@material-ui/icons/PlusOne';
 import ReceiptOutlinedIcon from '@material-ui/icons/ReceiptOutlined';
 import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
 import type { DidDocument } from '@verify/server';
@@ -22,6 +22,7 @@ import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import { mutate } from 'swr';
 import { getTenantUrl, useFetcher, useReSWR, useTenant } from 'utils';
+import SubmitButton from '../../../../components/SubmitButton';
 
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const useStyles = makeStyles((theme: Theme) =>
@@ -72,26 +73,27 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
               setSubmitting(true);
               await newDid({ alias: nonFqUrl as string }).then(() => setSubmitting(false));
             }}>
-            {({ isSubmitting }) => (
+            {({ isSubmitting, submitForm }) => (
               <Form>
                 <Card className={classes.root}>
                   <CardHeader
                     className={classes.root}
-                    subheader={`Web-identifier URL: ${nonFqUrl}`}
+                    title={`did:web:${nonFqUrl}`}
+                    subheader={`Your web identifier`}
                   />
-                  <CardContent>
-                    <ProTip text="No Decentralized Identity Document Found. You are about to create one" />
+                  <CardContent className={classes.root}>
+                    <ProTip text="No decentralized identity document found for this tenant. You are about to create one" />
                   </CardContent>
                   <CardActions>
-                    <Button
-                      className={classes.submit}
-                      variant="outlined"
-                      color="inherit"
-                      size="large"
-                      disabled={isSubmitting || !fqUrl || !!webDid?.data}
-                      type="submit">
-                      + Create Identifier
-                    </Button>
+                      <SubmitButton
+                        tooltip="Create web DID document"
+                        text={<PlusOneIcon />}
+                        loading={isSubmitting}
+                        submitForm={submitForm}
+                        disabled={isSubmitting || !fqUrl || !!webDid?.data}
+                        success={!!webDid?.data}
+                        error={!!webDid?.error}
+                      />
                   </CardActions>
                 </Card>
               </Form>
@@ -141,18 +143,18 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                   </CardContent>
                   <CardActions>
                     <QuickAction
-                      label="Service endpoint"
+                      label="Service"
                       link={`/dashboard/${tenantInfo.id}/identifiers/service`}
                       disabled={false}
                     />
                   </CardActions>
                 </CardContent>
               )}
+              <Result isTenantExist={!!tenantInfo} result={webDid} />
               {show && <RawContent title="Raw Did Document" content={data} />}
             </Card>
           </>
         )}
-        <Result isTenantExist={!!tenantInfo} result={webDid} />
       </Main>
     </Layout>
   );

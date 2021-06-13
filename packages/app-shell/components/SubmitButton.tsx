@@ -1,5 +1,6 @@
 import Button from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import Tooltip from '@material-ui/core/Tooltip';
 import { grey, green } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/Check';
@@ -44,13 +45,14 @@ const useStyles = makeStyles((theme: Theme) => {
 });
 
 const SubmitButton: React.FC<{
+  tooltip?: string;
   text: string | React.ReactFragment;
   disabled: boolean;
   loading: boolean;
   submitForm: () => Promise<any>;
   success: boolean;
   error?: boolean;
-}> = ({ text, disabled, loading, submitForm, success, error }) => {
+}> = ({ tooltip, text, disabled, loading, submitForm, success, error }) => {
   const classes = useStyles();
 
   const buttonClassname = clsx({
@@ -60,7 +62,20 @@ const SubmitButton: React.FC<{
   return (
     <div className={classes.root}>
       <div className={classes.wrapper}>
-        {!success && !error && (
+        {!success && !error && !!tooltip && (
+          <Tooltip title={tooltip}>
+            <Button
+              variant="outlined"
+              color="inherit"
+              size="large"
+              className={buttonClassname}
+              disabled={disabled}
+              onClick={() => !loading && submitForm()}>
+              {text}
+            </Button>
+          </Tooltip>
+        )}
+        {!success && !error && !tooltip && (
           <Button
             variant="outlined"
             color="inherit"

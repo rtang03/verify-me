@@ -31,7 +31,7 @@ const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const validation = yup.object({
   username: yup
     .string()
-    .min(5, 'Must be at least 3 characters')
+    .min(3, 'Must be at least 3 characters')
     .max(20, 'Must be less  than 20 characters')
     .required('Alias is required')
     .matches(/^[a-zA-Z0-9]+$/, 'Cannot contain special characters or spaces'),
@@ -126,6 +126,7 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                   </CardContent>
                   <CardActions>
                     <SubmitButton
+                      tooltip="Create user"
                       text={<PlusOneIcon />}
                       submitForm={submitForm}
                       loading={isSubmitting}

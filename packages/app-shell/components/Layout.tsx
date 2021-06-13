@@ -18,6 +18,7 @@ import MenuList from '@material-ui/core/MenuList';
 import Paper from '@material-ui/core/Paper';
 import Popper from '@material-ui/core/Popper';
 import Toolbar from '@material-ui/core/Toolbar';
+import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 import { grey } from '@material-ui/core/colors';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
@@ -163,25 +164,29 @@ const Layout: FC<{ title?: string; shouldShow?: any }> = ({
         <CssBaseline />
         <AppBar color={dark ? 'inherit' : 'primary'} position="fixed" className={classes.appBar}>
           <Toolbar>
-            <Button color="inherit">
-              <Link href="/">
-                <a>
-                  <Typography variant="h4">/</Typography>
-                </a>
-              </Link>
-            </Button>
+            <Tooltip title="Home">
+              <Button color="inherit">
+                <Link href="/">
+                  <a>
+                    <Typography variant="h4">/</Typography>
+                  </a>
+                </Link>
+              </Button>
+            </Tooltip>
             <div className={classes.root} />
             {session ? (
               <>
                 {/*** POP MENU FOR TENANT ***/}
-                <Button
-                  color="inherit"
-                  ref={anchorRefTenant}
-                  aria-controls={state.openTenant ? 'menu-list-grow' : undefined}
-                  aria-haspopup="true"
-                  onClick={handleToggle('openTenant')}>
-                  <a>{slugLocal || 'No tenant'}</a>
-                </Button>
+                <Tooltip title="Active tenant">
+                  <Button
+                    color="inherit"
+                    ref={anchorRefTenant}
+                    aria-controls={state.openTenant ? 'menu-list-grow' : undefined}
+                    aria-haspopup="true"
+                    onClick={handleToggle('openTenant')}>
+                    <a>{slugLocal || 'No tenant'}</a>
+                  </Button>
+                </Tooltip>
                 <Popper
                   open={state.openTenant}
                   anchorEl={anchorRefTenant.current}
@@ -292,18 +297,20 @@ const Layout: FC<{ title?: string; shouldShow?: any }> = ({
                   <NotificationsIcon style={{ color: grey[100] }} />
                 </IconButton>
                 {/*** POP MENU FOR ACCOUNT ***/}
-                <Button
-                  color="inherit"
-                  ref={anchorRefAccount}
-                  aria-controls={state.openAccount ? 'menu-list-grow' : undefined}
-                  aria-haspopup="true"
-                  onClick={handleToggle('openAccount')}>
-                  {session?.user?.image ? (
-                    <Avatar alt={session?.user?.name || 'Anonymous'} src={session?.user?.image} />
-                  ) : (
-                    <Typography variant="caption">{session?.user?.name}</Typography>
-                  )}
-                </Button>
+                <Tooltip title="Active account">
+                  <Button
+                    color="inherit"
+                    ref={anchorRefAccount}
+                    aria-controls={state.openAccount ? 'menu-list-grow' : undefined}
+                    aria-haspopup="true"
+                    onClick={handleToggle('openAccount')}>
+                    {session?.user?.image ? (
+                      <Avatar alt={session?.user?.name || 'Anonymous'} src={session?.user?.image} />
+                    ) : (
+                      <Typography variant="caption">{session?.user?.name}</Typography>
+                    )}
+                  </Button>
+                </Tooltip>
                 <Popper
                   open={state.openAccount}
                   anchorEl={anchorRefAccount.current}
@@ -378,7 +385,9 @@ const Layout: FC<{ title?: string; shouldShow?: any }> = ({
                   setDark(!dark);
                   isClient() && localStorage.setItem('dark', 'light');
                 }}>
-                <Brightness5Icon style={{ color: grey[100] }} />
+                <Tooltip title="Toggle dark mode">
+                  <Brightness5Icon style={{ color: grey[100] }} />
+                </Tooltip>
               </IconButton>
             ) : (
               <IconButton
@@ -386,18 +395,24 @@ const Layout: FC<{ title?: string; shouldShow?: any }> = ({
                   setDark(!dark);
                   isClient() && localStorage.setItem('dark', 'dark');
                 }}>
-                <Brightness4Icon style={{ color: grey[100] }} />
+                <Tooltip title="Toggle dark mode">
+                  <Brightness4Icon style={{ color: grey[100] }} />
+                </Tooltip>
               </IconButton>
             )}
             {shouldShow && show && (
-              <IconButton onClick={() => setShow((value: boolean) => !value)}>
-                <VisibilityOutlinedIcon style={{ color: grey[100] }} />
-              </IconButton>
+              <Tooltip title="Toggle raw content">
+                <IconButton onClick={() => setShow((value: boolean) => !value)}>
+                  <VisibilityOutlinedIcon style={{ color: grey[100] }} />
+                </IconButton>
+              </Tooltip>
             )}
             {shouldShow && !show && (
-              <IconButton onClick={() => setShow((value: boolean) => !value)}>
-                <VisibilityOffOutlinedIcon style={{ color: grey[100] }} />
-              </IconButton>
+              <Tooltip title="Toggle raw content">
+                <IconButton onClick={() => setShow((value: boolean) => !value)}>
+                  <VisibilityOffOutlinedIcon style={{ color: grey[100] }} />
+                </IconButton>
+              </Tooltip>
             )}
           </Toolbar>
         </AppBar>

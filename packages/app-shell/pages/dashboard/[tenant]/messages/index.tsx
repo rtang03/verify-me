@@ -5,22 +5,20 @@ import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import EmailOutlinedIcon from '@material-ui/icons/EmailOutlined';
 import Pagination from '@material-ui/lab/Pagination';
 import { withAuth } from 'components';
-import AvatarMd5 from 'components/AvatarMd5';
 import CardHeaderAvatar from 'components/CardHeaderAvatar';
 import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
+import MessageCard from 'components/MessageCard';
 import NoRecord from 'components/NoRecord';
 import QuickAction from 'components/QuickAction';
+import RawContent from 'components/RawContent';
 import omit from 'lodash/omit';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import Link from 'next/link';
-import React, { useState } from 'react';
-import JSONTree from 'react-json-tree';
+import React, { Fragment, useState } from 'react';
 import type { PaginatedMessage } from 'types';
 import { usePagination, useReSWR, useTenant } from 'utils';
-import RawContent from '../../../../components/RawContent';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
@@ -43,6 +41,8 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const { data, isLoading, isError, error } = useReSWR<PaginatedMessage>(url, shouldFetch);
   let count;
   data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
+
+  // Delete Message
 
   return (
     <Layout title="Messages" shouldShow={[show, setShow]}>
@@ -81,17 +81,8 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             <CardContent>
               {data &&
                 data.items.map((item, index) => (
-                  <Card key={index} className={classes.root} variant="outlined">
-                    <Link href={`/dashboard/${tenantInfo.id}/messages/${item.id}`}>
-                      <a>
-                        <CardHeader
-                          className={classes.root}
-                          avatar={<AvatarMd5 subject={item.to || 'idle'} />}
-                          title={`subject: ${item.to}`}
-                          subheader={`Type: "${item.type}" at ${item.createdAt} `}
-                        />
-                      </a>
-                    </Link>
+                  <Fragment key={index}>
+                    <MessageCard message={item} tenantInfo={tenantInfo} />
                     {show && item.type === 'w3c.vc' && (
                       <RawContent
                         content={item?.credentials?.map((cred) =>
@@ -100,11 +91,9 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                       />
                     )}
                     {show && item.type === 'sdr' && (
-                      <RawContent
-                        content={omit(item, 'type', 'raw', 'id', 'metaData', 'createdAt')}
-                      />
+                      <RawContent content={omit(item, 'type', 'raw', 'createdAt')} />
                     )}
-                  </Card>
+                  </Fragment>
                 ))}
             </CardContent>
           </Card>

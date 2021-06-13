@@ -16,6 +16,7 @@ import { getTenantUrl, useFetcher } from 'utils';
 import * as yup from 'yup';
 import Result from './Result';
 import SubmitButton from './SubmitButton';
+import RawContent from './RawContent';
 
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const secure = process.env.NEXT_PUBLIC_DOMAIN_SECURE === 'true';
@@ -35,11 +36,12 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const AddServiceEndpoint: React.FC<{ tenantInfo: TenantInfo; did: string; url: string | null }> = ({
-  tenantInfo,
-  did,
-  url,
-}) => {
+const AddServiceEndpoint: React.FC<{
+  showRawContent?: boolean;
+  tenantInfo: TenantInfo;
+  did: string;
+  url: string | null;
+}> = ({ showRawContent, tenantInfo, did, url }) => {
   const classes = useStyles();
   const { slug } = tenantInfo;
   const { val: addServiceEP, poster: add } = useFetcher<{ success: boolean }>();
@@ -65,67 +67,75 @@ const AddServiceEndpoint: React.FC<{ tenantInfo: TenantInfo; did: string; url: s
       }}>
       {({ isSubmitting, submitForm, values: { serviceEndpoint }, errors }) => (
         <Form>
-          <Card variant="outlined">
-            <CardContent>
-              <ProTip text="No service endpoint found. Please create one." />
-            </CardContent>
-            <CardHeader title="Add Service Endpoint" subheader="Used for Did-Comm Messaging" />
-            <CardContent>
-              <Field
-                disabled={true}
-                className={classes.typeTextField}
-                label="Type"
-                size="small"
-                component={TextField}
-                name={'type'}
-                placeholder={'Messaging'}
-                variant="outlined"
-                margin="normal"
-              />
-              <br />
-              <Field
-                disabled={!!addServiceEP.data}
-                className={classes.serviceTextField}
-                label="Service endpoint *"
-                size="small"
-                component={TextField}
-                name={'serviceEndpoint'}
-                placeholder={'e.g. http://example.com'}
-                variant="outlined"
-                margin="normal"
-                autoFocus={true}
-              />
-              <br />
-              <Field
-                disabled={!!addServiceEP.data}
-                className={classes.serviceTextField}
-                label="Description"
-                size="small"
-                component={TextField}
-                name={'description'}
-                placeholder={'Messaging Endpoint'}
-                variant="outlined"
-                margin="normal"
-                autoFocus={true}
-              />
-            </CardContent>
-            <CardActions>
-              <SubmitButton
-                text={<PlusOneIcon />}
-                submitForm={submitForm}
-                disabled={
-                  isSubmitting ||
-                  !!errors?.serviceEndpoint ||
-                  !serviceEndpoint ||
-                  !!addServiceEP?.data
-                }
-                loading={isSubmitting}
-                success={!!addServiceEP?.data}
-                error={!!addServiceEP?.error}
-              />
-            </CardActions>
-            <Result isTenantExist={!!tenantInfo} result={addServiceEP} />
-          </Card>
+          <CardContent className={classes.root}>
+            <ProTip text="No service endpoint found. Please create one." />
+          </CardContent>
+          <CardHeader
+            className={classes.root}
+            title="Add Service Endpoint"
+            subheader="Used for Did-Comm Messaging"
+          />
+          <CardContent>
+            <Field
+              disabled={true}
+              className={classes.typeTextField}
+              label="Type"
+              size="small"
+              component={TextField}
+              name={'type'}
+              placeholder={'Messaging'}
+              variant="outlined"
+              margin="normal"
+            />
+            <br />
+            <Field
+              disabled={!!addServiceEP.data}
+              className={classes.serviceTextField}
+              label="Service endpoint *"
+              size="small"
+              component={TextField}
+              name={'serviceEndpoint'}
+              placeholder={'e.g. http://example.com'}
+              variant="outlined"
+              margin="normal"
+              autoFocus={true}
+            />
+            <br />
+            <Field
+              disabled={!!addServiceEP.data}
+              className={classes.serviceTextField}
+              label="Description"
+              size="small"
+              component={TextField}
+              name={'description'}
+              placeholder={'Messaging Endpoint'}
+              variant="outlined"
+              margin="normal"
+              autoFocus={true}
+            />
+          </CardContent>
+          <CardActions>
+            <SubmitButton
+              tooltip="Add service endpoint"
+              text={<PlusOneIcon />}
+              submitForm={submitForm}
+              disabled={
+                isSubmitting ||
+                !!errors?.serviceEndpoint ||
+                !serviceEndpoint ||
+                !!addServiceEP?.data
+              }
+              loading={isSubmitting}
+              success={!!addServiceEP?.data}
+              error={!!addServiceEP?.error}
+            />
+          </CardActions>
+          <Result isTenantExist={!!tenantInfo} result={addServiceEP} />
+          {/* This is un-usable code. Once succesfully, the display will swap out this component */}
+          {/* May improve it later */}
+          {showRawContent && addServiceEP?.data && (
+            <RawContent title="Raw add-service result" content={addServiceEP.data} />
+          )}
         </Form>
       )}
     </Formik>

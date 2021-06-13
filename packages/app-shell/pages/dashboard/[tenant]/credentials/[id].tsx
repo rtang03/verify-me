@@ -86,7 +86,7 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
           <Card className={classes.root}>
             <CardHeader
               className={classes.root}
-              avatar={<AvatarMd5 subject={id || 'idle'} />}
+              avatar={<AvatarMd5 subject={id || 'idle'} image="identicon" />}
               title={JSON.stringify(vc.type, null, 2)}
               subheader={vc.issuanceDate}
             />

@@ -23,15 +23,20 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 const GRAVATAR_URI = 'https://www.gravatar.com/avatar/';
-const uri = (subject: string, size: number) => `${GRAVATAR_URI}${md5(subject)}?s=${size}&d=wavatar`;
+const uri = (subject: string, size: number, image: string) =>
+  `${GRAVATAR_URI}${md5(subject)}?s=${size}&d=${image}`;
 
-const AvatarMd5: React.FC<{ subject: string; size?: 'small' | 'large' }> = ({ subject, size }) => {
+const AvatarMd5: React.FC<{ subject: string; size?: 'small' | 'large'; image?: string }> = ({
+  subject,
+  size,
+  image = 'wavatar',
+}) => {
   const classes = useStyles();
 
-  if (size === 'small') return <Avatar src={uri(subject, 200)} className={classes.small} />;
-  if (size === 'large') return <Avatar src={uri(subject, 400)} className={classes.large} />;
+  if (size === 'small') return <Avatar src={uri(subject, 200, image)} className={classes.small} />;
+  if (size === 'large') return <Avatar src={uri(subject, 400, image)} className={classes.large} />;
 
-  return <Avatar src={uri(subject, 200)} />;
+  return <Avatar src={uri(subject, 200, image)} />;
 };
 
 export default AvatarMd5;

@@ -1,5 +1,6 @@
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Fab from '@material-ui/core/Fab';
+import Tooltip from '@material-ui/core/Tooltip';
 import { green, grey } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/Check';
@@ -42,12 +43,13 @@ const useStyles = makeStyles((theme: Theme) => {
 });
 
 const SendFab: React.FC<{
+  tooltip?: string;
   disabled: boolean;
   loading: boolean;
   submitForm: () => Promise<any>;
   success: boolean;
   error?: boolean;
-}> = ({ disabled, loading, submitForm, success, error }) => {
+}> = ({ tooltip, disabled, loading, submitForm, success, error }) => {
   const classes = useStyles();
 
   const buttonClassname = clsx({
@@ -57,7 +59,18 @@ const SendFab: React.FC<{
   return (
     <div className={classes.root}>
       <div className={classes.wrapper}>
-        {!success && !error && (
+        {!success && !error && tooltip && (
+          <Tooltip title={tooltip}>
+            <Fab
+              color="inherit"
+              className={buttonClassname}
+              disabled={disabled}
+              onClick={() => !loading && submitForm()}>
+              <MailOutlineIcon />
+            </Fab>
+          </Tooltip>
+        )}
+        {!success && !error && !tooltip && (
           <Fab
             color="inherit"
             className={buttonClassname}

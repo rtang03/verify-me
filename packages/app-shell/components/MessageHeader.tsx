@@ -11,6 +11,7 @@ import React from 'react';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
+    root: { margin: theme.spacing(3, 1, 2) },
     muiTextField: {
       '& .MuiTextField-root': {
         margin: theme.spacing(0.5),
@@ -30,7 +31,7 @@ const MessageHeader: React.FC<{ from?: string; to?: string; createdAt?: string; 
 
   return (
     <>
-      <CardHeader subheader="Message details" />
+      <CardHeader className={classes.root} title="Message Info" />
       <CardContent className={classes.muiTextField}>
         {from && (
           <>

@@ -17,6 +17,7 @@ import React, { Fragment } from 'react';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
+    root: { margin: theme.spacing(3, 1, 2) },
     muiTextField: {
       '& .MuiTextField-root': {
         margin: theme.spacing(0.5),
@@ -33,7 +34,7 @@ const SelectiveDisclosureReq: React.FC<{ sdr: ISelectiveDisclosureRequest }> = (
 
   return (
     <>
-      <CardHeader title="Selective-disclosure-request payload" />
+      <CardHeader className={classes.root} title="Selective disclosure request" />
       <CardContent className={classes.muiTextField}>
         {iss && (
           <MuiTextField
@@ -98,10 +99,11 @@ const SelectiveDisclosureReq: React.FC<{ sdr: ISelectiveDisclosureRequest }> = (
             }}
           />
         )}
-        <Card variant="outlined">
-          {claims.map((claim, index) => (
+        <Card className={classes.root} variant="outlined">
+          {claims?.map((claim, index) => (
             <Fragment key={index}>
               <CardHeader
+                className={classes.root}
                 avatar={
                   claim.essential ? (
                     <Tooltip title="Mandatory">

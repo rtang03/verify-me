@@ -1,12 +1,12 @@
 import Card from '@material-ui/core/Card';
-import CardHeader from '@material-ui/core/CardHeader';
+import CardContent from '@material-ui/core/CardContent';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import type { IMessage } from '@verify/server';
 import { withAuth } from 'components';
-import AvatarMd5 from 'components/AvatarMd5';
 import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
+import MessageCard from 'components/MessageCard';
 import QuickAction from 'components/QuickAction';
 import RawContent from 'components/RawContent';
 import type { NextPage } from 'next';
@@ -16,9 +16,7 @@ import React, { useState } from 'react';
 import { useReSWR, useTenant } from 'utils';
 
 const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    root: { margin: theme.spacing(3, 1, 2) },
-  })
+  createStyles({ root: { margin: theme.spacing(3, 1, 2) } })
 );
 
 const MessagesEditPage: NextPage<{ session: Session }> = ({ session }) => {
@@ -48,19 +46,18 @@ const MessagesEditPage: NextPage<{ session: Session }> = ({ session }) => {
         {isError && !isLoading && <Error error={error} />}
         {tenantInfo?.activated && data && (
           <Card className={classes.root}>
+            <MessageCard isFull={true} tenantInfo={tenantInfo} message={data} />
             {data.type === 'sdr' && (
-              <QuickAction
-                link={`/dashboard/${tenantInfo?.id}/messages/${id}/response`}
-                label="SELECTIVE DISCLOSURE RESPONSE"
-                disabled={!tenantInfo?.id}
-              />
+              <CardContent>
+                <CardContent>
+                  <QuickAction
+                    link={`/dashboard/${tenantInfo?.id}/messages/${id}/response`}
+                    label="RESPONSE"
+                    disabled={!tenantInfo?.id}
+                  />
+                </CardContent>
+              </CardContent>
             )}
-            <CardHeader
-              className={classes.root}
-              avatar={<AvatarMd5 subject={data.to || 'idle'} />}
-              title={data.type}
-              subheader={data.createdAt}
-            />
             {show && <RawContent title="Raw Message" content={data} />}
           </Card>
         )}

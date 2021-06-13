@@ -14,6 +14,7 @@ import React from 'react';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
+    root: { margin: theme.spacing(3, 1, 2) },
     muiTextField: {
       '& .MuiTextField-root': {
         margin: theme.spacing(0.5),
@@ -86,7 +87,7 @@ const Presentation: React.FC<{ vp: Partial<VerifiablePresentation> }> = ({ vp })
       <br />
       {vcs?.map((vc, index) => (
         <Card variant="outlined" key={index}>
-          <CardHeader subheader="Credentials" />
+          <CardHeader className={classes.root} subheader="Credentials" />
           <CardContent>
             <MuiTextField
               disabled={true}
@@ -132,8 +133,8 @@ const Presentation: React.FC<{ vp: Partial<VerifiablePresentation> }> = ({ vp })
             <br />
           </CardContent>
           <CardContent>
-            <Card variant="outlined">
-              <CardHeader subheader="Credential subjects" />
+            <Card className={classes.root} variant="outlined">
+              <CardHeader className={classes.root} subheader="Credential Subjects" />
               <CardContent>
                 {Object.entries<string>(vc.credentialSubject).map(([key, value], index) => (
                   <>

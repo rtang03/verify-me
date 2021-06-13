@@ -34,7 +34,6 @@ import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import { useFetcher, useTenant } from 'utils';
 import * as yup from 'yup';
-import { Send } from '@material-ui/icons';
 
 interface AddClaimArgs {
   claimType: string;
@@ -278,7 +277,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                               disabled={!requiredIssuerUrl || !requiredIssuer}
                               className={classes.submit}
                               variant="outlined"
-                              color="primary"
+                              color="inherit"
                               size="small"
                               onClick={() => addRequiredIssuer(requiredIssuer, requiredIssuerUrl)}>
                               + Issuer
@@ -291,7 +290,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                           disabled={!claimType || requiredIssuers.length === 0}
                           className={classes.submit}
                           variant="outlined"
-                          color="primary"
+                          color="inherit"
                           size="small"
                           onClick={() =>
                             addClaim({
@@ -306,7 +305,9 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                         <FormControlLabel
                           control={
                             <Checkbox
-                              disabled={!!sdrResult?.data}
+                              disabled={
+                                !!sdrResult?.data || !claimType || requiredIssuers.length === 0
+                              }
                               checked={claimRequired}
                               onChange={({ target: { checked } }) => setClaimRequired(checked)}
                             />
@@ -355,7 +356,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                         type: 'jwt',
                         body: sdrResult.data as string,
                       },
-                      save: false,
+                      save: true,
                     });
                     setSubmitting(false);
                   }}>
@@ -363,18 +364,12 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                     <Form>
                       <Card variant="outlined">
                         <CardHeader
-                          avatar={<DoneIcon color="primary" />}
-                          title={
-                            <Typography variant="body2" color="primary">
-                              Selective Disclosure Request successfully created
-                            </Typography>
-                          }
-                          subheader={
-                            <Typography variant="caption">Send the SDR to the subject</Typography>
-                          }
+                          avatar={<DoneIcon color="inherit" />}
+                          title="Selective Disclosure Request successfully created."
                         />
                         <CardContent className={classes.mail}>
                           <SendFab
+                            tooltip="Send the SDR to the subject"
                             loading={isSubmitting}
                             disabled={isSubmitting || !!result.data}
                             submitForm={submitForm}

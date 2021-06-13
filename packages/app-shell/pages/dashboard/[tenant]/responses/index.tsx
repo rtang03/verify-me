@@ -44,3 +44,19 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 export const getServerSideProps = withAuth;
 
 export default Page;
+
+const data = {
+  iat: 1623494419,
+  type: 'sdr',
+  subject: 'did:web:issuer.example.com:users:dog',
+  claims: [
+    {
+      claimType: 'kind',
+      issuers: [{ did: 'did:web:issuer.example.com:users:dog', url: 'https://issuer.example.com' }],
+      essential: true,
+      reason: 'testing',
+    },
+  ],
+  replyUrl: 'https://dummybank.example.com',
+  iss: 'did:web:dummybank.example.com:users:apple',
+};

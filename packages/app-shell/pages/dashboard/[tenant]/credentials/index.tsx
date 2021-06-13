@@ -8,6 +8,7 @@ import Pagination from '@material-ui/lab/Pagination';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import CardHeaderAvatar from 'components/CardHeaderAvatar';
+import Credential from 'components/Credential';
 import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
@@ -21,6 +22,7 @@ import Link from 'next/link';
 import React, { useState } from 'react';
 import type { PaginatedVerifiableCredential } from 'types';
 import { usePagination, useReSWR, useTenant } from 'utils';
+import CredentialCard from '../../../../components/CredentialCard';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
@@ -86,16 +88,8 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
             <CardContent>
               {data.items.map(({ verifiableCredential, hash }, index) => (
-                <Card key={index} className={classes.root} variant="outlined">
-                  <Link href={`/dashboard/${tenantInfo.id}/credentials/${hash}`}>
-                    <a>
-                      <CardHeader
-                        avatar={<AvatarMd5 subject={hash} />}
-                        title={verifiableCredential.credentialSubject.id}
-                        subheader={verifiableCredential.issuanceDate}
-                      />
-                    </a>
-                  </Link>
+                <Card key={index}>
+                  <CredentialCard hash={hash} tenantInfo={tenantInfo} vc={verifiableCredential} />
                   {show && (
                     <RawContent
                       title="Raw Credential"

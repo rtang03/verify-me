@@ -6,6 +6,7 @@ import CardHeader from '@material-ui/core/CardHeader';
 import MuiTextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
+import PlusOneIcon from '@material-ui/icons/PlusOne';
 import type { VerifiableCredential } from '@veramo/core';
 import type { ICreateVerifiableCredentialArgs } from '@veramo/credential-w3c';
 import { withAuth } from 'components';
@@ -14,6 +15,7 @@ import Layout from 'components/Layout';
 import Main from 'components/Main';
 import RawContent from 'components/RawContent';
 import Result from 'components/Result';
+import SubmitButton from 'components/SubmitButton';
 import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
 import type { NextPage } from 'next';
@@ -28,8 +30,8 @@ import * as yup from 'yup';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: { flexWrap: 'wrap' },
-    textField: { width: '45ch' },
+    root: { margin: theme.spacing(3, 1, 2) },
+    textField: { width: '45ch', margin: theme.spacing(1) },
     claimTextField: { width: '30ch' },
     submit: { width: '18ch', margin: theme.spacing(3, 3, 3) },
   })
@@ -43,6 +45,9 @@ const validation = yup.object({
 const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // Show Raw Content
+  const [show, setShow] = useState(false);
 
   // Issue credential
   const { val: result, poster } = useFetcher<VerifiableCredential>();
@@ -68,10 +73,10 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
   };
 
   return (
-    <Layout title="Credential">
+    <Layout title="Credential" shouldShow={[show, setShow]}>
       <Main
         session={session}
-        title="Issue credential"
+        title="Issue Credential"
         parentText="Credentials"
         parentUrl={`/dashboard/${tenantInfo?.id}/credentials`}
         isLoading={tenantLoading}
@@ -92,10 +97,10 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
               await issue(getCreateVerifiableCredentialArgs({ ...input, claims }));
               setSubmitting(false);
             }}>
-            {({ isSubmitting, errors }) => (
+            {({ isSubmitting, errors, submitForm }) => (
               <Form>
                 <Card className={classes.root}>
-                  <CardContent>
+                  <CardContent className={classes.root}>
                     <Field
                       className={classes.textField}
                       label="Issuer"
@@ -136,27 +141,13 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
                       disabled={result?.data}
                     />
                   </CardContent>
-                  <CardActions>
-                    <Button
-                      className={classes.submit}
-                      variant="outlined"
-                      color="inherit"
-                      size="large"
-                      type="submit"
-                      disabled={
-                        isSubmitting ||
-                        !!errors?.credentialType ||
-                        !!errors?.subject ||
-                        !!errors?.issuer ||
-                        !claims.length ||
-                        !!result?.data
-                      }>
-                      + Credential
-                    </Button>
-                  </CardActions>
                   <CardContent>
                     <Card variant="outlined">
-                      <CardHeader title="Add Claim(s)" subheader="At least one claim is required" />
+                      <CardHeader
+                        className={classes.root}
+                        title="Add Claim(s)"
+                        subheader="At least one claim is required"
+                      />
                       <CardContent>
                         <MuiTextField
                           className={classes.claimTextField}
@@ -221,13 +212,31 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
                       )}
                     </Card>
                   </CardContent>
+                  <CardActions>
+                    <SubmitButton
+                      tooltip="Issue credential"
+                      text={<PlusOneIcon />}
+                      submitForm={submitForm}
+                      loading={isSubmitting}
+                      disabled={
+                        isSubmitting ||
+                        !!errors?.credentialType ||
+                        !!errors?.subject ||
+                        !!errors?.issuer ||
+                        !claims.length ||
+                        !!result?.data
+                      }
+                      success={!!result?.data}
+                      error={!!result?.error}
+                    />
+                  </CardActions>
                   <Result isTenantExist={!!tenantInfo} result={result} />
                   {result?.data && !result.loading && (
                     <>
                       <CardContent>
                         <Credential vc={result.data} />
                       </CardContent>
-                      <RawContent title="Raw Credential" content={result.data} />
+                      {show && <RawContent title="Raw Credential" content={result.data} />}
                     </>
                   )}
                 </Card>

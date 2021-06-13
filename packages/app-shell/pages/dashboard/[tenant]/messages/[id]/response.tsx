@@ -1,21 +1,18 @@
-import Avatar from '@material-ui/core/Avatar';
-import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
+import Divider from '@material-ui/core/Divider';
 import FormControl from '@material-ui/core/FormControl';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
-import IconButton from '@material-ui/core/IconButton';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
 import Radio from '@material-ui/core/Radio';
 import RadioGroup from '@material-ui/core/RadioGroup';
 import Select from '@material-ui/core/Select';
 import Typography from '@material-ui/core/Typography';
-import { green } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import SendIcon from '@material-ui/icons/Send';
+import BorderColorIcon from '@material-ui/icons/BorderColor';
 import type {
   IMessage,
   IGetVerifiableCredentialsForSdrArgs,
@@ -34,6 +31,8 @@ import Presentation from 'components/Presentation';
 import RawContent from 'components/RawContent';
 import Result from 'components/Result';
 import SelectiveDisclosureReq from 'components/SelectiveDisclosureReq';
+import SendFab from 'components/SendFab';
+import SubmitButton from 'components/SubmitButton';
 import { Form, Field, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
@@ -46,7 +45,7 @@ const PAGESIZE = 25;
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: { flexWrap: 'wrap', backgroundColor: theme.palette.background.paper },
+    root: { margin: theme.spacing(3, 1, 2) },
     textField: { width: '40ch' },
     longTextField: { width: '60ch' },
     submit: { margin: theme.spacing(3, 3, 2) },
@@ -61,10 +60,7 @@ const useStyles = makeStyles((theme: Theme) =>
       minWidth: '50ch',
     },
     selectEmpty: { marginTop: theme.spacing(2) },
-    green: {
-      color: '#fff',
-      backgroundColor: green[500],
-    },
+    mail: { margin: theme.spacing(1, 5, 0) },
   })
 );
 
@@ -72,6 +68,9 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const router = useRouter();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // Show Raw Content
+  const [show, setShow] = useState(false);
 
   // Query Message
   const id = router.query.id as string; // hash
@@ -126,11 +125,11 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
   const { selected, onSelect, valid: selectCredentialValid } = useSelectedCredentials(claims || []);
 
   return (
-    <Layout title="Response">
+    <Layout title="Response" shouldShow={[show, setShow]}>
       <Main
         session={session}
         title="Selective Disclosure Response"
-        subtitle="Create SD-Response"
+        subtitle="Create Selective disclosure response"
         parentText={`Message`}
         parentUrl={`/dashboard/${tenantInfo?.id}/messages/${id}`}
         isLoading={tenantLoading || isMessageLoading || isIdsLoading || requestedClaims.loading}
@@ -159,7 +158,8 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
             )}
             {/*** Selective Discloure Payload ***/}
             {sdr && <SelectiveDisclosureReq sdr={sdr} />}
-            <RawContent title="Raw Selective disclosure request" content={sdr} />
+            {show && <RawContent title="Raw Selective disclosure request" content={sdr} />}
+            <Divider />
             <CardContent>
               <Formik
                 initialValues={{}}
@@ -180,12 +180,12 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
                     });
                   setSubmitting(false);
                 }}>
-                {({ isSubmitting }) => (
+                {({ isSubmitting, submitForm }) => (
                   <Form>
                     <CardContent>
                       <Card variant="outlined">
                         {/*** Step 1 ***/}
-                        <CardHeader title="Step 1: Sign" />
+                        <CardHeader className={classes.root} title="Step 1: Sign" />
                         {/*** Select Presenter ***/}
                         <CardContent>
                           {filteredIds?.length && (
@@ -210,7 +210,7 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
                         {!filteredIds?.length && <NoRecord title="Presenter *" />}
                         {/*** Requested Claims ***/}
                         <CardHeader
-                          title="Requested Claims"
+                          className={classes.root}
                           subheader="Choose credentials to share"
                         />
                         {claims && (
@@ -254,11 +254,13 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
                             </Card>
                           </CardContent>
                         )}
-                        {claims && <RawContent content={claims} title="Raw Requested claims" />}
+                        {show && claims && (
+                          <RawContent content={claims} title="Raw Requested claims" />
+                        )}
                         <CardContent>
-                          <Card variant="outlined">
+                          <Card className={classes.root} variant="outlined">
                             {/*** Preview presentation ***/}
-                            <CardHeader title="Preview presentation" />
+                            <CardHeader className={classes.root} title="Preview Presentation" />
                             <CardContent>
                               {message?.from && (
                                 <Presentation
@@ -274,7 +276,8 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
                             </CardContent>
                             <CardActions>
                               {/*** Sign presentation ***/}
-                              <Button
+                              <SubmitButton
+                                text={<BorderColorIcon />}
                                 disabled={
                                   isSubmitting ||
                                   !sdr ||
@@ -283,16 +286,19 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
                                   !presenter ||
                                   !!signedPresentation?.data
                                 }
-                                className={classes.submit}
-                                variant="contained"
-                                color="primary"
-                                type="submit">
-                                Sign Presentation
-                              </Button>
+                                submitForm={submitForm}
+                                loading={isSubmitting}
+                                tooltip="Sign presentation"
+                                success={!!signedPresentation?.data}
+                                error={!!signedPresentation?.error}
+                              />
                             </CardActions>
                           </Card>
                         </CardContent>
                         <Result isTenantExist={!!tenantInfo} result={signedPresentation} />
+                        {show && (
+                          <RawContent title="Raw Signed result" content={signedPresentation.data} />
+                        )}
                       </Card>
                     </CardContent>
                   </Form>
@@ -316,53 +322,56 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
                       });
                       setSubmitting(false);
                     }}>
-                    {({ isSubmitting }) => (
+                    {({ isSubmitting, submitForm }) => (
                       <Form>
                         <Card variant="outlined">
                           {/*** Step 2 ***/}
                           <CardHeader
+                            className={classes.root}
                             title="Step 2: Verify and Send"
                             subheader="Verify below signed presentation"
                           />
                           {signedPresentation?.data && (
                             <Presentation vp={signedPresentation.data} />
                           )}
-                          {signedPresentation?.data && (
+                          {show && signedPresentation?.data && (
                             <RawContent
                               content={signedPresentation.data}
                               title="Raw Signed-presentation"
                             />
                           )}
                           <CardContent>
-                            <Card variant="outlined">
+                            <Card className={classes.root} variant="outlined">
                               {/*** Send presentation ***/}
-                              <CardHeader
-                                title="SEND"
-                                subheader="Click icon to send"
-                                avatar={
-                                  <Avatar>
-                                    <IconButton
-                                      className={classes.green}
-                                      type="submit"
-                                      disabled={
-                                        isSubmitting ||
-                                        !!sendMessageResult?.data ||
-                                        !!sendMessageResult?.error
-                                      }>
-                                      <SendIcon />
-                                    </IconButton>
-                                  </Avatar>
-                                }
-                              />
-                              <CardContent>
-                                {/*** Review presentation before sending ***/}
-                                <MessageHeader
-                                  from={presenter}
-                                  to={message.from}
-                                  url={sdr?.replyUrl}
+                              <CardHeader className={classes.root} title="Send" />
+                              <CardContent className={classes.mail}>
+                                <SendFab
+                                  tooltip="Send presentation response"
+                                  loading={isSubmitting}
+                                  disabled={
+                                    isSubmitting ||
+                                    !!sendMessageResult?.data ||
+                                    !!sendMessageResult?.error
+                                  }
+                                  submitForm={submitForm}
+                                  success={!!sendMessageResult?.data}
+                                  error={!!sendMessageResult?.error}
                                 />
                               </CardContent>
+                              {/*** Review presentation before sending ***/}
+                              <MessageHeader
+                                from={presenter}
+                                to={message.from}
+                                url={sdr?.replyUrl}
+                              />
                               <Result isTenantExist={!!tenantInfo} result={sendMessageResult} />
+
+                              {show && sendMessageResult?.data && (
+                                <RawContent
+                                  title="Raw Send result"
+                                  content={sendMessageResult.data}
+                                />
+                              )}
                             </Card>
                           </CardContent>
                         </Card>
