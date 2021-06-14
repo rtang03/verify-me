@@ -2,13 +2,17 @@ import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
+import IconButton from '@material-ui/core/IconButton';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import HelpOutlineOutlinedIcon from '@material-ui/icons/HelpOutlineOutlined';
 import PlusOneIcon from '@material-ui/icons/PlusOne';
 import ReceiptOutlinedIcon from '@material-ui/icons/ReceiptOutlined';
 import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
 import type { DidDocument } from '@verify/server';
 import { withAuth } from 'components';
 import CardHeaderAvatar from 'components/CardHeaderAvatar';
+import GlossaryTerms, { TERMS } from 'components/GlossaryTerms';
+import HelpDialog from 'components/HelpDialog';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import ProTip from 'components/ProTip';
@@ -47,6 +51,11 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const { val: webDid, poster } = useFetcher<IIdentifier>();
   const newDid = async (body: IDIDManagerGetOrCreateArgs) =>
     mutate(url, poster(`/api/identifiers/create?slug=${slug}`, body));
+
+  // form state
+  const [openHelp, setHelpOpen] = React.useState(false);
+  const handleOpen = () => setHelpOpen(true);
+  const handleClose = () => setHelpOpen(false);
 
   return (
     <Layout title="Identifiers" shouldShow={[show, setShow]}>
@@ -112,6 +121,20 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                 }
                 title="Did Document"
                 subheader={<>Your URL: {fqUrl}</>}
+                action={
+                  <IconButton onClick={handleOpen}>
+                    <HelpOutlineOutlinedIcon />
+                  </IconButton>
+                }
+              />
+              <HelpDialog
+                open={openHelp}
+                handleClose={handleClose}
+                content={
+                  <GlossaryTerms
+                    terms={[TERMS.did, TERMS.serviceEndpoint, TERMS.verificationMethod]}
+                  />
+                }
               />
               <CardContent>
                 <CardHeader title="DID" subheader={data?.id} />

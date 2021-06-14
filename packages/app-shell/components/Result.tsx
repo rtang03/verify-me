@@ -1,7 +1,15 @@
 import CardContent from '@material-ui/core/CardContent';
+import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import Error from './Error';
-import Success from './Success';
+
+const Success: React.FC<any> = () => (
+  <div>
+    <Typography variant="body1" color="inherit">
+      Successfully done.
+    </Typography>
+  </div>
+);
 
 type Result = {
   data: any;
