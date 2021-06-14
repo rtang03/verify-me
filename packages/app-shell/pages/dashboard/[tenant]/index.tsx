@@ -1,3 +1,4 @@
+import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
@@ -17,9 +18,9 @@ import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import React, { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent, useEffect, useState } from 'react';
 import { mutate } from 'swr';
-import { useFetcher, useTenant } from 'utils';
+import { useFetcher, useLocalStorage, useTenant } from 'utils';
 import * as yup from 'yup';
 
 const baseUrl = '/api/tenants';
@@ -28,6 +29,11 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
     textField: { width: '45ch' },
+    button: {
+      '&:hover': {
+        'font-weight': 'bold',
+      },
+    },
   })
 );
 
@@ -36,6 +42,19 @@ type PsqlUpdated = { affected: number };
 const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // used for "Set Active"
+  const {
+    toggleStorage,
+    tenantIdLocal,
+    setSlugLocal,
+    setTenantIdLocal,
+    setActiveTenant,
+  } = useLocalStorage();
+  useEffect(() => {
+    setSlugLocal(localStorage.getItem('slug'));
+    setTenantIdLocal(localStorage.getItem('tenantId'));
+  }, [session, toggleStorage]);
 
   // Update Tenant
   const { val: updateResult, updater } = useFetcher<PsqlUpdated>();
@@ -47,7 +66,7 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const handleEdit = ({ target: { checked } }: ChangeEvent<HTMLInputElement>) => setEdit(checked);
 
   return (
-    <Layout title="Tenant">
+    <Layout title="Tenant" refresh={toggleStorage}>
       <Main
         title={slug?.toUpperCase() || 'Tenant details'}
         subtitle={tenantInfo?.name || 'Tenant profile'}
@@ -73,7 +92,25 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             {({ values, errors, isSubmitting, submitForm }) => (
               <Form>
                 <Card className={classes.root}>
-                  <CardHeader className={classes.root} title="About" />
+                  <CardHeader
+                    className={classes.root}
+                    title="About"
+                    action={
+                      tenantInfo?.id &&
+                      tenantInfo?.slug && (
+                        <Button
+                          className={classes.button}
+                          size="small"
+                          color="inherit"
+                          disabled={tenantIdLocal === tenantInfo.id}
+                          onClick={() =>
+                            setActiveTenant(tenantInfo.id || '', tenantInfo.slug || '')
+                          }>
+                          {tenantIdLocal === tenantInfo.id ? 'Active' : 'Set Active'}
+                        </Button>
+                      )
+                    }
+                  />
                   <CardHeader
                     className={classes.root}
                     avatar={<AvatarMd5 subject={tenantInfo.id || 'no id'} />}

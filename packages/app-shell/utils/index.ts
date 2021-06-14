@@ -16,3 +16,4 @@ export * from './useTenant';
 export * from './usePagination';
 export * from './useSelectedCredentials';
 export * from './getCreateVerifiableCredentialArgs';
+export * from './useLocalStorage';

@@ -42,7 +42,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import React, { FC, useEffect, MouseEvent, useState, useRef, KeyboardEvent } from 'react';
 import type { PaginatedTenant } from '../types';
-import { useReSWR, useStyles } from '../utils';
+import { isClient, useReSWR, useStyles, useLocalStorage } from '../utils';
 import AvatarMd5 from './AvatarMd5';
 import { sideBar } from './sidebar';
 
@@ -51,13 +51,23 @@ interface State {
   openTenant: boolean;
   openSwitchTenant: boolean;
 }
-const isClient = () => typeof window !== 'undefined';
 
-const Layout: FC<{ title?: string; shouldShow?: any }> = ({
+const Layout: FC<{ title?: string; shouldShow?: any, refresh?: boolean }> = ({
   children,
   title = 'No Title',
   shouldShow,
+  refresh
 }) => {
+  const {
+    toggleStorage,
+    slugLocal,
+    setSlugLocal,
+    tenantIdLocal,
+    setTenantIdLocal,
+    dark,
+    setDark,
+    setActiveTenant,
+  } = useLocalStorage();
   const [session] = useSession();
   const classes = useStyles();
   const [state, setState] = useState<State>({
@@ -78,7 +88,6 @@ const Layout: FC<{ title?: string; shouldShow?: any }> = ({
   const handleCloseTenant = ({ target }: MouseEvent<EventTarget>) =>
     !anchorRefTenant?.current?.contains(target as HTMLElement) &&
     setState({ ...state, openTenant: false });
-
   const prevOpenTenant = useRef(state.openTenant);
 
   useEffect(() => {
@@ -101,32 +110,21 @@ const Layout: FC<{ title?: string; shouldShow?: any }> = ({
   // END OF ACCOUNT
 
   // ACTIVE TENANT
-  const [toggleStorage, setToggleStorage] = useState(false);
-  const [slugLocal, setSlugLocal] = useState<string | null>('');
-  const [tenantIdLocal, setTenantIdLocal] = useState<string | null>('');
   useEffect(() => {
     setSlugLocal(localStorage.getItem('slug'));
     setTenantIdLocal(localStorage.getItem('tenantId'));
     setDark(localStorage.getItem('dark') === 'dark');
 
     if (tenant && !isLoading) {
-      const tenantId = tenant.items?.[0]?.id;
+      const tid = tenant.items?.[0]?.id;
       const slug = tenant.items?.[0]?.slug;
       isClient() &&
-        tenantId &&
+        tid &&
         !localStorage.getItem('tenantId') &&
-        localStorage.setItem('tenantId', tenantId);
+        localStorage.setItem('tenantId', tid);
       isClient() && slug && !localStorage.getItem('slug') && localStorage.setItem('slug', slug);
     }
-  }, [session, toggleStorage]);
-
-  const setActiveTenant = (id: string, slug: string) => {
-    if (isClient()) {
-      setToggleStorage(!toggleStorage);
-      localStorage.setItem('tenantId', id);
-      localStorage.setItem('slug', slug);
-    }
-  };
+  }, [session, toggleStorage, refresh]);
   // END OF CHECK ACTIVE TENANT
 
   // SWITCH TENANT
@@ -135,12 +133,8 @@ const Layout: FC<{ title?: string; shouldShow?: any }> = ({
   // END OF SWITCH TENANT
 
   // DARK THEME
-  const [dark, setDark] = useState(false);
   const theme = React.useMemo(
-    () =>
-      createMuiTheme({
-        palette: { type: dark ? 'dark' : 'light' },
-      }),
+    () => createMuiTheme({ palette: { type: dark ? 'dark' : 'light' } }),
     [dark]
   );
   // END of DARK THEME

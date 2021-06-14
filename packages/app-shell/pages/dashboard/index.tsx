@@ -1,37 +1,57 @@
+import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
+import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
-import Divider from '@material-ui/core/Divider';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemAvatar from '@material-ui/core/ListItemAvatar';
-import ListItemText from '@material-ui/core/ListItemText';
-import Typography from '@material-ui/core/Typography';
+import CardMedia from '@material-ui/core/CardMedia';
+import Tooltip from '@material-ui/core/Tooltip';
 import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
+import FlashAutoOutlinedIcon from '@material-ui/icons/FlashAutoOutlined';
+import FlashOffOutlinedIcon from '@material-ui/icons/FlashOffOutlined';
+import FlashOnOutlined from '@material-ui/icons/FlashOnOutlined';
 import StorefrontOutlinedIcon from '@material-ui/icons/StorefrontOutlined';
 import Pagination from '@material-ui/lab/Pagination';
 import { withAuth } from 'components';
-import AvatarMd5 from 'components/AvatarMd5';
 import CardHeaderAvatar from 'components/CardHeaderAvatar';
 import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
+import ProTip from 'components/ProTip';
 import QuickAction from 'components/QuickAction';
+import md5 from 'md5';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
-import React, { Fragment } from 'react';
+import React, { useEffect } from 'react';
 import type { PaginatedTenant } from 'types';
-import { usePagination, useReSWR } from 'utils';
-import ProTip from '../../components/ProTip';
+import { useLocalStorage, usePagination, useReSWR } from 'utils';
 
 const PAGESIZE = 5;
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
+const useStyles = makeStyles((theme: Theme) => {
+  const dark = theme.palette.type === 'dark';
+  const grey = theme.palette.grey;
+
+  return createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
-    inline: { display: 'inline' },
-  })
-);
+    card: { display: 'flex', margin: theme.spacing(3, 1, 2) },
+    details: {
+      display: 'flex',
+      flexDirection: 'column',
+      margin: theme.spacing(0.5),
+    },
+    media: {
+      height: 150,
+      width: 150,
+    },
+    button: {
+      '&:hover': {
+        'font-weight': 'bold',
+      },
+    },
+  });
+});
+const GRAVATAR_URI = 'https://www.gravatar.com/avatar/';
+const uri = (subject: string, size: number) => `${GRAVATAR_URI}${md5(subject)}?s=${size}&d=wavatar`;
 
 const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
@@ -43,8 +63,22 @@ const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   let count;
   if (data && !isLoading) count = Math.ceil(data.total / PAGESIZE);
 
+  // used for "Set Active"
+  const {
+    toggleStorage,
+    tenantIdLocal,
+    setSlugLocal,
+    setTenantIdLocal,
+    setActiveTenant,
+  } = useLocalStorage();
+  useEffect(() => {
+    setSlugLocal(localStorage.getItem('slug'));
+    setTenantIdLocal(localStorage.getItem('tenantId'));
+  }, [session, toggleStorage]);
+
   return (
-    <Layout title="Tenant">
+    // once the localStorage changes by "toggleStorage", will trigger page refresh in Layout
+    <Layout title="Tenant" refresh={toggleStorage}>
       <Main
         session={session}
         title="Tenants"
@@ -59,42 +93,60 @@ const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                   <StorefrontOutlinedIcon />
                 </CardHeaderAvatar>
               }
-              title="Active tenants"
+              title="All tenants"
               subheader={<>Total: {data?.total || 0}</>}
             />
             <CardContent>
               <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
               <br />
-              <List className={classes.root}>
-                {data.items.map((item, index) => (
-                  <Fragment key={index}>
-                    <Link href={`/dashboard/${item.id}`}>
-                      <a>
-                        <ListItem alignItems="flex-start">
-                          <ListItemAvatar>
-                            <AvatarMd5 subject={item.id || 'idle'} />
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={item.slug}
-                            secondary={
-                              <Fragment>
-                                <Typography
-                                  component="span"
-                                  variant="caption"
-                                  className={classes.inline}
-                                  color="textPrimary">
-                                  {item.name || 'No content'}
-                                </Typography>
-                              </Fragment>
-                            }
-                          />
-                        </ListItem>
-                      </a>
-                    </Link>
-                    <Divider variant="inset" component="li" />
-                  </Fragment>
-                ))}
-              </List>
+              {data.items.map((item, index) => (
+                <Card key={index} variant="outlined" className={classes.card}>
+                  <Link href={`/dashboard/${item.id}`}>
+                    <a>
+                      <CardMedia className={classes.media} image={uri(item.id || 'idle', 200)} />
+                    </a>
+                  </Link>
+                  <div className={classes.details}>
+                    <CardHeader
+                      avatar={
+                        item.activated ? (
+                          <CardHeaderAvatar>
+                            {tenantIdLocal === item.id ? (
+                              <Tooltip title="Activated / Active">
+                                <FlashAutoOutlinedIcon />
+                              </Tooltip>
+                            ) : (
+                              <Tooltip title="Activated / Inactive">
+                                <FlashOnOutlined />
+                              </Tooltip>
+                            )}
+                          </CardHeaderAvatar>
+                        ) : (
+                          <CardHeaderAvatar>
+                            <Tooltip title="Not activated">
+                              <FlashOffOutlinedIcon />
+                            </Tooltip>
+                          </CardHeaderAvatar>
+                        )
+                      }
+                      title={item.slug?.toUpperCase()}
+                      subheader={item.name || 'No content'}
+                    />
+                    {item?.id && item?.slug && tenantIdLocal !== item.id && (
+                      <CardActions>
+                        <Button
+                          variant="outlined"
+                          className={classes.button}
+                          size="small"
+                          color="inherit"
+                          onClick={() => setActiveTenant(item?.id || '', item?.slug || '')}>
+                          Set Active
+                        </Button>
+                      </CardActions>
+                    )}
+                  </div>
+                </Card>
+              ))}
             </CardContent>
           </Card>
         )}

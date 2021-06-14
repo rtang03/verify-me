@@ -11,7 +11,6 @@ import Credential from './Credential';
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { display: 'flex', margin: theme.spacing(3, 1, 2) },
-    full: { margin: theme.spacing(3, 1, 2) },
     muiTextField: {
       '& .MuiTextField-root': {
         margin: theme.spacing(0.5),
