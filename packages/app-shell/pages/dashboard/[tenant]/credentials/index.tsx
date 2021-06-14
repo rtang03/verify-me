@@ -9,6 +9,7 @@ import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import CardHeaderAvatar from 'components/CardHeaderAvatar';
 import Credential from 'components/Credential';
+import CredentialCard from 'components/CredentialCard';
 import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
@@ -18,20 +19,14 @@ import RawContent from 'components/RawContent';
 import omit from 'lodash/omit';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import Link from 'next/link';
 import React, { useState } from 'react';
 import type { PaginatedVerifiableCredential } from 'types';
 import { usePagination, useReSWR, useTenant } from 'utils';
-import CredentialCard from '../../../../components/CredentialCard';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
-    cardHeaderAvatar: {
-      color: grey[900],
-      backgroundColor: '#fff',
-    },
   })
 );
 
@@ -85,7 +80,14 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
               title="Active credentials"
               subheader={<>Total: {data?.total || 0}</>}
             />
-            <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
+            <Pagination
+              variant="outlined"
+              shape="rounded"
+              count={count}
+              showFirstButton
+              showLastButton
+              onChange={pageChange}
+            />
             <CardContent>
               {data.items.map(({ verifiableCredential, hash }, index) => (
                 <Card key={index}>

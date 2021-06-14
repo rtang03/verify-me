@@ -39,6 +39,7 @@ const useStyles = makeStyles((theme: Theme) => {
       '&:hover': {
         color: dark ? grey[900] : grey[100],
         backgroundColor: dark ? grey[100] : grey[900],
+        'font-weight': 'bold',
       },
     },
   });

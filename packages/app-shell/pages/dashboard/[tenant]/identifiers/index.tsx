@@ -2,7 +2,6 @@ import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
-import { grey } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import PlusOneIcon from '@material-ui/icons/PlusOne';
 import ReceiptOutlinedIcon from '@material-ui/icons/ReceiptOutlined';
@@ -16,23 +15,18 @@ import ProTip from 'components/ProTip';
 import QuickAction from 'components/QuickAction';
 import RawContent from 'components/RawContent';
 import Result from 'components/Result';
+import SubmitButton from 'components/SubmitButton';
 import { Form, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import { mutate } from 'swr';
 import { getTenantUrl, useFetcher, useReSWR, useTenant } from 'utils';
-import SubmitButton from '../../../../components/SubmitButton';
 
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
-    submit: { margin: theme.spacing(3, 3, 3) },
-    cardHeaderAvatar: {
-      color: grey[900],
-      backgroundColor: '#fff',
-    },
   })
 );
 
@@ -85,15 +79,15 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                     <ProTip text="No decentralized identity document found for this tenant. You are about to create one" />
                   </CardContent>
                   <CardActions>
-                      <SubmitButton
-                        tooltip="Create web DID document"
-                        text={<PlusOneIcon />}
-                        loading={isSubmitting}
-                        submitForm={submitForm}
-                        disabled={isSubmitting || !fqUrl || !!webDid?.data}
-                        success={!!webDid?.data}
-                        error={!!webDid?.error}
-                      />
+                    <SubmitButton
+                      tooltip="Create web DID document"
+                      text={<PlusOneIcon />}
+                      loading={isSubmitting}
+                      submitForm={submitForm}
+                      disabled={isSubmitting || !fqUrl || !!webDid?.data}
+                      success={!!webDid?.data}
+                      error={!!webDid?.error}
+                    />
                   </CardActions>
                 </Card>
               </Form>

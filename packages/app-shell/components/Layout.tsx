@@ -27,11 +27,12 @@ import Brightness5Icon from '@material-ui/icons/Brightness5';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import HelpOutlineOutlinedIcon from '@material-ui/icons/HelpOutlineOutlined';
 import NotificationsIcon from '@material-ui/icons/Notifications';
-import UserProfileIcon from '@material-ui/icons/PermContactCalendar';
-import PersonAddIcon from '@material-ui/icons/PersonAdd';
-import QueueIcon from '@material-ui/icons/Queue';
-import SettingsIcon from '@material-ui/icons/Settings';
+import PermContactCalendarOutlinedIcon from '@material-ui/icons/PermContactCalendarOutlined';
+import PersonAddOutlinedIcon from '@material-ui/icons/PersonAddOutlined';
+import QueueOutlinedIcon from '@material-ui/icons/QueueOutlined';
+import SettingsOutlinedIcon from '@material-ui/icons/SettingsOutlined';
 import VisibilityOffOutlinedIcon from '@material-ui/icons/VisibilityOffOutlined';
 import VisibilityOutlinedIcon from '@material-ui/icons/VisibilityOutlined';
 import clsx from 'clsx';
@@ -166,7 +167,7 @@ const Layout: FC<{ title?: string; shouldShow?: any }> = ({
           <Toolbar>
             <Tooltip title="Home">
               <Button color="inherit">
-                <Link href="/">
+                <Link href="/index">
                   <a>
                     <Typography variant="h4">/</Typography>
                   </a>
@@ -220,7 +221,7 @@ const Layout: FC<{ title?: string; shouldShow?: any }> = ({
                                 <a>
                                   <MenuItem onClick={handleCloseTenant}>
                                     <ListItemIcon>
-                                      <SettingsIcon />
+                                      <SettingsOutlinedIcon />
                                     </ListItemIcon>
                                     <ListItemText secondary="Settings" />
                                   </MenuItem>
@@ -232,7 +233,7 @@ const Layout: FC<{ title?: string; shouldShow?: any }> = ({
                                 <a>
                                   <MenuItem onClick={handleCloseTenant}>
                                     <ListItemIcon>
-                                      <PersonAddIcon />
+                                      <PersonAddOutlinedIcon />
                                     </ListItemIcon>
                                     <ListItemText secondary="Invite member" />
                                   </MenuItem>
@@ -279,7 +280,7 @@ const Layout: FC<{ title?: string; shouldShow?: any }> = ({
                               <a>
                                 <MenuItem onClick={handleCloseTenant}>
                                   <ListItemIcon>
-                                    <QueueIcon />
+                                    <QueueOutlinedIcon />
                                   </ListItemIcon>
                                   <ListItemText secondary="Create tenant" />
                                 </MenuItem>
@@ -339,7 +340,7 @@ const Layout: FC<{ title?: string; shouldShow?: any }> = ({
                               <a>
                                 <MenuItem onClick={handleCloseAccount}>
                                   <ListItemIcon>
-                                    <UserProfileIcon />
+                                    <PermContactCalendarOutlinedIcon />
                                   </ListItemIcon>
                                   <ListItemText secondary="User profile" />
                                 </MenuItem>
@@ -347,17 +348,23 @@ const Layout: FC<{ title?: string; shouldShow?: any }> = ({
                             </Link>
                             <MenuItem onClick={handleCloseAccount}>
                               <ListItemIcon>
-                                <ExitToAppIcon />
+                                <HelpOutlineOutlinedIcon />
                               </ListItemIcon>
-                              <a
-                                href={`/api/auth/signout`}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  return signOut();
-                                }}>
-                                <ListItemText secondary="Sign out" />
-                              </a>
+                              <ListItemText secondary="Help" />
                             </MenuItem>
+                            <a
+                              href={`/api/auth/signout`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                return signOut();
+                              }}>
+                              <MenuItem onClick={handleCloseAccount}>
+                                <ListItemIcon>
+                                  <ExitToAppIcon />
+                                </ListItemIcon>
+                                <ListItemText secondary="Sign out" />
+                              </MenuItem>
+                            </a>
                           </MenuList>
                         </ClickAwayListener>
                       </Paper>

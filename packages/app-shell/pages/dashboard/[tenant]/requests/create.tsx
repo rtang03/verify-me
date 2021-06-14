@@ -258,7 +258,8 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                               margin="normal"
                               value={requiredIssuer}
                               onChange={({ target: { value } }) => setRequiredIssuer(value)}
-                            />{' '}
+                            />
+                            <br />
                             <MuiTextField
                               disabled={!!sdrResult?.data}
                               className={classes.longTextField}
@@ -319,6 +320,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                   </CardContent>
                   <CardActions>
                     <SubmitButton
+                      tooltip="Create Request (no send)"
                       text={<PlusOneIcon />}
                       submitForm={submitForm}
                       loading={isSubmitting}

@@ -28,10 +28,6 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
     textField: { width: '45ch' },
-    submit: { margin: theme.spacing(3, 3, 3) },
-    activate: {
-      marginLeft: 'auto',
-    },
   })
 );
 
@@ -106,6 +102,7 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                   </CardContent>
                   <CardActions disableSpacing>
                     <SubmitButton
+                      tooltip="Save"
                       text={<SaveOutlinedIcon />}
                       submitForm={submitForm}
                       loading={isSubmitting}

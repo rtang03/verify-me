@@ -84,6 +84,7 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
         {isError && !isLoading && <Error error={error} />}
         {tenantInfo?.activated && vc && (
           <Card className={classes.root}>
+            TODO. This may be a design flaw, which send credential directly. Disable it; review later.
             <CardHeader
               className={classes.root}
               avatar={<AvatarMd5 subject={id || 'idle'} image="identicon" />}
@@ -109,7 +110,7 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
                       <CardContent className={classes.mail}>
                         <SendFab
                           loading={isSubmitting}
-                          disabled={isSubmitting || !vc || !!result?.data}
+                          disabled={true || isSubmitting || !vc || !!result?.data}
                           submitForm={submitForm}
                           success={!!result?.data}
                           error={!!result?.error}

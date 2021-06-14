@@ -47,7 +47,7 @@ const MessagesEditPage: NextPage<{ session: Session }> = ({ session }) => {
         {tenantInfo?.activated && data && (
           <Card className={classes.root}>
             <MessageCard isFull={true} tenantInfo={tenantInfo} message={data} />
-            {data.type === 'sdr' && (
+            {data.type === 'sdr' && data?.metaData?.[0]?.type === 'DIDComm' && (
               <CardContent>
                 <CardContent>
                   <QuickAction

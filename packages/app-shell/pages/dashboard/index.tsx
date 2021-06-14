@@ -23,6 +23,7 @@ import Link from 'next/link';
 import React, { Fragment } from 'react';
 import type { PaginatedTenant } from 'types';
 import { usePagination, useReSWR } from 'utils';
+import ProTip from '../../components/ProTip';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
@@ -101,11 +102,9 @@ const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         {/* WHEN NO TENTANT */}
         {data?.items?.length === 0 && !isLoading && (
           <>
-            <QuickAction link="/dashboard/create" label="CREATE TENANT" disabled={false} />
+            <QuickAction link="/dashboard/create" label="TENANT" disabled={false} />
             <br />
-            <Typography variant="body2" color="primary">
-              ‼️ No tenant found. You must create first tenant to proceed.
-            </Typography>
+            <ProTip text="No tenant found. You must create first tenant to proceed." />
           </>
         )}
       </Main>

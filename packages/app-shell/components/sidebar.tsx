@@ -1,8 +1,8 @@
 import BallotOutlinedIcon from '@material-ui/icons/BallotOutlined';
-import FolderSharedIcon from '@material-ui/icons/FolderShared';
+import FolderSharedOutlinedIcon from '@material-ui/icons/FolderSharedOutlined';
 import LanguageIcon from '@material-ui/icons/Language';
-import MailIcon from '@material-ui/icons/Mail';
-import ScreenShareIcon from '@material-ui/icons/ScreenShare';
+import MailOutlineOutlinedIcon from '@material-ui/icons/MailOutlineOutlined';
+import ScreenShareOutlinedIcon from '@material-ui/icons/ScreenShareOutlined';
 
 export const sideBar: (tenantId: string) => { text: string; icon: any; link: string }[] = (id) => [
   {
@@ -12,7 +12,7 @@ export const sideBar: (tenantId: string) => { text: string; icon: any; link: str
   },
   {
     text: 'User Identifier',
-    icon: <FolderSharedIcon />,
+    icon: <FolderSharedOutlinedIcon />,
     link: id === '0' ? `/dashboard` : `/dashboard/${id}/users`,
   },
   {
@@ -22,12 +22,12 @@ export const sideBar: (tenantId: string) => { text: string; icon: any; link: str
   },
   {
     text: 'Request',
-    icon: <ScreenShareIcon />,
+    icon: <ScreenShareOutlinedIcon />,
     link: id === '0' ? `/dashboard` : `/dashboard/${id}/requests`,
   },
   {
     text: 'Inbox',
-    icon: <MailIcon />,
+    icon: <MailOutlineOutlinedIcon />,
     link: id === '0' ? `/dashboard` : `/dashboard/${id}/messages`,
   },
 ];

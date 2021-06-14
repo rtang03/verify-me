@@ -32,7 +32,7 @@ const QuickActionComponent: React.FC<{
   const classes = useStyles();
   const ICON = {
     ['edit' as string]: <EditOutlinedIcon />,
-    send: <SendOutlinedIcon/>
+    send: <SendOutlinedIcon />,
   }[icon] || <AddToPhotosOutlinedIcon />;
 
   return (

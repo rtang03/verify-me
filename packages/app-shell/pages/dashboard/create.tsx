@@ -84,6 +84,7 @@ const TenantCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                 </CardContent>
                 <CardActions>
                   <SubmitButton
+                    tooltip="Create tenant"
                     text={<PlusOneIcon />}
                     submitForm={submitForm}
                     loading={isSubmitting}

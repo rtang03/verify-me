@@ -82,7 +82,14 @@ const UsersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
               title="Active identifiers"
               subheader={<>Total: {data?.total || 0}</>}
             />
-            <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
+            <Pagination
+              variant="outlined"
+              shape="rounded"
+              count={count}
+              showFirstButton
+              showLastButton
+              onChange={pageChange}
+            />
             <CardContent className={classes.root}>
               {data.items.map((item, index) => (
                 <IdentifierCard key={index} identifier={item} tenantInfo={tenantInfo} />

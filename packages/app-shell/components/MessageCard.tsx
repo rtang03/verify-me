@@ -69,6 +69,9 @@ const MessageCard: React.FC<{ isFull?: boolean; message: IMessage; tenantInfo: T
 }) => {
   const classes = useStyles();
   const { id, createdAt, from, to, metaData, type } = message;
+  const getMessageType = (messageType: string) =>
+    ({ 'w3c.vp': 'Presentation', sdr: 'SD Request', 'w3c.vc': 'Credential' }[messageType] ||
+    'unknown type');
 
   return (
     <>
@@ -82,14 +85,14 @@ const MessageCard: React.FC<{ isFull?: boolean; message: IMessage; tenantInfo: T
         />
         {isFull && (
           <div>
-            <TextField value={type} label="Type" />
+            <TextField value={getMessageType(type)} label="Type" />
             <CardMedia className={classes.media} image={uri(id, 200)} />
           </div>
         )}
         {!isFull && (
           <Link href={`/dashboard/${tenantInfo.id}/messages/${id}`}>
             <a>
-              <TextField value={type} label="Type" />
+              <TextField value={getMessageType(type)} label="Type" />
               <CardMedia className={classes.media} image={uri(id, 200)} />
             </a>
           </Link>

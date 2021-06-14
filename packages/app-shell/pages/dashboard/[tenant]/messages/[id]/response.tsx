@@ -12,7 +12,7 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import Select from '@material-ui/core/Select';
 import Typography from '@material-ui/core/Typography';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import BorderColorIcon from '@material-ui/icons/BorderColor';
+import BorderColorOutlinedIcon from '@material-ui/icons/BorderColorOutlined';
 import type {
   IMessage,
   IGetVerifiableCredentialsForSdrArgs,
@@ -277,7 +277,7 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
                             <CardActions>
                               {/*** Sign presentation ***/}
                               <SubmitButton
-                                text={<BorderColorIcon />}
+                                text={<BorderColorOutlinedIcon />}
                                 disabled={
                                   isSubmitting ||
                                   !sdr ||
@@ -296,7 +296,7 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
                           </Card>
                         </CardContent>
                         <Result isTenantExist={!!tenantInfo} result={signedPresentation} />
-                        {show && (
+                        {show && signedPresentation?.data && (
                           <RawContent title="Raw Signed result" content={signedPresentation.data} />
                         )}
                       </Card>
@@ -365,7 +365,6 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
                                 url={sdr?.replyUrl}
                               />
                               <Result isTenantExist={!!tenantInfo} result={sendMessageResult} />
-
                               {show && sendMessageResult?.data && (
                                 <RawContent
                                   title="Raw Send result"

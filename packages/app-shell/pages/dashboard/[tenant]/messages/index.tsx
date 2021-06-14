@@ -77,7 +77,14 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                 </CardHeaderAvatar>
               }
             />
-            <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
+            <Pagination
+              variant="outlined"
+              shape="rounded"
+              count={count}
+              showFirstButton
+              showLastButton
+              onChange={pageChange}
+            />
             <CardContent>
               {data &&
                 data.items.map((item, index) => (
