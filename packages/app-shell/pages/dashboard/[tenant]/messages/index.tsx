@@ -1,70 +1,123 @@
-import Avatar from '@material-ui/core/Avatar';
-import Divider from '@material-ui/core/Divider';
-import LinearProgress from '@material-ui/core/LinearProgress';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
-import Typography from '@material-ui/core/Typography';
-import type { IMessage, Paginated } from '@verify/server';
+import Card from '@material-ui/core/Card';
+import CardContent from '@material-ui/core/CardContent';
+import CardHeader from '@material-ui/core/CardHeader';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import EmailOutlinedIcon from '@material-ui/icons/EmailOutlined';
+import Pagination from '@material-ui/lab/Pagination';
 import { withAuth } from 'components';
-import AccessDenied from 'components/AccessDenied';
+import CardHeaderAvatar from 'components/CardHeaderAvatar';
+import Error from 'components/Error';
 import Layout from 'components/Layout';
-import md5 from 'md5';
+import Main from 'components/Main';
+import MessageCard from 'components/MessageCard';
+import NoRecord from 'components/NoRecord';
+import QuickAction from 'components/QuickAction';
+import RawContent from 'components/RawContent';
+import omit from 'lodash/omit';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import Link from 'next/link';
-import React, { Fragment, useEffect } from 'react';
-import JSONTree from 'react-json-tree';
-import { useFetcher } from 'utils';
+import React, { Fragment, useState } from 'react';
+import type { PaginatedMessage } from 'types';
+import { usePagination, useReSWR, useTenant } from 'utils';
 
-const GRAVATAR_URI = 'https://www.gravatar.com/avatar/';
-const uri = (did: string) => GRAVATAR_URI + md5(did) + '?s=200&d=retro';
+const PAGESIZE = 5;
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    root: { margin: theme.spacing(3, 1, 2) },
+  })
+);
 
-const Page: NextPage<{ session: Session }> = ({ session }) => {
-  const { val, fetcher } = useFetcher<Paginated<IMessage>>();
+const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
+  const classes = useStyles();
+  const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+  const { cursor, pageChange } = usePagination(PAGESIZE);
 
-  useEffect(() => {
-    fetcher(`/api/messages`).finally(() => true);
-  }, [session]);
+  // Show Raw Content
+  const [show, setShow] = useState(false);
+
+  // Query Messages
+  const shouldFetch = !!slug && !!tenantInfo?.activated;
+  const url = slug ? `/api/messages?slug=${slug}&cursor=${cursor}&pagesize=${PAGESIZE}` : null;
+  const { data, isLoading, isError, error } = useReSWR<PaginatedMessage>(url, shouldFetch);
+  let count;
+  data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
+
+  // Delete Message
 
   return (
-    <Layout title="Messages">
-      {session && (
-        <>
-          <Typography variant="h4">Inbox</Typography>
-          <Typography variant="caption">Incoming messages. Learn more</Typography>
-          <br />
-          <br />
-          {val.loading ? <LinearProgress /> : <Divider />}
-          {val?.data?.items?.length ? (
-            <>
-              <br />
-              <Typography variant="h5">Messages</Typography>
-              <Typography variant="caption">total: {val.data.total}</Typography>
-              <List dense>
-                {val.data.items.map((item: any, index) => (
-                  <ListItem key={index}>
-                    <Avatar src={uri(item?.data?.iss || '')} />
-                    <Link href={`/dashboard/1/messages/${item.id}`}>
-                      <a>
-                        <ListItemText primary={`From: ${item.from}`} secondary={`To: ${item.to}`} />
-                        <Typography variant="caption">Type: {item.type} - created at {item.createdAt}</Typography>
-                      </a>
-                    </Link>
-                  </ListItem>
+    <Layout title="Messages" shouldShow={[show, setShow]}>
+      <Main
+        session={session}
+        title="Inbox"
+        subtitle="Incoming messages. Learn more"
+        parentText={`Dashboard | ${slug}`}
+        parentUrl={`/dashboard/${tenantInfo?.id}`}
+        isLoading={tenantLoading || (isLoading && shouldFetch)}
+        isError={tenantError && !tenantLoading}
+        tenantInfo={tenantInfo}
+        shouldActivate={true}>
+        {isError && !isLoading && <Error error={error} />}
+        {tenantInfo?.activated && (
+          <QuickAction
+            link={`/dashboard/${tenantInfo?.id}`}
+            label="TBC"
+            icon="send"
+            disabled={!tenantInfo?.id}
+          />
+        )}
+        {tenantInfo?.activated && !!data?.items?.length && (
+          <Card className={classes.root}>
+            <CardHeader
+              className={classes.root}
+              title="Messages"
+              subheader={<>Total: {data?.total || 0}</>}
+              avatar={
+                <CardHeaderAvatar>
+                  <EmailOutlinedIcon />
+                </CardHeaderAvatar>
+              }
+            />
+            <Pagination
+              variant="outlined"
+              shape="rounded"
+              count={count}
+              showFirstButton
+              showLastButton
+              onChange={pageChange}
+            />
+            <CardContent>
+              {data &&
+                data.items.map((item, index) => (
+                  <Fragment key={index}>
+                    <MessageCard message={item} tenantInfo={tenantInfo} />
+                    {show && item.type === 'w3c.vc' && (
+                      <RawContent
+                        content={item?.credentials?.map((cred) =>
+                          omit(cred, '@context', 'type')
+                        )}
+                      />
+                    )}
+                    {show && item.type === 'w3c.vp' && (
+                      <RawContent
+                        content={item?.presentations?.map((presentation) =>
+                          omit(presentation, '@context', 'type')
+                        )}
+                      />
+                    )}
+                    {show && item.type === 'sdr' && (
+                      <RawContent content={omit(item, 'type')} />
+                    )}
+                  </Fragment>
                 ))}
-              </List>
-            </>
-          ) : (
-            <Typography variant="h6">No record</Typography>
-          )}
-        </>
-      )}
-      {!session && <AccessDenied />}
+            </CardContent>
+          </Card>
+        )}
+        {tenantInfo && !data?.items?.length && !isLoading && <NoRecord />}
+      </Main>
     </Layout>
   );
 };
 
 export const getServerSideProps = withAuth;
 
-export default Page;
+export default MessagesIndexPage;

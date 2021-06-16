@@ -1,17 +1,27 @@
 import Status from 'http-status';
 import type { NextApiHandler } from 'next';
 import { catchHandlerErrors } from './catchHandlerError';
+import { MISSING_ACTION, MISSING_DOMAIN, MISSING_ID, MISSING_SLUG } from './constants';
 import { doFetch } from './doFetch';
+import { getTenantUrl } from './getTenantUrl';
 
 const handler: (domain: string, methods: string[]) => NextApiHandler = (domain, methods) => async (
   req,
   res
 ) => {
   const method = req.method as string;
-  const slug = req.query.slug;
+  const domain = process.env.NEXT_PUBLIC_DOMAIN;
+  const secure = process.env.NEXT_PUBLIC_DOMAIN_SECURE === 'true';
+  const slug = req.query.slug as string;
   const action = req.query.action;
-  // const url = `http://${slug}.${domain}/actions/${req.query?.id}/${action}`;
-  const url = `${process.env.NEXT_PUBLIC_BACKEND}/actions/${req.query?.id}/${action}`;
+  const id = req.query.id as string;
+
+  if (!id) return res.status(Status.OK).send({ status: 'ERROR', error: MISSING_ID });
+  if (!action) return res.status(Status.OK).send({ status: 'ERROR', error: MISSING_ACTION });
+  if (!slug) return res.status(Status.OK).send({ status: 'ERROR', error: MISSING_SLUG });
+  if (!domain) return res.status(Status.OK).send({ status: 'ERROR', error: MISSING_DOMAIN });
+
+  const url = `${getTenantUrl(slug, domain, secure)}/actions/${id}/${action}`;
 
   return (
     {
@@ -50,5 +60,5 @@ const handler: (domain: string, methods: string[]) => NextApiHandler = (domain, 
   )(req.query?.id);
 };
 
-export const createHandlerByActions = (url: string, methods: string[] = ['GET', 'POST']) =>
-  catchHandlerErrors(handler(url, methods));
+export const createHandlerByActions = (domain: string, methods: string[] = ['GET', 'POST']) =>
+  catchHandlerErrors(handler(domain, methods));

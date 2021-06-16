@@ -1,46 +1,48 @@
-import Button from '@material-ui/core/Button';
-import Divider from '@material-ui/core/Divider';
-import LinearProgress from '@material-ui/core/LinearProgress';
+import Card from '@material-ui/core/Card';
+import CardActions from '@material-ui/core/CardActions';
+import CardContent from '@material-ui/core/CardContent';
+import IconButton from '@material-ui/core/IconButton';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
+import LinkIcon from '@material-ui/icons/ExitToApp';
+import PlusOneIcon from '@material-ui/icons/PlusOne';
+import { withAuth } from 'components';
 import Layout from 'components/Layout';
 import LowerCaseTextField from 'components/LowerCaseTextField';
 import Main from 'components/Main';
+import ProTip from 'components/ProTip';
+import Result from 'components/Result';
+import SubmitButton from 'components/SubmitButton';
 import { Form, Field, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
+import Link from 'next/link';
 import React from 'react';
-import JSONTree from 'react-json-tree';
+import type { PartialTenant } from 'types';
 import { useFetcher } from 'utils';
 import * as yup from 'yup';
-import { withAuth } from '../../components';
-import type { PartialTenant } from '../../types';
-import Success from '../../components/Success';
 
 const validation = yup.object({
   slug: yup
     .string()
-    .min(5, 'Must be at least 5 characters')
+    .min(3, 'Must be at least 3 characters')
     .max(20, 'Must be less  than 20 characters')
     .required('tenant name is required')
     .matches(/^[a-zA-Z0-9]+$/, 'Cannot contain special characters or spaces'),
 });
+
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: {
-      display: 'flex',
-      flexWrap: 'wrap',
-    },
+    root: { margin: theme.spacing(3, 1, 2) },
     textField: { width: '40ch' },
-    submit: { margin: theme.spacing(3, 0, 2) },
   })
 );
 
-const Page: NextPage<{ session: Session }> = ({ session }) => {
+const TenantCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { val, poster } = useFetcher<PartialTenant>();
   const user_id = (session as any)?.user?.id;
-  const newTenant = (body: any) => poster('/api/tenants', body);
+  const newTenant = (body: { slug: string; user_id: string }) => poster('/api/tenants', body);
 
   return (
     <Layout title="Tenant">
@@ -49,8 +51,8 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
         parentText="Dashboard"
         parentUrl="/dashboard"
         title="Create Tenant"
-        subtitle="Each tenant does .... Learn more.">
-        {val.loading ? <LinearProgress /> : <Divider />}
+        subtitle="Each tenant does .... Learn more."
+        isLoading={val.loading}>
         <Formik
           initialValues={{ slug: '' }}
           validateOnChange={true}
@@ -60,44 +62,58 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
             await newTenant({ slug, user_id });
             setSubmitting(false);
           }}>
-          {({ isSubmitting }) => (
+          {({ values, isSubmitting, submitForm }) => (
             <Form>
-              <Field
-                disabled={val.data}
-                className={classes.textField}
-                label="Short memorable name"
-                size="small"
-                component={LowerCaseTextField}
-                name={'slug'}
-                placeholder={'issuer'}
-                variant="outlined"
-                margin="normal"
-                fullwidth="true"
-                autoFocus={true}
-              />
-              <p>
-                <Button
-                  className={classes.submit}
-                  variant="contained"
-                  color="primary"
-                  size="small"
-                  disabled={isSubmitting || !!val.data}
-                  type="submit">
-                  Submit
-                </Button>
-              </p>
+              <Card className={classes.root}>
+                <CardContent className={classes.root}>
+                  <ProTip text="Tenant's name must be globally unique, and cannot be changed." />
+                  <br />
+                  <Field
+                    disabled={!!val.data}
+                    className={classes.textField}
+                    label="Short memorable name"
+                    size="small"
+                    component={LowerCaseTextField}
+                    name={'slug'}
+                    placeholder={'verifier'}
+                    variant="outlined"
+                    margin="normal"
+                    fullwidth="true"
+                    autoFocus={true}
+                  />
+                </CardContent>
+                <CardActions>
+                  <SubmitButton
+                    tooltip="Create tenant"
+                    text={<PlusOneIcon />}
+                    submitForm={submitForm}
+                    loading={isSubmitting}
+                    success={!!val?.data}
+                    error={!!val?.error}
+                    disabled={isSubmitting || !!val.data || !values.slug}
+                  />
+                </CardActions>
+                {val && <Result isTenantExist={true} result={val} />}
+                {val?.data && (
+                  <CardContent>
+                    <Typography variant="body2">
+                      <>
+                        <Link href={`/dashboard/${val.data.id}`}>
+                          <a>
+                            <IconButton>
+                              <LinkIcon />
+                            </IconButton>
+                          </a>
+                        </Link>
+                        {val.data.slug}
+                      </>
+                    </Typography>
+                  </CardContent>
+                )}
+              </Card>
             </Form>
           )}
         </Formik>
-        <Divider />
-        {val.data && !val.loading && (
-          <>
-            <Success />
-            <Typography variant="caption" color="primary">
-              id: {val.data.id}
-            </Typography>
-          </>
-        )}
       </Main>
     </Layout>
   );
@@ -105,4 +121,4 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default Page;
+export default TenantCreatePage;

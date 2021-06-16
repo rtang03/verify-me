@@ -1,8 +1,8 @@
+import { Users } from '@verify/server';
+import type { Session } from 'next-auth';
 import Adapters from 'next-auth/adapters';
 import Providers from 'next-auth/providers';
 import type { ConnectionOptions } from 'typeorm';
-import type { Session } from 'next-auth';
-import { Users } from '@verify/server';
 
 export const nextauthOptions: any = (connectionOptions: ConnectionOptions) => ({
   theme: 'light' as any,

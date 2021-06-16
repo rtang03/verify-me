@@ -1,8 +1,9 @@
-import Link from '@material-ui/core/Link';
+import Card from '@material-ui/core/Card';
+import CardHeader from '@material-ui/core/CardHeader';
 import SvgIcon from '@material-ui/core/SvgIcon';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme } from '@material-ui/core/styles';
-import React from 'react';
+import React, { ReactFragment } from 'react';
 
 const LightBulbIcon = (props: React.ComponentProps<any>) => (
   <SvgIcon {...props}>
@@ -12,7 +13,7 @@ const LightBulbIcon = (props: React.ComponentProps<any>) => (
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
-    margin: theme.spacing(6, 0, 3),
+    margin: theme.spacing(2, 0, 2),
   },
   lightBulb: {
     verticalAlign: 'middle',
@@ -20,14 +21,20 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
 }));
 
-const ProTip: React.FC<any> = () => {
+const ProTip: React.FC<{ text: string | ReactFragment }> = ({ text }) => {
   const classes = useStyles();
+
   return (
-    <Typography className={classes.root} color="textSecondary">
-      <LightBulbIcon className={classes.lightBulb} />
-      Pro tip: See more <Link href="http://localhost:3000/control">examples</Link> on the
-      documentation.
-    </Typography>
+    <Card variant="outlined">
+      <CardHeader
+        avatar={<LightBulbIcon className={classes.lightBulb} />}
+        title={
+          <Typography className={classes.root} color="inherit">
+            {text}
+          </Typography>
+        }
+      />
+    </Card>
   );
 };
 

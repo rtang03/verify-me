@@ -5,4 +5,4 @@ export * from './constants';
 export * from './setupVeramo';
 export * from './createHttpServer';
 export * from './createTenantManager';
-export * from './webDidRouter';
+export * from './createDidDocument';

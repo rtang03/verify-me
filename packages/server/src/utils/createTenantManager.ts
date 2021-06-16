@@ -17,19 +17,18 @@ const createConnOption: (tenant: Tenant) => ConnectionOptions = (tenant) => ({
   username: tenant.db_username,
   password: tenant.db_password,
   database: tenant.db_name,
-  synchronize: false,
+  synchronize: true,
   logging: true,
   entities: Entities,
   schema: getSchemaName(tenant.id),
 });
 
-const debug = Debug('utils:createTenantManager');
+const debug = Debug('createTenantManager');
 
 export const createTenantManager: (commonConnection: Connection) => TenantManager = (
   commonConnection
 ) => {
   let connectionPromises: Record<string, Promise<Connection>>;
-  let connections: Record<string, Connection> = {};
   // NOTE: agents' key is "slug"; NOT "tenantId"
   const agents: Record<string, TTAgent> = {};
   const tenantRepo = getConnection('default').getRepository(Tenant);
@@ -72,18 +71,7 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
       const promise = createConnection(connectionOption);
       connectionPromises[name] = promise;
 
-      // step 3: add connection
-      if (connections[name]) console.warn('connection already exists');
-      let connection: Connection;
-      try {
-        connection = await promise;
-        isConnectionReady = true;
-      } catch (e) {
-        console.warn(util.format('fail to create connection %s, %j', tenant.id, e));
-      }
-      connections[name] = connection;
-
-      // step 4: add agent
+      // step 3: add agent
       try {
         // NOTE: This is using slug
         agents[tenant.slug] = setupVeramo(promise);
@@ -92,7 +80,7 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
         console.warn(util.format('fail to setup Agent %s, %j', tenant.id, e));
       }
 
-      // step 5: update Tenant
+      // step 4: update Tenant
       try {
         const result = await tenantRepo.update(tenant.id, { activated: true });
         result?.affected === 1 && (isTenantUpdated = true);
@@ -102,20 +90,14 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
 
       return isAgentReady && isConnectionReady && isTenantExist && isSchemaExist && isTenantUpdated;
     },
-    closeAllConnections: async () => {
-      for await (const [tenantId, c] of Object.entries(connections)) {
-        await c.close();
-        console.log(`Connection ${tenantId} is closed`);
-      }
-    },
     connectAllDatabases: async () => {
       const connectionPromiseArr = [];
-      const connectionArr = [];
       const tenants = await tenantRepo.find({ where: { activated: true } });
 
       for await (const tenant of tenants) {
         try {
-          console.log('Creating schema, if not exist');
+          debug('Creating schema, if not exist');
+
           await commonConnection.query(
             `SELECT schema_name FROM information_schema.schemata WHERE schema_name = '${getSchemaName(
               tenant.id
@@ -124,29 +106,17 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
           const option = createConnOption(tenant);
           const conn = createConnection(option);
           connectionPromiseArr.push({ [option.name]: conn });
-          const connection = await conn;
-          connectionArr.push({ [option.name]: connection });
         } catch {
           console.warn(`Schema for ${tenant.slug} does not exists`);
         }
-        debug(connections);
       }
       connectionPromises = connectionPromiseArr.reduce((prev, curr) => ({ ...prev, ...curr }), {});
-      connections = connectionArr.reduce((prev, curr) => ({ ...prev, ...curr }), {});
     },
     deactivate: async (tenantId) => {
       const tenant = await tenantRepo.findOne(tenantId);
 
       // remove connectionPromise
       delete connectionPromises[tenantId];
-
-      // remove connection
-      try {
-        await connections[tenantId].close();
-      } catch (error) {
-        console.warn(error);
-      }
-      delete connections[tenantId];
 
       // remove agent with slug
       delete agents[tenant.slug];
@@ -162,11 +132,6 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
     },
     getAgents: () => agents,
     getConnectionPromises: () => connectionPromises,
-    getConnections: () => connections,
-    getConnectionStatuses: () =>
-      Object.entries(connections)
-        .map(([tenantId, c]) => ({ [tenantId]: c.isConnected }))
-        .reduce((prev, curr) => ({ ...prev, ...curr }), {}),
     getTenantStatus: async (tenantId) => {
       let isActivated: boolean;
       let isSchemaExist: boolean;
@@ -194,7 +159,6 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
       return <TenantStatus>{
         isActivated,
         isSchemaExist,
-        isConnectionReady: !!connections[tenantId],
         isAgentReady,
       };
     },
@@ -219,14 +183,14 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
             )
         ).length;
       return {
-        connectionCount: Object.keys(connections)?.length,
         agentCount: Object.keys(agents)?.length,
         schemaCount,
       };
     },
     setupAgents: async () => {
       for await (const [tenantId, promise] of Object.entries(connectionPromises)) {
-        console.log('Setup agents: ' + tenantId);
+        debug('Setup agents: ' + tenantId);
+
         const tenant = await tenantRepo.findOne(tenantId);
         tenant && (agents[tenant.slug] = setupVeramo(promise));
       }

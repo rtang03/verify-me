@@ -1,104 +1,162 @@
 import Button from '@material-ui/core/Button';
-import Divider from '@material-ui/core/Divider';
-import LinearProgress from '@material-ui/core/LinearProgress';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemAvatar from '@material-ui/core/ListItemAvatar';
-import ListItemText from '@material-ui/core/ListItemText';
-import Typography from '@material-ui/core/Typography';
+import Card from '@material-ui/core/Card';
+import CardActions from '@material-ui/core/CardActions';
+import CardContent from '@material-ui/core/CardContent';
+import CardHeader from '@material-ui/core/CardHeader';
+import CardMedia from '@material-ui/core/CardMedia';
+import Tooltip from '@material-ui/core/Tooltip';
 import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
+import FlashAutoOutlinedIcon from '@material-ui/icons/FlashAutoOutlined';
+import FlashOffOutlinedIcon from '@material-ui/icons/FlashOffOutlined';
+import FlashOnOutlined from '@material-ui/icons/FlashOnOutlined';
+import StorefrontOutlinedIcon from '@material-ui/icons/StorefrontOutlined';
 import Pagination from '@material-ui/lab/Pagination';
 import { withAuth } from 'components';
-import AvatarMd5 from 'components/AvatarMd5';
+import CardHeaderAvatar from 'components/CardHeaderAvatar';
+import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
+import ProTip from 'components/ProTip';
+import QuickAction from 'components/QuickAction';
+import md5 from 'md5';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
-import React, { Fragment, useState } from 'react';
-import Error from '../../components/Error';
-import type { PaginatedTenant } from '../../types';
-import { useCommonResponse } from '../../utils';
+import React, { useEffect } from 'react';
+import type { PaginatedTenant } from 'types';
+import { useLocalStorage, usePagination, useReSWR } from 'utils';
 
 const PAGESIZE = 5;
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    root: {
-      width: '100%',
-      maxWidth: '45ch',
-      backgroundColor: theme.palette.background.paper,
-    },
-    inline: { display: 'inline' },
-  })
-);
+const useStyles = makeStyles((theme: Theme) => {
+  const dark = theme.palette.type === 'dark';
+  const grey = theme.palette.grey;
 
-const Page: NextPage<{ session: Session }> = ({ session }) => {
+  return createStyles({
+    root: { margin: theme.spacing(3, 1, 2) },
+    card: { display: 'flex', margin: theme.spacing(3, 1, 2) },
+    details: {
+      display: 'flex',
+      flexDirection: 'column',
+      margin: theme.spacing(0.5),
+    },
+    media: {
+      height: 150,
+      width: 150,
+    },
+    button: {
+      '&:hover': {
+        'font-weight': 'bold',
+      },
+    },
+  });
+});
+const GRAVATAR_URI = 'https://www.gravatar.com/avatar/';
+const uri = (subject: string, size: number) => `${GRAVATAR_URI}${md5(subject)}?s=${size}&d=wavatar`;
+
+const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
-  const [pageIndex, setPageIndex] = useState(0);
-  const { data, isError, isLoading } = useCommonResponse<PaginatedTenant>(
-    `/api/tenants?cursor=${pageIndex * PAGESIZE}&pagesize=${PAGESIZE}`
+  const { cursor, pageChange } = usePagination(PAGESIZE);
+  const { data, isError, isLoading } = useReSWR<PaginatedTenant>(
+    `/api/tenants?cursor=${cursor}&pagesize=${PAGESIZE}`
   );
-  const handlePageChange = (event: React.ChangeEvent<unknown>, pagenumber: number) =>
-    setPageIndex((pagenumber - 1) * PAGESIZE);
 
   let count;
   if (data && !isLoading) count = Math.ceil(data.total / PAGESIZE);
 
+  // used for "Set Active"
+  const {
+    toggleStorage,
+    tenantIdLocal,
+    setSlugLocal,
+    setTenantIdLocal,
+    setActiveTenant,
+  } = useLocalStorage();
+  useEffect(() => {
+    setSlugLocal(localStorage.getItem('slug'));
+    setTenantIdLocal(localStorage.getItem('tenantId'));
+  }, [session, toggleStorage]);
+
   return (
-    <Layout title="Tenant">
-      <Main session={session} title="Tenants" subtitle="List of tenants. Learn more">
-        {isLoading ? <LinearProgress /> : <Divider />}
+    // once the localStorage changes by "toggleStorage", will trigger page refresh in Layout
+    <Layout title="Tenant" refresh={toggleStorage}>
+      <Main
+        session={session}
+        title="Tenants"
+        subtitle="List of tenants. Learn more"
+        isLoading={isLoading}>
         {!!data?.items?.length && !isLoading && (
-          <>
-            <Pagination count={count} showFirstButton showLastButton onChange={handlePageChange} />
-            <Typography variant="caption">Total: {data?.total || 0}</Typography>
-            <List className={classes.root}>
+          <Card className={classes.root}>
+            <CardHeader
+              className={classes.root}
+              avatar={
+                <CardHeaderAvatar>
+                  <StorefrontOutlinedIcon />
+                </CardHeaderAvatar>
+              }
+              title="All tenants"
+              subheader={<>Total: {data?.total || 0}</>}
+            />
+            <CardContent>
+              <Pagination count={count} showFirstButton showLastButton onChange={pageChange} />
+              <br />
               {data.items.map((item, index) => (
-                <Fragment key={index}>
+                <Card key={index} variant="outlined" className={classes.card}>
                   <Link href={`/dashboard/${item.id}`}>
                     <a>
-                      <ListItem alignItems="flex-start">
-                        <ListItemAvatar>
-                          <AvatarMd5 subject={item.id || 'idle'} />
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={item.slug}
-                          secondary={
-                            <Fragment>
-                              <Typography
-                                component="span"
-                                variant="caption"
-                                className={classes.inline}
-                                color="textPrimary">
-                                {item.id}
-                              </Typography>
-                              {item.name}
-                            </Fragment>
-                          }
-                        />
-                      </ListItem>
+                      <CardMedia className={classes.media} image={uri(item.id || 'idle', 200)} />
                     </a>
                   </Link>
-                  <Divider variant="inset" component="li" />
-                </Fragment>
+                  <div className={classes.details}>
+                    <CardHeader
+                      avatar={
+                        item.activated ? (
+                          <CardHeaderAvatar>
+                            {tenantIdLocal === item.id ? (
+                              <Tooltip title="Activated / Default">
+                                <FlashAutoOutlinedIcon />
+                              </Tooltip>
+                            ) : (
+                              <Tooltip title="Activated">
+                                <FlashOnOutlined />
+                              </Tooltip>
+                            )}
+                          </CardHeaderAvatar>
+                        ) : (
+                          <CardHeaderAvatar>
+                            <Tooltip title="Not activated">
+                              <FlashOffOutlinedIcon />
+                            </Tooltip>
+                          </CardHeaderAvatar>
+                        )
+                      }
+                      title={item.slug?.toUpperCase()}
+                      subheader={item.name || 'No content'}
+                    />
+                    {item?.id && item?.slug && tenantIdLocal !== item.id && (
+                      <CardActions>
+                        <Button
+                          variant="outlined"
+                          className={classes.button}
+                          size="small"
+                          color="inherit"
+                          onClick={() => setActiveTenant(item?.id || '', item?.slug || '')}>
+                          Make Default
+                        </Button>
+                      </CardActions>
+                    )}
+                  </div>
+                </Card>
               ))}
-            </List>
-          </>
+            </CardContent>
+          </Card>
         )}
         {isError && !isLoading && <Error />}
         {/* WHEN NO TENTANT */}
         {data?.items?.length === 0 && !isLoading && (
           <>
-            <Typography variant="caption" color="secondary">
-              ‼️ No tenant found. You must create first tenant to proceed.
-            </Typography>
+            <QuickAction link="/dashboard/create" label="TENANT" disabled={false} />
             <br />
-            <br />
-            <Link href="/dashboard/create">
-              <Button size="small" variant="contained">
-                + CREATE TENANT
-              </Button>
-            </Link>
+            <ProTip text="No tenant found. You must create first tenant to proceed." />
           </>
         )}
       </Main>
@@ -108,4 +166,4 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default Page;
+export default DashboardIndexPage;

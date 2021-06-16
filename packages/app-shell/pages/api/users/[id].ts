@@ -1,14 +1,26 @@
 import Status from 'http-status';
 import type { NextApiHandler } from 'next';
-import { OOPS } from '../../../utils';
+import { getTenantUrl, MISSING_DOMAIN, MISSING_SLUG, OOPS } from '../../../utils';
 
+// This is an unusual method, "didManagerFind" is POST
+// This handler accept GET, and invoke a POST
+// Also, it removes the privateKey from the result payload
+// This is a customized version of "createHandlerByAgentMethod"
 const handler: NextApiHandler = async (req, res) => {
   if (req.method === 'GET') {
-    const url = `${process.env.NEXT_PUBLIC_BACKEND}/agent/didManagerFind`;
+    const slug = req.query.slug as string;
+    const domain = process.env.NEXT_PUBLIC_DOMAIN;
+    const secure = process.env.NEXT_PUBLIC_DOMAIN_SECURE === 'true';
+    const alias = (req.query.id as string) || '';
+
+    if (!slug) return res.status(Status.OK).send({ status: 'ERROR', error: MISSING_SLUG });
+    if (!domain) return res.status(Status.OK).send({ status: 'ERROR', error: MISSING_DOMAIN });
+
+    const url = `${getTenantUrl(slug, domain, secure)}/agent/didManagerFind`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', authorization: `Bearer jklj;kljkl` },
-      body: JSON.stringify({ alias: req.query?.id || '' }),
+      body: JSON.stringify({ alias }),
     });
     const status = response.status;
 
@@ -18,13 +30,10 @@ const handler: NextApiHandler = async (req, res) => {
         ...item,
         keys: item.keys.map((key: any) => ({ ...key, privateKeyHex: '********' })),
       }));
-      return res.status(Status.OK).send({ status: 'OK', data: data[0] });
-    } else {
-      console.error(`fail to fetch ${url}, status: ${status}`);
-      return res.status(Status.OK).send({ status: 'ERROR', message: OOPS });
-    }
-  }
-  res.status(Status.METHOD_NOT_ALLOWED).send({ status: 'ERROR', message: OOPS });
+      res.status(Status.OK).send({ status: 'OK', data: data[0] });
+    } else
+      res.status(Status.OK).send({ status: 'ERROR', message: OOPS, error: await response.text() });
+  } else res.status(Status.METHOD_NOT_ALLOWED).send({ status: 'ERROR', message: OOPS });
 };
 
 export default handler;

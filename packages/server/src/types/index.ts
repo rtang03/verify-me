@@ -1,4 +1,12 @@
-import type { IMessage } from '@veramo/core';
+import type {
+  IMessage,
+  IDIDManagerAddServiceArgs,
+  IDIDManagerRemoveServiceArgs,
+  IDIDManagerGetOrCreateArgs,
+  VerifiablePresentation,
+  VerifiableCredential,
+} from '@veramo/core';
+import { ICreateVerifiablePresentationArgs } from '@veramo/credential-w3c';
 import type {
   FindArgs,
   TClaimsColumns,
@@ -7,9 +15,21 @@ import type {
   TMessageColumns,
   TPresentationColumns,
   UniqueVerifiableCredential,
+  UniqueVerifiablePresentation,
 } from '@veramo/data-store';
 import type { ISendMessageDIDCommAlpha1Args } from '@veramo/did-comm';
-import type { ICredentialRequestInput, Issuer } from '@veramo/selective-disclosure';
+import type {
+  ICredentialRequestInput,
+  ICreateSelectiveDisclosureRequestArgs,
+  Issuer,
+  IGetVerifiableCredentialsForSdrArgs,
+  ICredentialsForSdr,
+  IPresentationValidationResult,
+  ISelectiveDisclosure,
+  IValidatePresentationAgainstSdrArgs,
+  ICreateProfileCredentialsArgs,
+} from '@veramo/selective-disclosure';
+import type { ServiceEndpoint } from 'did-resolver';
 import type { CommonResponse } from './commonResponse';
 import type { DidDocument } from './didDocument';
 import type { Paginated } from './paginated';
@@ -36,9 +56,35 @@ export type DataStoreORMGetVerifiablePresentationsArgs = FindArgs<TPresentationC
 export type DataStoreORMGetVerifiablePresentationsCountArgs = FindArgs<TPresentationColumns>;
 
 export {
+  DidDocument,
   UniqueVerifiableCredential,
+  UniqueVerifiablePresentation,
   ISendMessageDIDCommAlpha1Args,
   IMessage,
   ICredentialRequestInput,
   Issuer,
+  IDIDManagerAddServiceArgs,
+  IDIDManagerRemoveServiceArgs,
+  IDIDManagerGetOrCreateArgs,
+  ICreateSelectiveDisclosureRequestArgs,
+  IGetVerifiableCredentialsForSdrArgs,
+  ICredentialsForSdr,
+  ICreateVerifiablePresentationArgs,
+  VerifiablePresentation,
+  VerifiableCredential,
+  ServiceEndpoint,
+  IPresentationValidationResult,
+  ISelectiveDisclosure,
+  IValidatePresentationAgainstSdrArgs,
+  ICreateProfileCredentialsArgs,
+};
+
+// workaround: the original ISelectiveDisclosureRequest is incorrectly typed.
+export type ISelectiveDisclosureRequest = {
+  iat: number;
+  iss: string;
+  type: string;
+  subject?: string;
+  replyUrl?: string;
+  claims: ICredentialRequestInput[];
 };

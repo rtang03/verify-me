@@ -1,39 +1,39 @@
-import AccountBoxIcon from '@material-ui/icons/AccountBox';
-import CallReceivedIcon from '@material-ui/icons/CallReceived';
-import FolderSharedIcon from '@material-ui/icons/FolderShared';
-import MailIcon from '@material-ui/icons/Mail';
-import PhonelinkIcon from '@material-ui/icons/Phonelink';
-import ScreenShareIcon from '@material-ui/icons/ScreenShare';
+import BallotOutlinedIcon from '@material-ui/icons/BallotOutlined';
+import FolderSharedOutlinedIcon from '@material-ui/icons/FolderSharedOutlined';
+import LanguageIcon from '@material-ui/icons/Language';
+import MailOutlineOutlinedIcon from '@material-ui/icons/MailOutlineOutlined';
+import ScreenShareOutlinedIcon from '@material-ui/icons/ScreenShareOutlined';
+import SendOutlinedIcon from '@material-ui/icons/SendOutlined';
 
 export const sideBar: (tenantId: string) => { text: string; icon: any; link: string }[] = (id) => [
   {
-    text: 'Issuer',
-    icon: <AccountBoxIcon />,
-    link: `/dashboard/${id}/identities`,
+    text: 'Did Document',
+    icon: <LanguageIcon />,
+    link: id === '0' ? `/dashboard` : `/dashboard/${id}/identifiers`,
   },
   {
     text: 'User',
-    icon: <FolderSharedIcon />,
-    link: `/dashboard/${id}/users`,
+    icon: <FolderSharedOutlinedIcon />,
+    link: id === '0' ? `/dashboard` : `/dashboard/${id}/users`,
   },
   {
     text: 'Credential',
-    icon: <PhonelinkIcon />,
-    link: `/dashboard/${id}/credentials`,
-  },
-  {
-    text: 'Inbox',
-    icon: <MailIcon />,
-    link: `/dashboard/${id}/messages`,
+    icon: <BallotOutlinedIcon />,
+    link: id === '0' ? `/dashboard` : `/dashboard/${id}/credentials`,
   },
   {
     text: 'Request',
-    icon: <ScreenShareIcon />,
-    link: `/dashboard/${id}/requests`,
+    icon: <SendOutlinedIcon />,
+    link: id === '0' ? `/dashboard` : `/dashboard/${id}/requests`,
   },
   {
-    text: 'Response',
-    icon: <CallReceivedIcon />,
-    link: `/dashboard/${id}/responses`,
+    text: 'Presentation',
+    icon: <ScreenShareOutlinedIcon />,
+    link: id === '0' ? `/dashboard` : `/dashboard/${id}/presentations`,
+  },
+  {
+    text: 'Inbox',
+    icon: <MailOutlineOutlinedIcon />,
+    link: id === '0' ? `/dashboard` : `/dashboard/${id}/messages`,
   },
 ];

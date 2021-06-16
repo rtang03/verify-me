@@ -7,6 +7,7 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 import Divider from '@material-ui/core/Divider';
 import Drawer from '@material-ui/core/Drawer';
 import Grow from '@material-ui/core/Grow';
+import IconButton from '@material-ui/core/IconButton';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
@@ -17,37 +18,67 @@ import MenuList from '@material-ui/core/MenuList';
 import Paper from '@material-ui/core/Paper';
 import Popper from '@material-ui/core/Popper';
 import Toolbar from '@material-ui/core/Toolbar';
+import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
+import { grey } from '@material-ui/core/colors';
+import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
+import Brightness4Icon from '@material-ui/icons/Brightness4';
+import Brightness5Icon from '@material-ui/icons/Brightness5';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import UserProfileIcon from '@material-ui/icons/PermContactCalendar';
-import PersonAddIcon from '@material-ui/icons/PersonAdd';
-import QueueIcon from '@material-ui/icons/Queue';
-import SettingsIcon from '@material-ui/icons/Settings';
+import HelpOutlineOutlinedIcon from '@material-ui/icons/HelpOutlineOutlined';
+import NotificationsIcon from '@material-ui/icons/Notifications';
+import PermContactCalendarOutlinedIcon from '@material-ui/icons/PermContactCalendarOutlined';
+import PersonAddOutlinedIcon from '@material-ui/icons/PersonAddOutlined';
+import QueueOutlinedIcon from '@material-ui/icons/QueueOutlined';
+import SettingsOutlinedIcon from '@material-ui/icons/SettingsOutlined';
+import VisibilityOffOutlinedIcon from '@material-ui/icons/VisibilityOffOutlined';
+import VisibilityOutlinedIcon from '@material-ui/icons/VisibilityOutlined';
+import clsx from 'clsx';
 import sortBy from 'lodash/sortBy';
 import { signIn, signOut, useSession } from 'next-auth/client';
 import Head from 'next/head';
 import Link from 'next/link';
 import React, { FC, useEffect, MouseEvent, useState, useRef, KeyboardEvent } from 'react';
 import type { PaginatedTenant } from '../types';
-import { useCommonResponse, useStyles } from '../utils';
+import { isClient, useReSWR, useStyles, useLocalStorage } from '../utils';
 import AvatarMd5 from './AvatarMd5';
 import { sideBar } from './sidebar';
 
 interface State {
   openAccount: boolean;
   openTenant: boolean;
+  openSwitchTenant: boolean;
 }
 
-const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
+const Layout: FC<{ title?: string; shouldShow?: any, refresh?: boolean }> = ({
+  children,
+  title = 'No Title',
+  shouldShow,
+  refresh
+}) => {
+  const {
+    toggleStorage,
+    slugLocal,
+    setSlugLocal,
+    tenantIdLocal,
+    setTenantIdLocal,
+    dark,
+    setDark,
+    setActiveTenant,
+  } = useLocalStorage();
   const [session] = useSession();
   const classes = useStyles();
-  const { data: tenant, isError, isLoading } = useCommonResponse<PaginatedTenant>('/api/tenants');
-  const [val, setVal] = useState<State>({ openAccount: false, openTenant: false });
-  const handleToggle = (state: keyof State) => () => setVal({ ...val, [state]: !val[state] });
-  const handleListKeyDown = (state: keyof State) => (event: KeyboardEvent) =>
-    event.key === 'Tab' && event.preventDefault() && setVal({ ...val, [state]: false });
+  const [state, setState] = useState<State>({
+    openAccount: false,
+    openTenant: false,
+    openSwitchTenant: false,
+  });
+  const { data: tenant, isLoading } = useReSWR<PaginatedTenant>('/api/tenants');
+  const handleToggle = (key: keyof State) => () => setState({ ...state, [key]: !state[key] });
+  const handleListKeyDown = (key: keyof State) => (event: KeyboardEvent) =>
+    event.key === 'Tab' && event.preventDefault() && setState({ ...state, [key]: false });
 
   // POPUP MENU for TENANT
   // @see https://material-ui.com/components/drawers/
@@ -56,309 +87,365 @@ const Layout: FC<{ title?: string }> = ({ children, title = 'No Title' }) => {
 
   const handleCloseTenant = ({ target }: MouseEvent<EventTarget>) =>
     !anchorRefTenant?.current?.contains(target as HTMLElement) &&
-    setVal({ ...val, openTenant: false });
-
-  const prevOpenTenant = useRef(val.openTenant);
+    setState({ ...state, openTenant: false });
+  const prevOpenTenant = useRef(state.openTenant);
 
   useEffect(() => {
-    prevOpenTenant.current && !val.openTenant && anchorRefTenant.current?.focus();
-    prevOpenTenant.current = val.openTenant;
-  }, [val.openTenant]);
+    prevOpenTenant.current && !state.openTenant && anchorRefTenant.current?.focus();
+    prevOpenTenant.current = state.openTenant;
+  }, [state.openTenant]);
   // END OF TENTANT
 
   // POPUP MENU for ACCOUNT
   const anchorRefAccount = useRef<HTMLButtonElement>(null);
   const handleCloseAccount = ({ target }: MouseEvent<EventTarget>) =>
     !anchorRefAccount?.current?.contains(target as HTMLElement) &&
-    setVal({ ...val, openAccount: false });
-  const prevOpenAccount = useRef(val.openAccount);
+    setState({ ...state, openAccount: false });
+  const prevOpenAccount = useRef(state.openAccount);
 
   useEffect(() => {
-    prevOpenAccount.current && !val.openAccount && anchorRefAccount.current?.focus();
-    prevOpenAccount.current = val.openAccount;
-  }, [val.openAccount]);
+    prevOpenAccount.current && !state.openAccount && anchorRefAccount.current?.focus();
+    prevOpenAccount.current = state.openAccount;
+  }, [state.openAccount]);
   // END OF ACCOUNT
 
   // ACTIVE TENANT
-  const getTenantId = () =>
-    (typeof window !== 'undefined' && localStorage.getItem('tenantId')) || null;
-  const getSlug = () => (typeof window !== 'undefined' && localStorage.getItem('slug')) || null;
-  if (tenant && !isLoading) {
-    const tenantId = tenant.items?.[0]?.id;
-    const slug = tenant.items?.[0]?.slug;
-    // check if the localStorage's tenantId & slug is not out-of-dated.
-    const tenants = tenant?.items?.map(({ id }) => ({ id }));
-    if (tenants?.filter(({ id }) => id === getTenantId()).length === 0) {
-      typeof window !== 'undefined' && localStorage.setItem('tenantId', '');
-      typeof window !== 'undefined' && localStorage.setItem('slug', '');
+  useEffect(() => {
+    setSlugLocal(localStorage.getItem('slug'));
+    setTenantIdLocal(localStorage.getItem('tenantId'));
+    setDark(localStorage.getItem('dark') === 'dark');
+
+    if (tenant && !isLoading) {
+      const tid = tenant.items?.[0]?.id;
+      const slug = tenant.items?.[0]?.slug;
+      isClient() &&
+        tid &&
+        !localStorage.getItem('tenantId') &&
+        localStorage.setItem('tenantId', tid);
+      isClient() && slug && !localStorage.getItem('slug') && localStorage.setItem('slug', slug);
     }
-    // if none exists, save it to localStorage
-    !getTenantId() &&
-      typeof window !== 'undefined' &&
-      tenantId &&
-      localStorage.setItem('tenantId', tenantId);
-    !getSlug() && typeof window !== 'undefined' && slug && localStorage.setItem('slug', slug);
-  }
-  const setActiveTenant = (id: string, slug: string) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('tenantId', id);
-      localStorage.setItem('slug', slug);
-    }
-  };
+  }, [session, toggleStorage, refresh]);
   // END OF CHECK ACTIVE TENANT
 
   // SWITCH TENANT
-  const [openSwitchTenant, setOpenSwitchTenant] = useState(false);
-  const handleSwitchTenant = () => setOpenSwitchTenant(!openSwitchTenant);
+  const handleSwitchTenant = () =>
+    setState({ ...state, openSwitchTenant: !state.openSwitchTenant });
   // END OF SWITCH TENANT
 
-  return (
-    <div className={classes.root}>
-      <Head>
-        <title>{title}</title>
-      </Head>
-      <style jsx global>{`
-        a {
-          color: inherit;
-          text-decoration: none;
-        }
-      `}</style>
-      <CssBaseline />
-      <AppBar position="fixed" className={classes.appBar}>
-        <Toolbar>
-          <Button color="inherit">
-            <Link href="/">
-              <Typography variant="caption" noWrap>
-                Home
-              </Typography>
-            </Link>
-          </Button>
+  // DARK THEME
+  const theme = React.useMemo(
+    () => createMuiTheme({ palette: { type: dark ? 'dark' : 'light' } }),
+    [dark]
+  );
+  // END of DARK THEME
 
-          <div className={classes.root} />
-          {session ? (
-            <>
-              {/*** POP MENU FOR TENANT ***/}
-              <Button
-                color="inherit"
-                ref={anchorRefTenant}
-                aria-controls={val.openTenant ? 'menu-list-grow' : undefined}
-                aria-haspopup="true"
-                onClick={handleToggle('openTenant')}>
-                <a>{getSlug() || 'No tenant'}</a>
+  // Should Show Payload
+  let show = false;
+  let setShow: (fcn: any) => void;
+  shouldShow && ([show, setShow] = shouldShow);
+
+  return (
+    <ThemeProvider theme={theme}>
+      <div className={classes.root}>
+        <Head>
+          <title>{title}</title>
+        </Head>
+        <style jsx global>{`
+          a {
+            color: inherit;
+            text-decoration: none;
+          }
+        `}</style>
+        <CssBaseline />
+        <AppBar color={dark ? 'inherit' : 'primary'} position="fixed" className={classes.appBar}>
+          <Toolbar>
+            <Tooltip title="Home">
+              <Button color="inherit">
+                <Link href="/index">
+                  <a>
+                    <Typography variant="h4">/</Typography>
+                  </a>
+                </Link>
               </Button>
-              <Popper
-                open={val.openTenant}
-                anchorEl={anchorRefTenant.current}
-                role={undefined}
-                transition
-                disablePortal>
-                {({ TransitionProps, placement }) => (
-                  <Grow
-                    {...TransitionProps}
-                    style={{
-                      transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom',
-                    }}>
-                    <Paper>
-                      <ClickAwayListener onClickAway={handleCloseTenant}>
-                        <MenuList
-                          autoFocusItem={val.openTenant}
-                          id="menu-list-grow"
-                          onKeyDown={handleListKeyDown('openTenant')}>
-                          <ListItem onClick={handleCloseTenant}>
-                            <ListItemAvatar>
-                              <AvatarMd5 subject={getTenantId() || 'idle'} />
-                            </ListItemAvatar>
-                            <Typography variant="inherit" color="secondary">
-                              {typeof window !== 'undefined' && (getSlug() || 'No tenant')}
-                            </Typography>
-                          </ListItem>
-                          <Divider />
-                          {/* hide when no active tenant */}
-                          {getTenantId() && (
-                            <Link href={`/dashboard/${getTenantId()}`}>
+            </Tooltip>
+            <div className={classes.root} />
+            {session ? (
+              <>
+                {/*** POP MENU FOR TENANT ***/}
+                <Tooltip title="Active tenant">
+                  <Button
+                    color="inherit"
+                    ref={anchorRefTenant}
+                    aria-controls={state.openTenant ? 'menu-list-grow' : undefined}
+                    aria-haspopup="true"
+                    onClick={handleToggle('openTenant')}>
+                    <a>{slugLocal || 'No tenant'}</a>
+                  </Button>
+                </Tooltip>
+                <Popper
+                  open={state.openTenant}
+                  anchorEl={anchorRefTenant.current}
+                  role={undefined}
+                  transition
+                  disablePortal>
+                  {({ TransitionProps, placement }) => (
+                    <Grow
+                      {...TransitionProps}
+                      style={{
+                        transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom',
+                      }}>
+                      <Paper>
+                        <ClickAwayListener onClickAway={handleCloseTenant}>
+                          <MenuList
+                            autoFocusItem={state.openTenant}
+                            id="menu-list-grow"
+                            onKeyDown={handleListKeyDown('openTenant')}>
+                            <ListItem onClick={handleCloseTenant}>
+                              <ListItemAvatar>
+                                <AvatarMd5 subject={tenantIdLocal || 'idle'} />
+                              </ListItemAvatar>
+                              <Typography variant="inherit" color="secondary">
+                                {slugLocal?.toUpperCase() || 'No tenant'}
+                              </Typography>
+                            </ListItem>
+                            <Divider />
+                            {/* hide when no active tenant */}
+                            {tenantIdLocal && (
+                              <Link href={`/dashboard/${tenantIdLocal}`}>
+                                <a>
+                                  <MenuItem onClick={handleCloseTenant}>
+                                    <ListItemIcon>
+                                      <SettingsOutlinedIcon />
+                                    </ListItemIcon>
+                                    <ListItemText secondary="Settings" />
+                                  </MenuItem>
+                                </a>
+                              </Link>
+                            )}
+                            {tenantIdLocal && (
+                              <Link href={`/dashboard/${tenantIdLocal}/invite`}>
+                                <a>
+                                  <MenuItem onClick={handleCloseTenant}>
+                                    <ListItemIcon>
+                                      <PersonAddOutlinedIcon />
+                                    </ListItemIcon>
+                                    <ListItemText secondary="Invite member" />
+                                  </MenuItem>
+                                </a>
+                              </Link>
+                            )}
+                            {tenantIdLocal && (
+                              <ListItem button onClick={handleSwitchTenant}>
+                                <ListItemIcon>
+                                  {state.openSwitchTenant ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                                </ListItemIcon>
+                                <ListItemText secondary="Switch tenant" />
+                              </ListItem>
+                            )}
+                            {tenant && tenant?.items?.length !== 0 && (
+                              <Collapse in={state.openSwitchTenant} timeout="auto" unmountOnExit>
+                                <List component="div" disablePadding>
+                                  {sortBy(tenant.items, 'slug')?.map((item, index) => (
+                                    <Link key={index} href={`/dashboard/${item.id}`}>
+                                      <ListItem
+                                        button
+                                        className={classes.nested}
+                                        onClick={handleCloseTenant}>
+                                        <ListItemIcon
+                                          onClick={() =>
+                                            setActiveTenant(item.id || '', item.slug || '')
+                                          }>
+                                          <AvatarMd5 subject={item.id || 'idle'} size="small" />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                          secondary={item.slug}
+                                          onClick={() =>
+                                            setActiveTenant(item.id || '', item.slug || '')
+                                          }
+                                        />
+                                      </ListItem>
+                                    </Link>
+                                  ))}
+                                </List>
+                              </Collapse>
+                            )}
+                            <Divider />
+                            <Link href="/dashboard/create">
                               <a>
-                                <ListItem onClick={handleCloseTenant}>
+                                <MenuItem onClick={handleCloseTenant}>
                                   <ListItemIcon>
-                                    <SettingsIcon />
+                                    <QueueOutlinedIcon />
                                   </ListItemIcon>
-                                  <ListItemText secondary="Settings" />
-                                </ListItem>
+                                  <ListItemText secondary="Create tenant" />
+                                </MenuItem>
                               </a>
                             </Link>
-                          )}
-                          {getTenantId() && (
-                            <ListItem onClick={handleCloseTenant}>
-                              <ListItemIcon>
-                                <PersonAddIcon />
-                              </ListItemIcon>
-                              <ListItemText secondary="Invite member" />
+                          </MenuList>
+                        </ClickAwayListener>
+                      </Paper>
+                    </Grow>
+                  )}
+                </Popper>
+                {/*** END OF POP MENU FOR TENANT ***/}
+                {/*** NOTIFICATIONS ***/}
+                <IconButton>
+                  <NotificationsIcon style={{ color: grey[100] }} />
+                </IconButton>
+                {/*** POP MENU FOR ACCOUNT ***/}
+                <Tooltip title="Active account">
+                  <Button
+                    color="inherit"
+                    ref={anchorRefAccount}
+                    aria-controls={state.openAccount ? 'menu-list-grow' : undefined}
+                    aria-haspopup="true"
+                    onClick={handleToggle('openAccount')}>
+                    {session?.user?.image ? (
+                      <Avatar alt={session?.user?.name || 'Anonymous'} src={session?.user?.image} />
+                    ) : (
+                      <Typography variant="caption">{session?.user?.name}</Typography>
+                    )}
+                  </Button>
+                </Tooltip>
+                <Popper
+                  open={state.openAccount}
+                  anchorEl={anchorRefAccount.current}
+                  role={undefined}
+                  transition
+                  disablePortal>
+                  {({ TransitionProps, placement }) => (
+                    <Grow
+                      {...TransitionProps}
+                      style={{
+                        transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom',
+                      }}>
+                      <Paper>
+                        <ClickAwayListener onClickAway={handleCloseAccount}>
+                          <MenuList
+                            autoFocusItem={state.openAccount}
+                            id="menu-list-grow"
+                            onKeyDown={handleListKeyDown('openAccount')}>
+                            <ListItem onClick={handleCloseAccount}>
+                              <ListItemAvatar>
+                                <Avatar src={session?.user?.image || 'idle'} />
+                              </ListItemAvatar>
+                              <ListItemText primary={session?.user?.name || 'Anonymous'} />
                             </ListItem>
-                          )}
-                          {getTenantId() && (
-                            <ListItem button onClick={handleSwitchTenant}>
+                            <Link href="/profile">
+                              <a>
+                                <MenuItem onClick={handleCloseAccount}>
+                                  <ListItemIcon>
+                                    <PermContactCalendarOutlinedIcon />
+                                  </ListItemIcon>
+                                  <ListItemText secondary="User profile" />
+                                </MenuItem>
+                              </a>
+                            </Link>
+                            <MenuItem onClick={handleCloseAccount}>
                               <ListItemIcon>
-                                {openSwitchTenant ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                                <HelpOutlineOutlinedIcon />
                               </ListItemIcon>
-                              <ListItemText secondary="Switch tenant" />
-                            </ListItem>
-                          )}
-                          {tenant && tenant?.items?.length !== 0 && (
-                            <Collapse in={openSwitchTenant} timeout="auto" unmountOnExit>
-                              <List component="div" disablePadding>
-                                {sortBy(tenant.items, 'slug')?.map((item, index) => (
-                                  <Link key={index} href={`/dashboard/${item.id}`}>
-                                    <ListItem
-                                      button
-                                      className={classes.nested}
-                                      onClick={handleCloseTenant}>
-                                      <ListItemIcon>
-                                        <AvatarMd5 subject={item.id || 'idle'} size="small" />
-                                      </ListItemIcon>
-                                      <ListItemText
-                                        secondary={item.slug}
-                                        onClick={() =>
-                                          setActiveTenant(item.id || '', item.slug || '')
-                                        }
-                                      />
-                                    </ListItem>
-                                  </Link>
-                                ))}
-                              </List>
-                            </Collapse>
-                          )}
-
-                          <Divider />
-                          <Link href="/dashboard/create">
-                            <a>
-                              <ListItem onClick={handleCloseTenant}>
-                                <ListItemIcon>
-                                  <QueueIcon />
-                                </ListItemIcon>
-                                <ListItemText secondary="Create tenant" />
-                              </ListItem>
-                            </a>
-                          </Link>
-                        </MenuList>
-                      </ClickAwayListener>
-                    </Paper>
-                  </Grow>
-                )}
-              </Popper>
-              {/*** END OF POP MENU FOR TENANT ***/}
-              {/*** POP MENU FOR ACCOUNT ***/}
-              <span
-                style={{ backgroundImage: `url(${session?.user?.image})` }}
-                className={classes.avatar}
-              />
-              <Button
-                color="inherit"
-                ref={anchorRefAccount}
-                aria-controls={val.openAccount ? 'menu-list-grow' : undefined}
-                aria-haspopup="true"
-                onClick={handleToggle('openAccount')}>
-                {session?.user?.image ? (
-                  <Avatar alt={session?.user?.name || 'Anonymous'} src={session?.user?.image} />
-                ) : (
-                  <Typography variant="caption">{session?.user?.name}</Typography>
-                )}
-              </Button>
-              <Popper
-                open={val.openAccount}
-                anchorEl={anchorRefAccount.current}
-                role={undefined}
-                transition
-                disablePortal>
-                {({ TransitionProps, placement }) => (
-                  <Grow
-                    {...TransitionProps}
-                    style={{
-                      transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom',
-                    }}>
-                    <Paper>
-                      <ClickAwayListener onClickAway={handleCloseAccount}>
-                        <MenuList
-                          autoFocusItem={val.openAccount}
-                          id="menu-list-grow"
-                          onKeyDown={handleListKeyDown('openAccount')}>
-                          <ListItem onClick={handleCloseAccount}>
-                            <ListItemAvatar>
-                              <Avatar src={session?.user?.image || 'idle'} />
-                            </ListItemAvatar>
-                            <ListItemText primary={session?.user?.name || 'Anonymous'} />
-                          </ListItem>
-                          <Link href="/profile">
-                            <a>
-                              <ListItem onClick={handleCloseAccount}>
-                                <ListItemIcon>
-                                  <UserProfileIcon />
-                                </ListItemIcon>
-                                <ListItemText secondary="User profile" />
-                              </ListItem>
-                            </a>
-                          </Link>
-                          <ListItem onClick={handleCloseAccount}>
-                            <ListItemIcon>
-                              <ExitToAppIcon />
-                            </ListItemIcon>
+                              <ListItemText secondary="Help" />
+                            </MenuItem>
                             <a
                               href={`/api/auth/signout`}
                               onClick={(e) => {
                                 e.preventDefault();
                                 return signOut();
                               }}>
-                              <ListItemText secondary="Sign out" />
+                              <MenuItem onClick={handleCloseAccount}>
+                                <ListItemIcon>
+                                  <ExitToAppIcon />
+                                </ListItemIcon>
+                                <ListItemText secondary="Sign out" />
+                              </MenuItem>
                             </a>
-                          </ListItem>
-                        </MenuList>
-                      </ClickAwayListener>
-                    </Paper>
-                  </Grow>
-                )}
-              </Popper>
-              {/*** END OF POP MENU FOR ACCOUNT ***/}
-            </>
-          ) : (
-            <Button color="inherit">
-              <a
-                href={`/api/auth/signin`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  return signIn();
+                          </MenuList>
+                        </ClickAwayListener>
+                      </Paper>
+                    </Grow>
+                  )}
+                </Popper>
+                {/*** END OF POP MENU FOR ACCOUNT ***/}
+              </>
+            ) : (
+              <Button color="inherit">
+                <a
+                  href={`/api/auth/signin`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    return signIn();
+                  }}>
+                  Sign In
+                </a>
+              </Button>
+            )}
+            {/*** DARK MODE ***/}
+            {dark ? (
+              <IconButton
+                onClick={() => {
+                  setDark(!dark);
+                  isClient() && localStorage.setItem('dark', 'light');
                 }}>
-                Sign In
-              </a>
-            </Button>
-          )}
-        </Toolbar>
-      </AppBar>
-      <Drawer
-        open={false}
-        className={classes.drawer}
-        variant="permanent"
-        classes={{
-          paper: classes.drawerPaper,
-        }}
-        anchor="left">
-        <Divider />
-        <div className={classes.toolbar} />
-        <Divider />
-        <List>
-          {sideBar(getTenantId() || '0').map(({ text, icon, link }, index) => (
-            <Link href={link} key={index}>
-              <ListItem button>
-                <ListItemIcon>{icon}</ListItemIcon>
-                <ListItemText secondary={text} />
-              </ListItem>
-            </Link>
-          ))}
+                <Tooltip title="Toggle dark mode">
+                  <Brightness5Icon style={{ color: grey[100] }} />
+                </Tooltip>
+              </IconButton>
+            ) : (
+              <IconButton
+                onClick={() => {
+                  setDark(!dark);
+                  isClient() && localStorage.setItem('dark', 'dark');
+                }}>
+                <Tooltip title="Toggle dark mode">
+                  <Brightness4Icon style={{ color: grey[100] }} />
+                </Tooltip>
+              </IconButton>
+            )}
+            {shouldShow && show && (
+              <Tooltip title="Toggle raw content">
+                <IconButton onClick={() => setShow((value: boolean) => !value)}>
+                  <VisibilityOutlinedIcon style={{ color: grey[100] }} />
+                </IconButton>
+              </Tooltip>
+            )}
+            {shouldShow && !show && (
+              <Tooltip title="Toggle raw content">
+                <IconButton onClick={() => setShow((value: boolean) => !value)}>
+                  <VisibilityOffOutlinedIcon style={{ color: grey[100] }} />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Toolbar>
+        </AppBar>
+        <Drawer
+          open={!!session?.user}
+          className={classes.drawer}
+          variant="persistent"
+          classes={{
+            paper: classes.drawerPaper,
+          }}
+          anchor="left">
           <Divider />
-        </List>
-      </Drawer>
-      <main className={classes.content}>
-        <div className={classes.toolbar} />
-        {children}
-      </main>
-    </div>
+          <div className={classes.toolbar} />
+          <Divider />
+          <List>
+            {sideBar(tenantIdLocal || '0').map(({ text, icon, link }, index) => (
+              <Link href={link} key={index}>
+                <ListItem button>
+                  <ListItemIcon>{icon}</ListItemIcon>
+                  <ListItemText secondary={text} />
+                </ListItem>
+              </Link>
+            ))}
+            <Divider />
+          </List>
+        </Drawer>
+        <main className={clsx(classes.content, { [classes.contentShift]: !!session?.user })}>
+          <div className={classes.toolbar} />
+          {children}
+        </main>
+      </div>
+    </ThemeProvider>
   );
 };
 

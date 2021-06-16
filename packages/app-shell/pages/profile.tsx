@@ -1,3 +1,10 @@
+import Avatar from '@material-ui/core/Avatar';
+import Card from '@material-ui/core/Card';
+import CardContent from '@material-ui/core/CardContent';
+import CardHeader from '@material-ui/core/CardHeader';
+import IconButton from '@material-ui/core/IconButton';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import EditOutlinedIcon from '@material-ui/icons/EditOutlined';
 import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
@@ -9,16 +16,36 @@ import useSWR from 'swr';
 import { withAuth } from '../components';
 import type { CommonResponse, UserInfo } from '../types';
 
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    root: { margin: theme.spacing(3, 1, 2) },
+  })
+);
+
 const Page: NextPage<{ session: Session }> = ({ session }) => {
-  // todo: upgrade to useCommonResponse
+  const classes = useStyles();
   const { data, error } = useSWR<CommonResponse<UserInfo>>('/api/userinfo');
 
   return (
     <Layout title="Profile">
-      <Main session={session} title="User profile">
+      <Main session={session} title="User profile" isLoading={!data}>
         {!!data && (
           <>
-            <JSONTree data={data?.data} hideRoot={true} theme="bright" />
+            <Card className={classes.root}>
+              <CardHeader
+                className={classes.root}
+                avatar={<Avatar src={data?.data?.image || 'idle'} />}
+                subheader={data?.data?.name}
+                action={
+                  <IconButton>
+                    <EditOutlinedIcon />
+                  </IconButton>
+                }
+              />
+              <CardContent>
+                <JSONTree data={data?.data} hideRoot={true} />
+              </CardContent>
+            </Card>
           </>
         )}
         {!!error && <Error />}

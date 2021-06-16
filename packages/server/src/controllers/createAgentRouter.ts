@@ -1,74 +1,144 @@
-import { ApiSchemaRouter, MessagingRouter, RequestWithAgentRouter } from '@veramo/remote-server';
-import { Router, Request, Response, NextFunction } from 'express';
+import { RequestWithAgentRouter } from '@veramo/remote-server';
+import Debug from 'debug';
+import { Router, Request, Response, text } from 'express';
 import Status from 'http-status';
+import pick from 'lodash/pick';
 import type { Connection } from 'typeorm';
 import type { TenantManager } from '../types';
 import type { TTAgent } from '../utils';
-import { exposedMethods, WebDidDocRouter } from '../utils';
+import { createDidDocument, exposedMethods } from '../utils';
+
+const debug = Debug('utils:createAgentRouter');
+const getAliasForRequest = (req: Request) => encodeURIComponent(req.hostname);
+const reservedWord = ['default', 'public'];
 
 interface RequestWithAgent extends Request {
-  agent: TTAgent;
+  agent?: TTAgent;
+  vhost?: any;
 }
 
 export const createAgentRouter = (commonConnection: Connection, tenantManager: TenantManager) => {
   const router = Router();
-  const schemaRouter = ApiSchemaRouter({
-    exposedMethods,
-    basePath: '/open-api.json',
-  });
-  const didDocRouter = WebDidDocRouter();
-  const messageRouter = MessagingRouter({ metaData: { type: 'DIDComm' } });
+  // const schemaRouter = ApiSchemaRouter({
+  //   exposedMethods,
+  //   basePath: '/open-api.json',
+  // });
 
+  // 1. setup Agent
   router.use(
-    '/:slug',
     RequestWithAgentRouter({
-      getAgentForRequest: (req) => {
+      getAgentForRequest: async (req: RequestWithAgent) => {
         // baseUrl is /slug/:slug
-        const slug = req.baseUrl.replace('/slug/', '');
-        const agent: TTAgent = tenantManager.getAgents()?.[slug];
-        return agent ? Promise.resolve(agent) : Promise.resolve(null);
+        // const slug = req.baseUrl.replace('/slug/', '');
+        const slug = req.vhost[0];
+
+        if (!slug) return Promise.resolve(null);
+
+        if (reservedWord.includes(slug)) return Promise.reject(new Error('slug name invalid'));
+
+        return Promise.resolve(tenantManager.getAgents()?.[slug]);
       },
     })
   );
 
-  router.get('/:slug/is_agent_exist', (req: RequestWithAgent, res) => {
-    const agent = req.agent;
-    if (agent) res.status(Status.OK).send({ data: 'Agent found' });
-    else res.status(Status.OK).send({ data: 'Agent not found' });
-  });
-
-  router.post(
-    '/:slug/agent/didManagerFind',
-    // AgentRouter({ exposedMethods })
-    async (req: RequestWithAgent, res: Response, next: NextFunction) => {
-      if (!req.agent) throw Error('Agent not available');
-      try {
-        const result = await req.agent.execute('didManagerFind', req.body);
-        res.status(200).json(result);
-      } catch (e) {
-        if (e.name === 'ValidationError') {
-          res.status(400).json({
-            name: 'ValidationError',
-            message: e.message,
-            method: e.method,
-            path: e.path,
-            code: e.code,
-            description: e.description,
-          });
-        } else {
-          res.status(500).json({ error: e.message });
-        }
-      }
-    }
+  // 2. healthcheck
+  router.get('/is_agent_exist', (req: RequestWithAgent, res) =>
+    req.agent
+      ? res.status(Status.OK).send({ data: 'Agent found' })
+      : res.status(Status.OK).send({ data: 'Agent not found' })
   );
 
+  // 3. execute Agent methods
+  exposedMethods.forEach((method) =>
+    router.post(`/agent/${method}`, async (req: RequestWithAgent, res: Response) => {
+      if (!req.agent) return res.status(Status.BAD_GATEWAY).send({ error: 'agent not found' });
+      debug('method: ', method);
+      debug('body: %O', req.body);
+
+      try {
+        const result = await req.agent.execute(method, req.body);
+
+        debug(result);
+
+        res.status(Status.OK).json(result);
+      } catch (e) {
+        return e.name === 'ValidationError'
+          ? res.status(Status.BAD_REQUEST).json({
+              ...pick(e, 'message', 'method', 'path', 'code', 'description'),
+              name: 'ValidationError',
+            })
+          : res.status(Status.BAD_GATEWAY).json({ error: e.message });
+      }
+    })
+  );
+
+  // 4. serve .well-known/did.json
+  router.get(`/.well-known/did.json`, async (req: RequestWithAgent, res) => {
+    if (!req.agent) return res.status(Status.BAD_GATEWAY).send({ error: 'agent not found' });
+
+    try {
+      // Note: it returns req.hostname, like "http://issuer.examp.com:3001" will return issuer.example.com
+      const alias = getAliasForRequest(req);
+
+      debug('getAliasForRequest: %s', alias);
+
+      const identifier = await req.agent.didManagerGet({ did: `did:web:${alias}` });
+      const didDocument = createDidDocument(identifier);
+
+      debug('did-document', didDocument);
+
+      res.status(Status.OK).json(didDocument);
+    } catch (error) {
+      debug(error.message);
+
+      if (error.message.includes('not found')) {
+        res.status(Status.NOT_FOUND).send({ message: error.message });
+      } else res.status(Status.BAD_GATEWAY).send({ error });
+    }
+  });
+
+  router.get(/^\/(.+)\/did.json$/, async (req: RequestWithAgent, res) => {
+    if (!req.agent) return res.status(Status.BAD_GATEWAY).send({ error: 'agent not found' });
+
+    try {
+      const identifier = await req.agent.didManagerGet({
+        did: 'did:web:' + getAliasForRequest(req) + ':' + req.params[0].replace('/', ':'),
+      });
+      debug('identifier', identifier);
+
+      const didDoc = createDidDocument(identifier);
+      debug(didDoc);
+
+      res.status(Status.OK).json(didDoc);
+    } catch (e) {
+      res.status(Status.NOT_FOUND).send(e);
+    }
+  });
+
+  // 5. messaging router
+  router.use(text({ type: '*/*' }));
+  router.post('/', async (req: RequestWithAgent, res) => {
+    if (!req.agent) return res.status(Status.BAD_GATEWAY).send({ error: 'agent not found' });
+
+    try {
+      const message = await req.agent?.handleMessage({
+        raw: (req.body as any) as string,
+        metaData: [{ type: 'DIDComm' }],
+        save: true,
+      });
+
+      if (message) {
+        console.log('Received message', message.type, message.id);
+        res.status(Status.OK).json({ id: message.id });
+      }
+    } catch (e) {
+      console.log(e);
+      res.status(Status.BAD_REQUEST).send(e.message);
+    }
+  });
+
   // api schema
-  router.use('/open-api.json', schemaRouter);
-
-  // e.g. /.well-known/did.json
-  router.use(didDocRouter);
-
-  router.use(messageRouter);
+  // router.use('/open-api.json', schemaRouter);
 
   return router;
 };

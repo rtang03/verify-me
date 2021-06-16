@@ -1,13 +1,14 @@
 {
   "name": "verify-me",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "license": "BSD-3-Clause-Clear",
   "description": "SaaS",
+  "email": "ask@dashslab.com",
   "repository": {
     "type": "git",
     "url": "ssh://git@github.com/rtang03/verify-me.git"
   },
-  "author": "Ross Tang",
+  "author": "Dashslab",
   "homepage": "https://github.com/rtang03/verify-me",
   "bugs": {
     "url": "https://github.com/rtang03/verify-me/issues"

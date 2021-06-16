@@ -20,18 +20,18 @@ services:
       - 5432:5432
     networks:
       - devnet
-  nginx:
-    image: nginx:alpine
-    container_name: nginx01
-    ports:
-      - 80:80
-    environment:
-      - NGINX_PORT=80
-      - NGINX_HOST=example.com
-    volumes:
-      - ./scripts/ngx.template:/etc/nginx/templates/default.conf.template
-    networks:
-      - devnet
+#  nginx:
+#    image: nginx:alpine
+#    container_name: nginx01
+#    ports:
+#      - 80:80
+#    environment:
+#      - NGINX_PORT=80
+#      - NGINX_HOST=example.com
+#    volumes:
+#      - ./scripts/ngx.template:/etc/nginx/templates/default.conf.template
+#    networks:
+#      - devnet
 #  mongo:
 #    container_name: mongo
 #    image: mongo

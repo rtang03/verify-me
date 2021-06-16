@@ -1,0 +1,73 @@
+import Card from '@material-ui/core/Card';
+import CardContent from '@material-ui/core/CardContent';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import type {
+  VerifiablePresentation,
+} from '@verify/server';
+import { withAuth } from 'components';
+import Error from 'components/Error';
+import Layout from 'components/Layout';
+import Main from 'components/Main';
+import Presentation from 'components/Presentation';
+import RawContent from 'components/RawContent';
+import type { NextPage } from 'next';
+import type { Session } from 'next-auth';
+import { useRouter } from 'next/router';
+import React, { useState } from 'react';
+import { useReSWR, useTenant } from 'utils';
+
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    root: { margin: theme.spacing(3, 1, 2) },
+    mail: { margin: theme.spacing(1, 5, 0) },
+    muiTextField: {
+      '& .MuiTextField-root': {
+        margin: theme.spacing(0.5),
+        width: '50ch',
+      },
+    },
+  })
+);
+
+const PresentationDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
+  const classes = useStyles();
+  const router = useRouter();
+  const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // Show Raw Content
+  const [show, setShow] = useState(false);
+
+  // Query Presentation
+  const id = router.query.id as string; // hash
+  const url = slug ? `/api/presentations/${id}?slug=${slug}&id=${id}` : null;
+  const { data: vp, isLoading, isError, error } = useReSWR<VerifiablePresentation>(url, !!slug);
+
+  return (
+    <Layout title="Presentation" shouldShow={[show, setShow]}>
+      <Main
+        session={session}
+        title="Presentation"
+        subtitle="Validate verifiable presentation"
+        parentText="Presentations"
+        parentUrl={`/dashboard/${tenantInfo?.id}/presentations`}
+        isLoading={tenantLoading}
+        isError={tenantError && !tenantLoading}
+        tenantInfo={tenantInfo}
+        shouldActivate={true}>
+        {isError && !isLoading && <Error error={error} />}
+        {tenantInfo?.activated && vp && (
+          <Card className={classes.root}>
+            <CardContent>
+              <Presentation vp={vp} />
+              {show && <RawContent content={vp} title="Raw Presentation Details" />}
+            </CardContent>
+          </Card>
+        )}
+      </Main>
+    </Layout>
+  );
+};
+
+export const getServerSideProps = withAuth;
+
+export default PresentationDetailsPage;

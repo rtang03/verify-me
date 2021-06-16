@@ -1,57 +1,196 @@
-import Divider from '@material-ui/core/Divider';
-import LinearProgress from '@material-ui/core/LinearProgress';
-import Typography from '@material-ui/core/Typography';
-import type { IMessage } from '@verify/server';
+import Button from '@material-ui/core/Button';
+import Card from '@material-ui/core/Card';
+import CardContent from '@material-ui/core/CardContent';
+import CardHeader from '@material-ui/core/CardHeader';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import type {
+  IPresentationValidationResult,
+  IValidatePresentationAgainstSdrArgs,
+  IMessage,
+  ISelectiveDisclosureRequest,
+} from '@verify/server';
 import { withAuth } from 'components';
-import AccessDenied from 'components/AccessDenied';
+import Error from 'components/Error';
 import Layout from 'components/Layout';
+import Main from 'components/Main';
+import MessageCard from 'components/MessageCard';
+import ProTip from 'components/ProTip';
+import QuickAction from 'components/QuickAction';
+import RawContent from 'components/RawContent';
+import Result from 'components/Result';
+import SelectiveDisclosureReq from 'components/SelectiveDisclosureReq';
+import SubmitButton from 'components/SubmitButton';
+import { Form, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import React, { useEffect } from 'react';
-import { useFetcher } from 'utils';
+import React, { useState } from 'react';
+import type { PaginatedMessage } from 'types';
+import { useFetcher, useReSWR, useTenant } from 'utils';
+import Typography from '@material-ui/core/Typography';
 
-const Page: NextPage<{ session: Session }> = ({ session }) => {
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({ root: { margin: theme.spacing(3, 1, 2) } })
+);
+
+const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
+  const classes = useStyles();
   const router = useRouter();
-  const { val, fetcher } = useFetcher<IMessage>();
+  const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
-  useEffect(() => {
-    fetcher(`/api/messages/${router.query.id}`).finally(() => true);
-  }, [session]);
-  // useEffect(() => {
-  //   if (val.data && !val.loading) {
-  //     fetcher(`/api/credentialSdr`, {
-  //       method: 'POST',
-  //       headers: { 'Content-type': 'application/json' },
-  //       body: JSON.stringify({}),
-  //     }).finally(() => true);
-  //   }
-  // }, [val]);
+  // Show Raw Content
+  const [show, setShow] = useState(false);
+  // END
+
+  // Query Message
+  const id = router.query.id as string; // hash
+  const url = slug ? `/api/messages/${id}?slug=${slug}&id=${id}` : null;
+  const { data, isLoading, isError, error } = useReSWR<IMessage>(url, !!slug);
+  const isOutGoingMessage = data?.metaData?.[0]?.type === 'DIDComm-sent';
+  const canValidate = !isOutGoingMessage && data?.type === 'w3c.vp';
+  // END
+
+  // Query Outgoing SDR, max 100 SDR
+  const args = {
+    where: [
+      { column: 'type', op: 'Equal', value: ['sdr'] },
+      { column: 'from', op: 'Equal', value: [data?.to] },
+    ],
+  };
+  const shouldFetch = !!data && !!slug && !!tenantInfo?.activated;
+  const fetchSdrUrl = slug
+    ? `/api/messages?slug=${slug}&cursor=0&pagesize=100&args=${JSON.stringify(args)}`
+    : null;
+  const {
+    data: sdrResult,
+    isLoading: isSdrLoading,
+    isError: isSdrError,
+    error: sdrError,
+  } = useReSWR<PaginatedMessage>(fetchSdrUrl, shouldFetch);
+  const requests: [string, ISelectiveDisclosureRequest][] | undefined =
+    sdrResult?.items && sdrResult?.items.length === 0
+      ? []
+      : sdrResult?.items.map((item) => [item.id, item.data as ISelectiveDisclosureRequest]);
+  // END
+
+  // Validate Presentation for SDR
+  const { val: validateResult, poster } = useFetcher<IPresentationValidationResult>();
+  const validate = (body: IValidatePresentationAgainstSdrArgs) =>
+    poster(`/api/tenants/validatePresentationAgainstSdr?slug=${slug}`, body);
+  // END
 
   return (
-    <Layout title="Messages">
-      {session && (
-        <>
-          <Link href="/dashboard/1/messages">
-            <a>
-              <Typography variant="caption">← Back to Messages</Typography>
-            </a>
-          </Link>
-          <br />
-          <br />
-          <Typography variant="h4">Message</Typography>
-          <br />
-          <br />
-          {val.loading ? <LinearProgress /> : <Divider />}
-          {val.data && <pre>{JSON.stringify(val.data, null, 2)}</pre>}
-        </>
-      )}
-      {!session && <AccessDenied />}
+    <Layout title="Message" shouldShow={[show, setShow]}>
+      <Main
+        session={session}
+        title="Message"
+        parentText="Messages"
+        parentUrl={`/dashboard/${tenantInfo?.id}/messages`}
+        isLoading={tenantLoading || isLoading}
+        isError={tenantError && !tenantLoading}
+        tenantInfo={tenantInfo}
+        shouldActivate={true}>
+        {isError && !isLoading && <Error error={error} />}
+        {tenantInfo?.activated && data && (
+          <Card className={classes.root}>
+            <CardHeader
+              className={classes.root}
+              subheader={isOutGoingMessage ? 'Outgoing message' : 'Incomming message'}
+            />
+            <CardContent>
+              <MessageCard isFull={true} tenantInfo={tenantInfo} message={data} />
+              {show && <RawContent title="Raw Message" content={data} />}
+            </CardContent>
+            {/*** SHOW RESPONSE BUTTON, if it is Incomming Message ***/}
+            {data.type === 'sdr' && data?.metaData?.[0]?.type === 'DIDComm' && (
+              <CardContent>
+                <CardContent>
+                  <QuickAction
+                    link={`/dashboard/${tenantInfo?.id}/messages/${id}/response`}
+                    label="RESPONSE"
+                    disabled={!tenantInfo?.id}
+                  />
+                </CardContent>
+              </CardContent>
+            )}
+            {canValidate && (
+              <CardContent>
+                <Card variant="outlined">
+                  <CardHeader className={classes.root} title="Validate against below request(s)" />
+                  {isSdrError && !isSdrLoading && <Error error={sdrError} />}
+                  {!requests?.length && (
+                    <ProTip text="No selective request meet the requirement " />
+                  )}
+                  {requests &&
+                    requests?.length > 0 &&
+                    requests.map((request, index) => (
+                      <CardContent key={index}>
+                        <Card variant="outlined">
+                          <CardHeader
+                            title={`Found request #${++index}`}
+                            action={
+                              <Link href={`/dashboard/${tenantInfo.id}/messages/${request[0]}`}>
+                                <a>
+                                  <Button size="small" color="inherit">
+                                    <Typography variant="caption">Originating Message</Typography>
+                                  </Button>
+                                </a>
+                              </Link>
+                            }
+                          />
+                          {request[1] && (
+                            <SelectiveDisclosureReq sdr={request[1]} hideHeader={true} />
+                          )}
+                          <Formik
+                            initialValues={{}}
+                            onSubmit={async (_, { setSubmitting }) => {
+                              setSubmitting(true);
+                              data?.presentations?.[0] &&
+                                (await validate({
+                                  presentation: data.presentations[0],
+                                  sdr: request[1] as any,
+                                }));
+                              setSubmitting(false);
+                            }}>
+                            {({ isSubmitting, submitForm }) => (
+                              <Form>
+                                <SubmitButton
+                                  tooltip="Validate presentation against Sdr"
+                                  text="Validate"
+                                  submitForm={submitForm}
+                                  loading={isSubmitting}
+                                  disabled={
+                                    isSubmitting ||
+                                    !!validateResult?.data ||
+                                    !!validateResult?.error
+                                  }
+                                  success={!!validateResult?.data}
+                                  error={!!validateResult?.error}
+                                />
+                              </Form>
+                            )}
+                          </Formik>
+                          <Result isTenantExist={!!tenantInfo} result={validateResult} />
+                          {validateResult?.data && (
+                            <RawContent
+                              title="Raw Validation result"
+                              content={validateResult.data}
+                            />
+                          )}
+                        </Card>
+                      </CardContent>
+                    ))}
+                </Card>
+              </CardContent>
+            )}
+          </Card>
+        )}
+      </Main>
     </Layout>
   );
 };
 
 export const getServerSideProps = withAuth;
 
-export default Page;
+export default MessagesDetailsPage;

@@ -1,150 +1,114 @@
-import { createStyles } from '@material-ui/core';
-import Button from '@material-ui/core/Button';
-import Divider from '@material-ui/core/Divider';
-import LinearProgress from '@material-ui/core/LinearProgress';
-import Typography from '@material-ui/core/Typography';
-import { makeStyles, Theme } from '@material-ui/core/styles';
+import Card from '@material-ui/core/Card';
+import CardContent from '@material-ui/core/CardContent';
+import CardHeader from '@material-ui/core/CardHeader';
+import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import type { IIdentifier } from '@veramo/core';
 import { withAuth } from 'components';
-import AccessDenied from 'components/AccessDenied';
+import AddServiceEndpoint from 'components/AddServiceEndpoint';
+import AvatarMd5 from 'components/AvatarMd5';
+import Error from 'components/Error';
+import Identifier from 'components/Identifier';
 import Layout from 'components/Layout';
-import { Form, Field, Formik } from 'formik';
-import { TextField } from 'formik-material-ui';
+import Main from 'components/Main';
+import RawContent from 'components/RawContent';
+import RemoveServiceEndpoint from 'components/RemoveServiceEndpoint';
+import ServiceEndpoint from 'components/ServiceEndpoint';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState } from 'react';
-import JSONTree from 'react-json-tree';
-import { useFetcher } from 'utils';
-import * as yup from 'yup';
+import React, { useState } from 'react';
+import { useReSWR, useTenant } from 'utils';
 
-const validation = yup.object({
-  serviceEndpoint: yup.string().url().required('url is required'),
-});
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: {
-      display: 'flex',
-      flexWrap: 'wrap',
-    },
+    root: { margin: theme.spacing(3, 1, 2) },
     typeTextField: { width: '15ch' },
     serviceTextField: { width: '50ch' },
-    submit: { margin: theme.spacing(3, 0, 2) },
+    submit: { width: '15ch', margin: theme.spacing(3, 3, 3) },
   })
 );
 
-const Page: NextPage<{ session: Session }> = ({ session }) => {
+const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const router = useRouter();
-  const { val, fetcher } = useFetcher<IIdentifier>();
-  const { val: addServiceEP, fetcher: addServiceEPFetcher } = useFetcher<{ success: boolean }>();
-  const isMessagingExist = () =>
-    val.data?.services
-      ?.map(({ type }) => type === 'Messaging')
-      .reduce((prev, curr) => prev || curr, false);
+  const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
-  useEffect(() => {
-    fetcher(`/api/users/${router.query.id}`).finally(() => true);
-  }, [session]);
+  // Show Raw Content
+  const [show, setShow] = useState(false);
+
+  // Query IIdentifier
+  const id = router.query.id as string; // this is "IIdentifier.alias"
+  const url = slug ? `/api/users/${id}?slug=${slug}&id={id}` : null;
+  const { data, isLoading, isError, error } = useReSWR<IIdentifier>(url, !!slug);
+  const isMessagingExist = data?.services
+    ?.map(({ type }) => type === 'Messaging')
+    .reduce((prev, curr) => prev || curr, false);
+  const services = data?.services;
 
   return (
-    <Layout title="User">
-      {session && (
-        <>
-          <Link href="/dashboard/1/users">
-            <a>
-              <Typography variant="caption">← Back to User-Identifiers</Typography>
-            </a>
-          </Link>
-          <br />
-          <br />
-          <Typography variant="h4">User Identifier</Typography>
-          <br />
-          <br />
-          {val.loading ? <LinearProgress /> : <Divider />}
-          <Divider />
-          {val.data && (
-            <>
-              <Typography variant="h5">Current document</Typography>
-              <JSONTree theme="bright" data={val.data} hideRoot={true} />
-              <div hidden={isMessagingExist()}>
-                <Divider variant="inset" />
-                <Typography variant="h6">Add messaging endpoint</Typography>
-                <Formik
-                  initialValues={{ type: 'Messaging', serviceEndpoint: '' }}
-                  validateOnChange={true}
-                  validationSchema={validation}
-                  onSubmit={async ({ type, serviceEndpoint }, { setSubmitting }) => {
-                    setSubmitting(true);
-                    const numberOfServiceEndpoint = val.data?.services?.length ?? 0;
-                    const id = `service#${numberOfServiceEndpoint + 1}`;
-                    console.log(id);
-                    await addServiceEPFetcher(`/api/users/${router.query.id}/services`, {
-                      method: 'POST',
-                      headers: { 'Content-type': 'application/json' },
-                      body: JSON.stringify({ serviceEndpoint, type, id }),
-                    }).finally(() => setSubmitting(false));
-                  }}>
-                  {({ values: { serviceEndpoint }, isSubmitting, errors }) => (
-                    <Form>
-                      <Field
-                        disabled={true}
-                        className={classes.typeTextField}
-                        label="Type"
-                        size="small"
-                        component={TextField}
-                        name={'type'}
-                        placeholder={'Messaging'}
-                        variant="outlined"
-                        margin="normal"
-                        fullwidth="20%"
-                      />{' '}
-                      <Field
-                        disabled={addServiceEP.data}
-                        className={classes.serviceTextField}
-                        label="Service endpoint"
-                        size="small"
-                        component={TextField}
-                        name={'serviceEndpoint'}
-                        placeholder={'e.g. http://example.com'}
-                        variant="outlined"
-                        margin="normal"
-                        fullwidth="50%"
-                        autoFocus={true}
+    <Layout title="User" shouldShow={[show, setShow]}>
+      <Main
+        session={session}
+        title="User Identifier"
+        parentUrl={`/dashboard/${tenantInfo?.id}/users`}
+        parentText="User-Identifiers"
+        isLoading={tenantLoading || isLoading}
+        isError={tenantError && !tenantLoading}
+        tenantInfo={tenantInfo}
+        shouldActivate={true}>
+        {isError && !isLoading && <Error error={error} />}
+        {tenantInfo?.activated && data && (
+          <Card className={classes.root}>
+            <CardHeader
+              className={classes.root}
+              avatar={<AvatarMd5 subject={data.did || 'idle'} />}
+              title={data.did}
+            />
+            <CardContent>
+              <Card variant="outlined" className={classes.root}>
+                <CardHeader className={classes.root} title="About"/>
+                <CardContent>
+                  <Identifier identifier={data} />
+                </CardContent>
+                {show && <RawContent title="Raw User Identifier" content={data} />}
+              </Card>
+              {/*** Add Service Endpoint ***/}
+              {!isMessagingExist && (
+                <Card className={classes.root}>
+                  <AddServiceEndpoint tenantInfo={tenantInfo} did={data.did} url={url} />
+                </Card>
+              )}
+              {isMessagingExist && (
+                <Card variant="outlined" className={classes.root}>
+                  {/*** Remove Service Endpoint ***/}
+                  {!!services?.length &&
+                    data?.did &&
+                    services.map((service, index) => (
+                      <RemoveServiceEndpoint
+                        key={index}
+                        service={service}
+                        did={data?.did}
+                        url={url}
+                        tenantInfo={tenantInfo}
                       />
-                      <div>
-                        <Button
-                          className={classes.submit}
-                          variant="contained"
-                          color="primary"
-                          size="small"
-                          type="submit"
-                          disabled={
-                            isSubmitting ||
-                            !!errors?.serviceEndpoint ||
-                            !serviceEndpoint ||
-                            !!addServiceEP?.data
-                          }>
-                          Add
-                        </Button>
-                      </div>
-                    </Form>
+                    ))}
+                  {!!services?.length && (
+                    <CardContent>
+                      {services.map(({ id, type, serviceEndpoint }, index) => (
+                        <ServiceEndpoint key={index} id={id} type={type} url={serviceEndpoint} />
+                      ))}
+                    </CardContent>
                   )}
-                </Formik>
-                <Typography variant="caption" color="secondary">
-                  {addServiceEP?.data?.success && 'Service endpoint added'}
-                </Typography>
-              </div>
-            </>
-          )}
-        </>
-      )}
-      {!session && <AccessDenied />}
+                </Card>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </Main>
     </Layout>
   );
 };
 
 export const getServerSideProps = withAuth;
 
-export default Page;
+export default UsersEditPage;
