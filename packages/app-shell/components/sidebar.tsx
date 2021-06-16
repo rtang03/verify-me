@@ -3,6 +3,7 @@ import FolderSharedOutlinedIcon from '@material-ui/icons/FolderSharedOutlined';
 import LanguageIcon from '@material-ui/icons/Language';
 import MailOutlineOutlinedIcon from '@material-ui/icons/MailOutlineOutlined';
 import ScreenShareOutlinedIcon from '@material-ui/icons/ScreenShareOutlined';
+import SendOutlinedIcon from '@material-ui/icons/SendOutlined';
 
 export const sideBar: (tenantId: string) => { text: string; icon: any; link: string }[] = (id) => [
   {
@@ -11,7 +12,7 @@ export const sideBar: (tenantId: string) => { text: string; icon: any; link: str
     link: id === '0' ? `/dashboard` : `/dashboard/${id}/identifiers`,
   },
   {
-    text: 'User Identifier',
+    text: 'User',
     icon: <FolderSharedOutlinedIcon />,
     link: id === '0' ? `/dashboard` : `/dashboard/${id}/users`,
   },
@@ -22,8 +23,13 @@ export const sideBar: (tenantId: string) => { text: string; icon: any; link: str
   },
   {
     text: 'Request',
-    icon: <ScreenShareOutlinedIcon />,
+    icon: <SendOutlinedIcon />,
     link: id === '0' ? `/dashboard` : `/dashboard/${id}/requests`,
+  },
+  {
+    text: 'Presentation',
+    icon: <ScreenShareOutlinedIcon />,
+    link: id === '0' ? `/dashboard` : `/dashboard/${id}/presentations`,
   },
   {
     text: 'Inbox',

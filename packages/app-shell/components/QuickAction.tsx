@@ -1,5 +1,4 @@
 import Button from '@material-ui/core/Button';
-import { grey } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import AddToPhotosOutlinedIcon from '@material-ui/icons/AddToPhotosOutlined';
 import EditOutlinedIcon from '@material-ui/icons/EditOutlined';
@@ -9,6 +8,7 @@ import React from 'react';
 
 const useStyles = makeStyles((theme: Theme) => {
   const dark = theme.palette.type === 'dark';
+  const grey = theme.palette.grey;
 
   return createStyles({
     button: {

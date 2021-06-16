@@ -1,11 +1,11 @@
 import CardMedia from '@material-ui/core/CardMedia';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import type { VerifiableCredential } from '@verify/server';
+import type { VerifiablePresentation } from '@verify/server';
 import md5 from 'md5';
 import Link from 'next/link';
 import React from 'react';
-import { TenantInfo } from '../types';
-import Credential from './Credential';
+import type { TenantInfo } from '../types';
+import Presentation from './Presentation';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -32,25 +32,25 @@ const GRAVATAR_URI = 'https://www.gravatar.com/avatar/';
 const uri = (subject: string, size: number) =>
   `${GRAVATAR_URI}${md5(subject)}?s=${size}&d=identicon`;
 
-const CredentialCard: React.FC<{
+const PresentationCard: React.FC<{
   tenantInfo: TenantInfo;
-  vc: VerifiableCredential;
+  vp: VerifiablePresentation;
   hash: string;
-}> = ({ tenantInfo, vc, hash }) => {
+}> = ({ tenantInfo, vp, hash }) => {
   const classes = useStyles();
 
   return (
     <div className={classes.root}>
-      <Link href={`/dashboard/${tenantInfo.id}/credentials/${hash}`}>
+      <Link href={`/dashboard/${tenantInfo.id}/presentations/${hash}`}>
         <a>
           <CardMedia className={classes.media} image={uri(hash, 200)} />
         </a>
       </Link>
       <div className={classes.details}>
-        <Credential vc={vc} compact={true} />
+        <Presentation vp={vp} compact={true} />
       </div>
     </div>
   );
 };
 
-export default CredentialCard;
+export default PresentationCard;

@@ -1,7 +1,6 @@
 import Card from '@material-ui/core/Card';
 import CardHeader from '@material-ui/core/CardHeader';
 import Grid from '@material-ui/core/Grid';
-import Paper from '@material-ui/core/Paper';
 import { grey } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import Footer from 'components/Footer';

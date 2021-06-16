@@ -7,10 +7,11 @@ import MuiTextField from '@material-ui/core/TextField';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import DeleteOutlineOutlinedIcon from '@material-ui/icons/DeleteOutlineOutlined';
 import type { IMessage } from '@veramo/core';
+import { format } from 'date-fns';
 import md5 from 'md5';
 import Link from 'next/link';
 import React from 'react';
-import { TenantInfo } from '../types';
+import type { TenantInfo } from '../types';
 import RawContent from './RawContent';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -38,6 +39,7 @@ const useStyles = makeStyles((theme: Theme) =>
 const GRAVATAR_URI = 'https://www.gravatar.com/avatar/';
 const uri = (subject: string, size: number) =>
   `${GRAVATAR_URI}${md5(subject)}?s=${size}&d=robohash`;
+const pattern = "d.M.yyyy HH:mm:ss 'GMT' XXX (z)";
 
 const TextField: React.FC<{
   value: string | undefined;
@@ -100,7 +102,7 @@ const MessageCard: React.FC<{ isFull?: boolean; message: IMessage; tenantInfo: T
         <div className={classes.details}>
           <TextField value={from} label="From" />
           <TextField value={to} label="To" />
-          <TextField value={createdAt} label="CreatedAt" />
+          <TextField value={format(new Date(createdAt as any), pattern)} label="Created At" />
           {metaData?.map((item, index) => (
             <TextField key={index} value={JSON.stringify(item)} label="MetaData" />
           ))}

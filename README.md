@@ -69,3 +69,6 @@ https://stackoverflow.com/questions/7450940/automatic-https-connection-redirect-
 https://github.com/node-fetch/node-fetch/issues/19
 https://developer.uport.me/flows/selectivedisclosure
 https://developer.uport.me/messages/sharereq
+
+TypeORM bug
+https://github.com/typeorm/typeorm/pull/4257/commits/781e77b15f929286c30bb17c9b12afd0d756395f

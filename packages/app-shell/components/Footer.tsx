@@ -1,12 +1,12 @@
 import Grid from '@material-ui/core/Grid';
-import Paper from '@material-ui/core/Paper';
-import { grey } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import Link from 'next/link';
 import React from 'react';
 import packageJson from '../../../package.json';
 
 const useStyles = makeStyles((theme: Theme) => {
   const dark = theme.palette.type === 'dark';
+  const grey = theme.palette.grey;
 
   return createStyles({
     root: {
@@ -60,13 +60,17 @@ const Footer: React.FC<any> = () => {
         <Grid item xs={2}>
           <Grid container direction="column">
             <Grid item>
-              <div className={classes.paper}>About</div>
+              <div className={classes.paper}>
+                <Link href="/about">
+                  <a className={classes.link}>About</a>
+                </Link>
+              </div>
             </Grid>
             <Grid item>
               <div className={classes.paper}>
-                <a className={classes.link} href={`mailto:${packageJson.email}`}>
-                  Contact Us
-                </a>
+                <Link href="/contact">
+                  <a className={classes.link}>Contact Us</a>
+                </Link>
               </div>
             </Grid>
             <Grid item>

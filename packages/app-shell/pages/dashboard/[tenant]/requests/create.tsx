@@ -5,10 +5,12 @@ import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
 import Checkbox from '@material-ui/core/Checkbox';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
+import IconButton from '@material-ui/core/IconButton';
 import MuiTextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import DoneIcon from '@material-ui/icons/Done';
+import HelpOutlineOutlinedIcon from '@material-ui/icons/HelpOutlineOutlined';
 import PlusOneIcon from '@material-ui/icons/PlusOne';
 import type {
   ISendMessageDIDCommAlpha1Args,
@@ -19,6 +21,8 @@ import type {
 } from '@verify/server';
 import { withAuth } from 'components';
 import Error from 'components/Error';
+import GlossaryTerms, { TERMS } from 'components/GlossaryTerms';
+import HelpDialog from 'components/HelpDialog';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import MessageHeader from 'components/MessageHeader';
@@ -109,6 +113,11 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
     setRequiredIssuers([]);
   };
 
+  // form state - HelpDialog
+  const [openHelp, setHelpOpen] = React.useState(false);
+  const handleHelpOpen = () => setHelpOpen(true);
+  const handleHelpClose = () => setHelpOpen(false);
+
   // parse SDR
   let iss = '';
   let sub = '';
@@ -158,7 +167,20 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
               {({ values, isSubmitting, submitForm }) => (
                 <Form>
                   {/* Requester Info */}
-                  <CardHeader className={classes.root} title="Requester Info" />
+                  <CardHeader
+                    className={classes.root}
+                    title="Requester Info"
+                    action={
+                      <IconButton onClick={handleHelpOpen}>
+                        <HelpOutlineOutlinedIcon />
+                      </IconButton>
+                    }
+                  />
+                  <HelpDialog
+                    open={openHelp}
+                    handleClose={handleHelpClose}
+                    content={<GlossaryTerms terms={[TERMS.did]} />}
+                  />
                   <CardContent>
                     <Field
                       disabled={!!sdrResult?.data}

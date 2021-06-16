@@ -59,8 +59,8 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         {isError && !isLoading && <Error error={error} />}
         {tenantInfo?.activated && (
           <QuickAction
-            link={`/dashboard/${tenantInfo?.id}/messages`}
-            label="Credential"
+            link={`/dashboard/${tenantInfo?.id}`}
+            label="TBC"
             icon="send"
             disabled={!tenantInfo?.id}
           />
@@ -93,12 +93,19 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                     {show && item.type === 'w3c.vc' && (
                       <RawContent
                         content={item?.credentials?.map((cred) =>
-                          omit(cred, '@context', 'proof', 'type')
+                          omit(cred, '@context', 'type')
+                        )}
+                      />
+                    )}
+                    {show && item.type === 'w3c.vp' && (
+                      <RawContent
+                        content={item?.presentations?.map((presentation) =>
+                          omit(presentation, '@context', 'type')
                         )}
                       />
                     )}
                     {show && item.type === 'sdr' && (
-                      <RawContent content={omit(item, 'type', 'raw', 'createdAt')} />
+                      <RawContent content={omit(item, 'type')} />
                     )}
                   </Fragment>
                 ))}

@@ -62,8 +62,7 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
             <CardHeader
               className={classes.root}
               avatar={<AvatarMd5 subject={data.did || 'idle'} />}
-              title="Active User"
-              subheader={data.did}
+              title={data.did}
             />
             <CardContent>
               <Card variant="outlined" className={classes.root}>

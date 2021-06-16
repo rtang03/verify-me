@@ -23,6 +23,8 @@ import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { useFetcher, useReSWR, useTenant } from 'utils';
+import Credential from '../../../../components/Credential';
+import ProTip from '../../../../components/ProTip';
 
 const getSendMessageDIDCommAlpha1Args: (
   vc: VerifiableCredential
@@ -48,9 +50,7 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-// Currently, it is not an Edit page. It is sending VC.
-// TODO: may refactor it with right name.
-const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
+const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const router = useRouter();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
@@ -84,13 +84,18 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
         {isError && !isLoading && <Error error={error} />}
         {tenantInfo?.activated && vc && (
           <Card className={classes.root}>
-            TODO. This may be a design flaw, which send credential directly. Disable it; review later.
             <CardHeader
               className={classes.root}
               avatar={<AvatarMd5 subject={id || 'idle'} image="identicon" />}
               title={JSON.stringify(vc.type, null, 2)}
               subheader={vc.issuanceDate}
             />
+            <CardContent>
+              <Card variant="outlined">
+                <Credential vc={vc} />
+                {show && vc && <RawContent content={vc} title="Raw Credential Details" />}
+              </Card>
+            </CardContent>
             <CardContent>
               <Card className={classes.root} variant="outlined">
                 <Formik
@@ -102,12 +107,16 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
                   }}>
                   {({ isSubmitting, submitForm }) => (
                     <Form>
+                      <CardContent>
+                        <ProTip text="Warning: Need to revisit this feature; temporarily disabled." />
+                      </CardContent>
                       <CardHeader
                         className={classes.root}
                         title="Send Credential"
                         subheader="Click icon to send to Subject's service endpoint"
                       />
                       <CardContent className={classes.mail}>
+                        {/*** TODO. This may be issue, which send credential directly. Disable it; review later. ***/}
                         <SendFab
                           loading={isSubmitting}
                           disabled={true || isSubmitting || !vc || !!result?.data}
@@ -147,7 +156,6 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
                           </CardContent>
                         </Card>
                       </CardContent>
-                      {show && vc && <RawContent content={vc} title="Raw Credential Details" />}
                       <Result isTenantExist={!!tenantInfo} result={result} />
                       {show && result?.data && (
                         <RawContent content={result.data} title="Raw Send-message result" />
@@ -166,4 +174,4 @@ const CredentialsEditPage: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default CredentialsEditPage;
+export default CredentialsDetailsPage;

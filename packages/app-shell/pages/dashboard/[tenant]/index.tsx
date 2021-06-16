@@ -106,7 +106,7 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                           onClick={() =>
                             setActiveTenant(tenantInfo.id || '', tenantInfo.slug || '')
                           }>
-                          {tenantIdLocal === tenantInfo.id ? 'Active' : 'Set Active'}
+                          {tenantIdLocal === tenantInfo.id ? 'Default' : 'Set Default'}
                         </Button>
                       )
                     }

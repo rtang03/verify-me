@@ -8,9 +8,12 @@ import AccountCircle from '@material-ui/icons/AccountCircle';
 import CategoryIcon from '@material-ui/icons/Category';
 import ExtensionIcon from '@material-ui/icons/Extension';
 import LocationCityIcon from '@material-ui/icons/LocationCity';
+import ScreenShareOutlinedIcon from '@material-ui/icons/ScreenShareOutlined';
 import TodayIcon from '@material-ui/icons/Today';
 import type { VerifiablePresentation } from '@verify/server';
 import React from 'react';
+import CardHeaderAvatar from './CardHeaderAvatar';
+import { format } from 'date-fns';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -23,77 +26,53 @@ const useStyles = makeStyles((theme: Theme) =>
     },
   })
 );
+const pattern = "d.M.yyyy HH:mm:ss 'GMT' XXX (z)";
 
-const Presentation: React.FC<{ vp: Partial<VerifiablePresentation> }> = ({ vp }) => {
+const Presentation: React.FC<{ vp: Partial<VerifiablePresentation>; compact?: boolean }> = ({
+  vp,
+  compact,
+}) => {
   const classes = useStyles();
   const { holder, verifier, issuanceDate, verifiableCredential: vcs } = vp;
 
   return (
-    <CardContent className={classes.muiTextField}>
-      {holder && (
-        <>
-          <MuiTextField
-            disabled={true}
-            size="small"
-            label="Holder"
-            value={holder}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <AccountCircle />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <br />
-        </>
+    <>
+      {!compact && (
+        <CardHeader
+          className={classes.root}
+          avatar={
+            <CardHeaderAvatar>
+              <ScreenShareOutlinedIcon />
+            </CardHeaderAvatar>
+          }
+          title="Verifiable Presentation"
+        />
       )}
-      {verifier && (
-        <>
-          <MuiTextField
-            disabled={true}
-            size="small"
-            label="Verifier"
-            value={verifier}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LocationCityIcon />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <br />
-        </>
-      )}
-      {issuanceDate && (
-        <>
-          <MuiTextField
-            disabled={true}
-            size="small"
-            label="Issuance Date / Time"
-            value={issuanceDate}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <TodayIcon />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <br />
-        </>
-      )}
-      <br />
-      {vcs?.map((vc, index) => (
-        <Card variant="outlined" key={index}>
-          <CardHeader className={classes.root} subheader="Credentials" />
-          <CardContent>
+      <CardContent className={classes.root}>
+        {holder && (
+          <div className={classes.muiTextField}>
             <MuiTextField
               disabled={true}
               size="small"
-              label="Issuer"
-              value={vc.issuer?.id}
+              label="Holder"
+              value={holder}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <AccountCircle />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </div>
+        )}
+        {verifier && (
+          <div className={classes.muiTextField}>
+            <MuiTextField
+              disabled={true}
+              size="small"
+              label="Verifier"
+              value={verifier}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -102,26 +81,15 @@ const Presentation: React.FC<{ vp: Partial<VerifiablePresentation> }> = ({ vp })
                 ),
               }}
             />
-            <br />
-            <MuiTextField
-              disabled={true}
-              size="small"
-              label="Type"
-              value={JSON.stringify(vc.type, null, 2)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <CategoryIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <br />
+          </div>
+        )}
+        {issuanceDate && (
+          <div className={classes.muiTextField}>
             <MuiTextField
               disabled={true}
               size="small"
               label="Issuance Date / Time"
-              value={vc.issuanceDate}
+              value={format(new Date(issuanceDate), pattern)}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -130,37 +98,91 @@ const Presentation: React.FC<{ vp: Partial<VerifiablePresentation> }> = ({ vp })
                 ),
               }}
             />
-            <br />
-          </CardContent>
-          <CardContent>
-            <Card className={classes.root} variant="outlined">
-              <CardHeader className={classes.root} subheader="Credential Subjects" />
+          </div>
+        )}
+      </CardContent>
+      {!compact && (
+        <CardContent className={classes.root}>
+          {vcs?.map((vc, index) => (
+            <Card variant="outlined" key={index}>
+              <CardHeader className={classes.root} subheader="Credentials" />
               <CardContent>
-                {Object.entries<string>(vc.credentialSubject).map(([key, value], index) => (
-                  <>
-                    <MuiTextField
-                      key={index}
-                      disabled={true}
-                      size="small"
-                      label={key}
-                      value={value}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <ExtensionIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                    <br />
-                  </>
-                ))}
+                <div className={classes.muiTextField}>
+                  <MuiTextField
+                    disabled={true}
+                    size="small"
+                    label="Issuer"
+                    value={vc.issuer?.id}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LocationCityIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </div>
+                <div className={classes.muiTextField}>
+                  <MuiTextField
+                    disabled={true}
+                    size="small"
+                    label="Type"
+                    value={JSON.stringify(vc.type, null, 2)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <CategoryIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </div>
+                <div className={classes.muiTextField}>
+                  <MuiTextField
+                    disabled={true}
+                    size="small"
+                    label="Issuance Date / Time"
+                    value={format(new Date(vc.issuanceDate), pattern)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <TodayIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </div>
+              </CardContent>
+              <CardContent>
+                <Card className={classes.root} variant="outlined">
+                  <CardHeader className={classes.root} subheader="Credential Subjects" />
+                  <CardContent>
+                    {Object.entries<string>(vc.credentialSubject).map(([key, value], index) => (
+                      <div className={classes.muiTextField}>
+                        <MuiTextField
+                          key={index}
+                          disabled={true}
+                          size="small"
+                          label={key}
+                          value={value}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <ExtensionIcon />
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
               </CardContent>
             </Card>
-          </CardContent>
-        </Card>
-      ))}
-    </CardContent>
+          ))}
+        </CardContent>
+      )}
+    </>
   );
 };
 

@@ -1,6 +1,5 @@
 import CardHeader from '@material-ui/core/CardHeader';
 import IconButton from '@material-ui/core/IconButton';
-import { grey } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import DeleteOutlineOutlinedIcon from '@material-ui/icons/DeleteOutlineOutlined';
 import LanguageIcon from '@material-ui/icons/Language';
@@ -14,15 +13,17 @@ import CardHeaderAvatar from './CardHeaderAvatar';
 import ConfirmationDialog from './ConfirmationDialog';
 import Result from './Result';
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
+const useStyles = makeStyles((theme: Theme) => {
+  const grey = theme.palette.grey;
+
+  return createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
     cardHeaderAvatar: {
       color: grey[900],
       backgroundColor: '#fff',
     },
-  })
-);
+  });
+});
 
 const RemoveServiceEndpoint: React.FC<{
   service: ServiceEndpoint;

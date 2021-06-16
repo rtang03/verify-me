@@ -3,14 +3,18 @@ import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
+import IconButton from '@material-ui/core/IconButton';
 import MuiTextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
+import HelpOutlineOutlinedIcon from '@material-ui/icons/HelpOutlineOutlined';
 import PlusOneIcon from '@material-ui/icons/PlusOne';
 import type { VerifiableCredential } from '@veramo/core';
 import type { ICreateVerifiableCredentialArgs } from '@veramo/credential-w3c';
 import { withAuth } from 'components';
 import Credential from 'components/Credential';
+import GlossaryTerms, { TERMS } from 'components/GlossaryTerms';
+import HelpDialog from 'components/HelpDialog';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import RawContent from 'components/RawContent';
@@ -52,7 +56,7 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
   // Issue credential
   const { val: result, poster } = useFetcher<VerifiableCredential>();
   const issue = (body: ICreateVerifiableCredentialArgs) =>
-    poster(`/api/credentials/issue?slug=${slug}`, body);
+    poster(`/api/tenants/createVerifiableCredential?slug=${slug}`, body);
 
   // used for pre-selected value in Select component
   const [claims, updateClaims] = useState<Claim[]>([]);
@@ -71,6 +75,11 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
     setClaimType('');
     setClaimValue('');
   };
+
+  // form state - HelpDialog
+  const [openHelp, setHelpOpen] = React.useState(false);
+  const handleHelpOpen = () => setHelpOpen(true);
+  const handleHelpClose = () => setHelpOpen(false);
 
   return (
     <Layout title="Credential" shouldShow={[show, setShow]}>
@@ -100,6 +109,20 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
             {({ isSubmitting, errors, submitForm }) => (
               <Form>
                 <Card className={classes.root}>
+                  <CardHeader
+                    className={classes.root}
+                    title="Credential Info"
+                    action={
+                      <IconButton onClick={handleHelpOpen}>
+                        <HelpOutlineOutlinedIcon />
+                      </IconButton>
+                    }
+                  />
+                  <HelpDialog
+                    open={openHelp}
+                    handleClose={handleHelpClose}
+                    content={<GlossaryTerms terms={[TERMS.did]} />}
+                  />
                   <CardContent className={classes.root}>
                     <Field
                       className={classes.textField}

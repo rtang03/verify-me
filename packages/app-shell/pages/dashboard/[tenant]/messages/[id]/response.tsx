@@ -101,7 +101,7 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
     const body: IGetVerifiableCredentialsForSdrArgs = { sdr };
     if (sdr)
       getVerifiableCredentialsForSdr(
-        `/api/requests/getVerifiableCredentialsForSdr?slug=${slug}`,
+        `/api/tenants/getVerifiableCredentialsForSdr?slug=${slug}`,
         body
       ).finally(() => true);
   }, [message]);

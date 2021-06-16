@@ -112,11 +112,11 @@ const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                         item.activated ? (
                           <CardHeaderAvatar>
                             {tenantIdLocal === item.id ? (
-                              <Tooltip title="Activated / Active">
+                              <Tooltip title="Activated / Default">
                                 <FlashAutoOutlinedIcon />
                               </Tooltip>
                             ) : (
-                              <Tooltip title="Activated / Inactive">
+                              <Tooltip title="Activated">
                                 <FlashOnOutlined />
                               </Tooltip>
                             )}
@@ -140,7 +140,7 @@ const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                           size="small"
                           color="inherit"
                           onClick={() => setActiveTenant(item?.id || '', item?.slug || '')}>
-                          Set Active
+                          Make Default
                         </Button>
                       </CardActions>
                     )}

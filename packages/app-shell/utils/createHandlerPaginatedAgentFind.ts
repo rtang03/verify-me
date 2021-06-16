@@ -11,6 +11,8 @@ const handler: (agentMethod: string, agentCountMethod: string) => NextApiHandler
     const cursor = req.query.cursor as string;
     const skip = (cursor && parseInt(cursor, 10)) || 0;
     const pagesize = req.query.pagesize as string;
+    const _args = req.query.args as string;
+    const args = _args && JSON.parse(_args);
     const take = (pagesize && parseInt(pagesize, 10)) || 50;
     const domain = process.env.NEXT_PUBLIC_DOMAIN;
     const secure = process.env.NEXT_PUBLIC_DOMAIN_SECURE === 'true';
@@ -25,14 +27,14 @@ const handler: (agentMethod: string, agentCountMethod: string) => NextApiHandler
     const response = await fetch(getUrl(agentMethod), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', authorization: `Bearer jklj;kljkl` },
-      body: JSON.stringify({ skip, take }),
+      body: JSON.stringify( { skip, take, ...args }),
     });
 
     // Query Count
     const countResponse = await fetch(getUrl(agentCountMethod), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', authorization: `Bearer jklj;kljkl` },
-      body: JSON.stringify({}),
+      body: JSON.stringify(args),
     });
     const status = response.status;
 

@@ -15,6 +15,7 @@ import type {
   TMessageColumns,
   TPresentationColumns,
   UniqueVerifiableCredential,
+  UniqueVerifiablePresentation,
 } from '@veramo/data-store';
 import type { ISendMessageDIDCommAlpha1Args } from '@veramo/did-comm';
 import type {
@@ -23,6 +24,10 @@ import type {
   Issuer,
   IGetVerifiableCredentialsForSdrArgs,
   ICredentialsForSdr,
+  IPresentationValidationResult,
+  ISelectiveDisclosure,
+  IValidatePresentationAgainstSdrArgs,
+  ICreateProfileCredentialsArgs,
 } from '@veramo/selective-disclosure';
 import type { ServiceEndpoint } from 'did-resolver';
 import type { CommonResponse } from './commonResponse';
@@ -53,6 +58,7 @@ export type DataStoreORMGetVerifiablePresentationsCountArgs = FindArgs<TPresenta
 export {
   DidDocument,
   UniqueVerifiableCredential,
+  UniqueVerifiablePresentation,
   ISendMessageDIDCommAlpha1Args,
   IMessage,
   ICredentialRequestInput,
@@ -67,6 +73,10 @@ export {
   VerifiablePresentation,
   VerifiableCredential,
   ServiceEndpoint,
+  IPresentationValidationResult,
+  ISelectiveDisclosure,
+  IValidatePresentationAgainstSdrArgs,
+  ICreateProfileCredentialsArgs,
 };
 
 // workaround: the original ISelectiveDisclosureRequest is incorrectly typed.

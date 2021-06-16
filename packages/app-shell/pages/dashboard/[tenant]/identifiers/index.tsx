@@ -50,7 +50,7 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   // Create Web Did
   const { val: webDid, poster } = useFetcher<IIdentifier>();
   const newDid = async (body: IDIDManagerGetOrCreateArgs) =>
-    mutate(url, poster(`/api/identifiers/create?slug=${slug}`, body));
+    mutate(url, poster(`/api/tenants/didManagerCreate?slug=${slug}`, body));
 
   // form state
   const [openHelp, setHelpOpen] = React.useState(false);

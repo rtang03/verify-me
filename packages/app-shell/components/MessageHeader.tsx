@@ -7,6 +7,7 @@ import AccountCircle from '@material-ui/icons/AccountCircle';
 import LanguageIcon from '@material-ui/icons/Language';
 import LocationCityIcon from '@material-ui/icons/LocationCity';
 import TodayIcon from '@material-ui/icons/Today';
+import { format } from 'date-fns';
 import React from 'react';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -20,6 +21,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
   })
 );
+const pattern = "d.M.yyyy HH:mm:ss 'GMT' XXX (z)";
 
 const MessageHeader: React.FC<{ from?: string; to?: string; createdAt?: string; url?: string }> = ({
   from,
@@ -74,8 +76,8 @@ const MessageHeader: React.FC<{ from?: string; to?: string; createdAt?: string; 
             <MuiTextField
               disabled={true}
               size="small"
-              label="Date / Time"
-              value={createdAt}
+              label="Date"
+              value={format(new Date(createdAt), pattern)}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">

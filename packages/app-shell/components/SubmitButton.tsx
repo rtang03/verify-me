@@ -1,7 +1,7 @@
 import Button from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Tooltip from '@material-ui/core/Tooltip';
-import { grey, green } from '@material-ui/core/colors';
+import { green } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/Check';
 import ErrorOutlineOutlinedIcon from '@material-ui/icons/ErrorOutlineOutlined';
@@ -10,6 +10,7 @@ import React from 'react';
 
 const useStyles = makeStyles((theme: Theme) => {
   const dark = theme.palette.type === 'dark';
+  const grey = theme.palette.grey;
 
   return createStyles({
     root: {

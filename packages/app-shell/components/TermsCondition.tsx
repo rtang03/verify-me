@@ -5,12 +5,13 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Typography from '@material-ui/core/Typography';
-import { green, grey } from '@material-ui/core/colors';
+import { green } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import React from 'react';
 
 const useStyles = makeStyles((theme: Theme) => {
   const dark = theme.palette.type === 'dark';
+  const grey = theme.palette.grey;
 
   return createStyles({
     root: {

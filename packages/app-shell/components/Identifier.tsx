@@ -13,7 +13,7 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       width: '100%',
-      maxWidth: '60ch',
+      // maxWidth: '60ch',
     },
   })
 );

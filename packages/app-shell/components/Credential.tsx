@@ -10,6 +10,7 @@ import ExtensionIcon from '@material-ui/icons/Extension';
 import LocationCityIcon from '@material-ui/icons/LocationCity';
 import TodayIcon from '@material-ui/icons/Today';
 import type { VerifiableCredential } from '@verify/server';
+import { format } from 'date-fns';
 import React from 'react';
 import CardHeaderAvatar from './CardHeaderAvatar';
 
@@ -24,13 +25,14 @@ const useStyles = makeStyles((theme: Theme) =>
     },
   })
 );
+const pattern = "d.M.yyyy HH:mm:ss 'GMT' XXX (z)";
 
 const Credential: React.FC<{ vc: VerifiableCredential; compact?: boolean }> = ({ vc, compact }) => {
   const classes = useStyles();
   const { issuer, type, issuanceDate } = vc;
 
   return (
-    <Card variant="outlined">
+    <div>
       {!compact && (
         <CardHeader
           className={classes.root}
@@ -61,8 +63,8 @@ const Credential: React.FC<{ vc: VerifiableCredential; compact?: boolean }> = ({
         <MuiTextField
           disabled={true}
           size="small"
-          label="Issuance Date / Time"
-          value={issuanceDate}
+          label="Issuance Date"
+          value={format(new Date(issuanceDate), pattern)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -114,7 +116,7 @@ const Credential: React.FC<{ vc: VerifiableCredential; compact?: boolean }> = ({
           </Card>
         </CardContent>
       )}
-    </Card>
+    </div>
   );
 };
 

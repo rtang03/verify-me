@@ -28,13 +28,16 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 // SDR payload and metadata
-const SelectiveDisclosureReq: React.FC<{ sdr: ISelectiveDisclosureRequest }> = ({ sdr }) => {
+const SelectiveDisclosureReq: React.FC<{
+  sdr: ISelectiveDisclosureRequest;
+  hideHeader?: boolean;
+}> = ({ sdr, hideHeader }) => {
   const classes = useStyles();
   const { iat, iss, subject, claims, replyUrl } = sdr;
 
   return (
     <>
-      <CardHeader className={classes.root} title="Selective disclosure request" />
+      {!hideHeader && <CardHeader className={classes.root} title="Selective disclosure request" />}
       <CardContent className={classes.muiTextField}>
         {iss && (
           <MuiTextField

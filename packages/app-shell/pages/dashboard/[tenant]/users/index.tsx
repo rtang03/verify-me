@@ -44,8 +44,12 @@ const UsersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const [show, setShow] = useState(false);
 
   // Query IIdentifiers
+  // where-clause filter out empty IIdentifier, created by automically cascaded insert of TypeORM
+  const args = { where: [{ column: 'provider', op: 'Equal', value: ['did:web'] }] };
   const shouldFetch = !!slug && !!tenantInfo?.activated;
-  const url = slug ? `/api/users?slug=${slug}&cursor=${cursor}&pagesize=${PAGESIZE}` : null;
+  const url = slug
+    ? `/api/users?slug=${slug}&cursor=${cursor}&pagesize=${PAGESIZE}&args=${JSON.stringify(args)}`
+    : null;
   const { data, isLoading, isError, error } = useReSWR<PaginatedIIdentifier>(url, shouldFetch);
   let count;
   data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
