@@ -9,13 +9,16 @@ import type { VerifiableCredential, IMessage } from '@veramo/core';
 import type { ISendMessageDIDCommAlpha1Args } from '@veramo/did-comm';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
+import Credential from 'components/Credential';
 import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import MessageHeader from 'components/MessageHeader';
+import ProTip from 'components/ProTip';
 import RawContent from 'components/RawContent';
 import Result from 'components/Result';
 import SendFab from 'components/SendFab';
+import { format } from 'date-fns';
 import { Form, Formik } from 'formik';
 import omit from 'lodash/omit';
 import type { NextPage } from 'next';
@@ -23,9 +26,8 @@ import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { useFetcher, useReSWR, useTenant } from 'utils';
-import Credential from '../../../../components/Credential';
-import ProTip from '../../../../components/ProTip';
 
+const pattern = "d.M.yyyy HH:mm:ss 'GMT' XXX (z)";
 const getSendMessageDIDCommAlpha1Args: (
   vc: VerifiableCredential
 ) => ISendMessageDIDCommAlpha1Args = (vc) => ({
@@ -88,7 +90,7 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
               className={classes.root}
               avatar={<AvatarMd5 subject={id || 'idle'} image="identicon" />}
               title={JSON.stringify(vc.type, null, 2)}
-              subheader={vc.issuanceDate}
+              subheader={format(new Date(vc.issuanceDate), pattern)}
             />
             <CardContent>
               <Card variant="outlined">

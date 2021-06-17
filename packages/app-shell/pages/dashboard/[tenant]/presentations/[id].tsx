@@ -1,21 +1,23 @@
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
+import CardHeader from '@material-ui/core/CardHeader';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import type {
-  VerifiablePresentation,
-} from '@verify/server';
+import type { VerifiablePresentation } from '@verify/server';
 import { withAuth } from 'components';
 import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import Presentation from 'components/Presentation';
 import RawContent from 'components/RawContent';
+import { format } from 'date-fns';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { useReSWR, useTenant } from 'utils';
+import AvatarMd5 from '../../../../components/AvatarMd5';
 
+const pattern = "d.M.yyyy HH:mm:ss 'GMT' XXX (z)";
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
@@ -47,7 +49,7 @@ const PresentationDetailsPage: NextPage<{ session: Session }> = ({ session }) =>
       <Main
         session={session}
         title="Presentation"
-        subtitle="Validate verifiable presentation"
+        subtitle="Verifiable presentation"
         parentText="Presentations"
         parentUrl={`/dashboard/${tenantInfo?.id}/presentations`}
         isLoading={tenantLoading}
@@ -57,6 +59,12 @@ const PresentationDetailsPage: NextPage<{ session: Session }> = ({ session }) =>
         {isError && !isLoading && <Error error={error} />}
         {tenantInfo?.activated && vp && (
           <Card className={classes.root}>
+            <CardHeader
+              className={classes.root}
+              title={JSON.stringify(vp.type, null, 2)}
+              subheader={format(new Date(vp.issuanceDate as any), pattern)}
+              avatar={<AvatarMd5 subject={id || 'idle'} image="identicon" />}
+            />
             <CardContent>
               <Presentation vp={vp} />
               {show && <RawContent content={vp} title="Raw Presentation Details" />}
