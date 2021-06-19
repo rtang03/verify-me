@@ -10,10 +10,9 @@ const useStyles = makeStyles((theme: Theme) => {
 
   return createStyles({
     root: {
-      position: 'absolute',
-      bottom: 0,
+      border: `1px solid ${dark ? grey[700] : grey[200]}`,
       width: '100%',
-      margin: theme.spacing(3, -3, 0, -3),
+      margin: theme.spacing(0, 0, 0, 0),
       padding: theme.spacing(0),
       color: dark ? grey[300] : grey[600],
       backgroundColor: dark ? grey[700] : grey[200],
@@ -47,13 +46,16 @@ const Footer: React.FC<any> = () => {
         direction="row"
         justify="flex-start"
         alignItems="flex-start">
-        <Grid item xs={2} spacing={1}>
+        <Grid item xs={2}>
           <Grid container direction="column">
             <Grid item>
               <div className={classes.paper}>v{packageJson.version}-dev</div>
             </Grid>
             <Grid item>
               <div className={classes.paper}>Copyright &copy; 2021 Dashslab</div>
+            </Grid>
+            <Grid item>
+              <div className={classes.paper}>Terms of Use</div>
             </Grid>
           </Grid>
         </Grid>
@@ -69,19 +71,19 @@ const Footer: React.FC<any> = () => {
             <Grid item>
               <div className={classes.paper}>
                 <Link href="/contact">
-                  <a className={classes.link}>Contact Us</a>
+                  <a className={classes.link}>Contact</a>
                 </Link>
               </div>
             </Grid>
             <Grid item>
-              <div className={classes.paper}>Privacy</div>
+              <div className={classes.paper}>Privacy Policy</div>
             </Grid>
           </Grid>
         </Grid>
         <Grid item xs={2}>
           <Grid container direction="column">
             <Grid item>
-              <div className={classes.paper}>Help</div>
+              <div className={classes.paper}>Core Concepts</div>
             </Grid>
             <Grid item>
               <div className={classes.paper}>Getting Started</div>

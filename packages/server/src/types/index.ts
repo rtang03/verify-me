@@ -3,6 +3,7 @@ import type {
   IDIDManagerAddServiceArgs,
   IDIDManagerRemoveServiceArgs,
   IDIDManagerGetOrCreateArgs,
+  IDIDManagerDeleteArgs,
   VerifiablePresentation,
   VerifiableCredential,
 } from '@veramo/core';
@@ -65,6 +66,7 @@ export {
   Issuer,
   IDIDManagerAddServiceArgs,
   IDIDManagerRemoveServiceArgs,
+  IDIDManagerDeleteArgs,
   IDIDManagerGetOrCreateArgs,
   ICreateSelectiveDisclosureRequestArgs,
   IGetVerifiableCredentialsForSdrArgs,

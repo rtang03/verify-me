@@ -1,12 +1,20 @@
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
+import IconButton from '@material-ui/core/IconButton';
+import Tooltip from '@material-ui/core/Tooltip';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
+import HelpOutlineOutlinedIcon from '@material-ui/icons/HelpOutlineOutlined';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
 import type { IIdentifier } from '@veramo/core';
 import { withAuth } from 'components';
 import AddServiceEndpoint from 'components/AddServiceEndpoint';
 import AvatarMd5 from 'components/AvatarMd5';
+import DeleteIdentifier from 'components/DeleteIdentifier';
+import DropdownMenu from 'components/DropdownMenu';
 import Error from 'components/Error';
+import GlossaryTerms, { TERMS } from 'components/GlossaryTerms';
+import HelpDialog from 'components/HelpDialog';
 import Identifier from 'components/Identifier';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
@@ -45,6 +53,17 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
     .reduce((prev, curr) => prev || curr, false);
   const services = data?.services;
 
+  // form state - helpDialog
+  const [openHelp, setHelpOpen] = React.useState(false);
+  const handleHelpOpen = () => setHelpOpen(true);
+  const handleHelpClose = () => setHelpOpen(false);
+
+  // form state - menu
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) =>
+    setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
   return (
     <Layout title="User" shouldShow={[show, setShow]}>
       <Main
@@ -63,10 +82,36 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
               className={classes.root}
               avatar={<AvatarMd5 subject={data.did || 'idle'} />}
               title={data.did}
+              action={
+                <IconButton onClick={handleMenuClick}>
+                  <MoreVertIcon />
+                </IconButton>
+              }
+            />
+            <DropdownMenu
+              anchorEl={anchorEl}
+              handleClick={handleMenuClick}
+              handleClose={handleMenuClose}
+              iconButtons={[
+                <Tooltip key="1" title="Help">
+                  <IconButton onClick={handleHelpOpen}>
+                    <HelpOutlineOutlinedIcon />
+                  </IconButton>
+                </Tooltip>,
+              ]}
+            />
+            <HelpDialog
+              open={openHelp}
+              handleClose={handleHelpClose}
+              content={
+                <GlossaryTerms
+                  terms={[TERMS.did, TERMS.serviceEndpoint, TERMS.verificationMethod]}
+                />
+              }
             />
             <CardContent>
               <Card variant="outlined" className={classes.root}>
-                <CardHeader className={classes.root} title="About"/>
+                <CardHeader className={classes.root} title="About" />
                 <CardContent>
                   <Identifier identifier={data} />
                 </CardContent>
@@ -101,6 +146,9 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
                   )}
                 </Card>
               )}
+            </CardContent>
+            <CardContent className={classes.root}>
+              <DeleteIdentifier tenantInfo={tenantInfo} did={data?.did} />
             </CardContent>
           </Card>
         )}

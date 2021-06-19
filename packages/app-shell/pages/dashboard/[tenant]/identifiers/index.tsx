@@ -3,14 +3,17 @@ import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
 import IconButton from '@material-ui/core/IconButton';
+import Tooltip from '@material-ui/core/Tooltip';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import HelpOutlineOutlinedIcon from '@material-ui/icons/HelpOutlineOutlined';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PlusOneIcon from '@material-ui/icons/PlusOne';
 import ReceiptOutlinedIcon from '@material-ui/icons/ReceiptOutlined';
 import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
 import type { DidDocument } from '@verify/server';
 import { withAuth } from 'components';
 import CardHeaderAvatar from 'components/CardHeaderAvatar';
+import DropdownMenu from 'components/DropdownMenu';
 import GlossaryTerms, { TERMS } from 'components/GlossaryTerms';
 import HelpDialog from 'components/HelpDialog';
 import Layout from 'components/Layout';
@@ -52,10 +55,16 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const newDid = async (body: IDIDManagerGetOrCreateArgs) =>
     mutate(url, poster(`/api/tenants/didManagerCreate?slug=${slug}`, body));
 
-  // form state
+  // form state - helpDialog
   const [openHelp, setHelpOpen] = React.useState(false);
   const handleOpen = () => setHelpOpen(true);
   const handleClose = () => setHelpOpen(false);
+
+  // form state - menu
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) =>
+    setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
 
   return (
     <Layout title="Identifiers" shouldShow={[show, setShow]}>
@@ -122,10 +131,22 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                 title="Did Document"
                 subheader={<>Your URL: {fqUrl}</>}
                 action={
-                  <IconButton onClick={handleOpen}>
-                    <HelpOutlineOutlinedIcon />
+                  <IconButton onClick={handleMenuClick}>
+                    <MoreVertIcon />
                   </IconButton>
                 }
+              />
+              <DropdownMenu
+                anchorEl={anchorEl}
+                handleClick={handleMenuClick}
+                handleClose={handleMenuClose}
+                iconButtons={[
+                  <Tooltip key="1" title="Help">
+                    <IconButton onClick={handleOpen}>
+                      <HelpOutlineOutlinedIcon />
+                    </IconButton>
+                  </Tooltip>,
+                ]}
               />
               <HelpDialog
                 open={openHelp}
