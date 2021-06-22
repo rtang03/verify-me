@@ -15,3 +15,15 @@ TypeORM bug
 https://github.com/typeorm/typeorm/pull/4257/commits/781e77b15f929286c30bb17c9b12afd0d756395f
 
 https://undraw.co/illustrations
+
+https://github.com/async-labs/saas/tree/master/saas/api
+https://github.com/bcgov/vc-authn-oidc/tree/master/docs
+https://github.com/animo/awesome-self-sovereign-identity
+https://github.com/bcgov/vc-authn-oidc/tree/master/docs
+https://github.com/veramolabs/agent-explorer/blob/main/src/components/standard/CreateResponse.tsx
+https://developer.uport.me/flows/selectivedisclosure
+https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth
+
+auth0 callback for Registra application when using next-auth
+http://localhost:3000/api/auth/callback/auth0
+

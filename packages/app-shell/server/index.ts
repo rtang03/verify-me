@@ -4,7 +4,7 @@ import util from 'util';
 import { Accounts, Sessions, Tenant, Users } from '@verify/server';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express from 'express';
+import express, { json, urlencoded } from 'express';
 import morgan from 'morgan';
 import next from 'next';
 import { default as NextAuth } from 'next-auth';
@@ -35,17 +35,17 @@ const connectionOptions: ConnectionOptions = {
 app
   .prepare()
   .then(async () => {
-    let connection: Connection;
+    // let connection: Connection;
 
     try {
-      connection = await createConnection(connectionOptions);
+      await createConnection(connectionOptions);
     } catch (e) {
       console.error(e);
       throw new Error('fail to connect');
     }
     const server = express();
-    server.use(express.json());
-    server.use(express.urlencoded({ extended: true }));
+    server.use(json());
+    server.use(urlencoded({ extended: true }));
     server.use(cookieParser());
     server.use(morgan('dev'));
     server.use(cors({ origin: '*' }));

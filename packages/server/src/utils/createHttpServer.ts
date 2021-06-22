@@ -1,6 +1,6 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express, { Express, json } from 'express';
+import express, { Express, json, urlencoded } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { Connection, ConnectionOptions, createConnection, getConnection } from 'typeorm';
@@ -59,7 +59,7 @@ export const createHttpServer: (option: {
 
   app.use(json());
   app.use(cookieParser());
-  app.use(express.urlencoded({ extended: true }));
+  app.use(urlencoded({ extended: true }));
   app.use(morgan('dev'));
   app.use(helmet());
   baseUrl && app.use(cors({ origin: baseUrl }));
