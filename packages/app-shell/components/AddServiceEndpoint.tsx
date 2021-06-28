@@ -1,4 +1,3 @@
-import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
@@ -14,9 +13,9 @@ import { mutate } from 'swr';
 import type { TenantInfo } from 'types';
 import { getTenantUrl, useFetcher } from 'utils';
 import * as yup from 'yup';
+import RawContent from './RawContent';
 import Result from './Result';
 import SubmitButton from './SubmitButton';
-import RawContent from './RawContent';
 
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const secure = process.env.NEXT_PUBLIC_DOMAIN_SECURE === 'true';

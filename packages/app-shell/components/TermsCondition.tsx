@@ -14,7 +14,8 @@ const useStyles = makeStyles((theme: Theme) => {
   const grey = theme.palette.grey;
 
   return createStyles({
-    root: {
+    root: { margin: theme.spacing(3, 1, 2) },
+    buttonRoot: {
       display: 'flex',
       alignItems: 'center',
     },
@@ -64,7 +65,7 @@ const TermsCondition: React.FC<any> = () => {
       <Button size="small" color="inherit" variant="outlined" onClick={handleClickOpen}>
         <Typography variant="caption">Terms and Conditions</Typography>
       </Button>
-      <Dialog open={open} onClose={handleClose} scroll="paper">
+      <Dialog  className={classes.root} open={open} onClose={handleClose} scroll="paper">
         <DialogTitle id="scroll-dialog-title">Terms and Conditions</DialogTitle>
         <DialogContent dividers={true}>
           <DialogContentText
@@ -91,7 +92,7 @@ Praesent commodo cursus magna, vel scelerisque nisl consectetur et.`
             Reject
           </Button>
           {/* Accept is NOT fully implement. See example at ConfirmationDialog.tsx */}
-          <div className={classes.root}>
+          <div className={classes.buttonRoot}>
             <div className={classes.wrapper}>
               <Button
                 className={classes.button}

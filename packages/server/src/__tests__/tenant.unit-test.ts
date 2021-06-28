@@ -3,8 +3,7 @@ import { Express } from 'express';
 import request from 'supertest';
 import type { ConnectionOptions } from 'typeorm';
 import { getRepository } from 'typeorm';
-import { Tenant } from '../entities/Tenant';
-import { Users } from '../entities/Users';
+import { Tenant, Users } from '../entities';
 import { createHttpServer, isTenant } from '../utils';
 
 const slug = `tenant_${Math.floor(Math.random() * 1000)}`;

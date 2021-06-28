@@ -3,7 +3,14 @@ import { Entities } from '@veramo/data-store';
 import Debug from 'debug';
 import includes from 'lodash/includes';
 import { Connection, ConnectionOptions, createConnection, getConnection } from 'typeorm';
-import { Tenant } from '../entities/Tenant';
+import {
+  Tenant,
+  OidcCredential,
+  OidcClient,
+  OidcIssuer,
+  OidcFederatedProvider,
+  OidcVerifier,
+} from '../entities';
 import type { TenantManager, TenantStatus } from '../types';
 import type { TTAgent } from './setupVeramo';
 import { setupVeramo } from './setupVeramo';
@@ -19,7 +26,14 @@ const createConnOption: (tenant: Tenant) => ConnectionOptions = (tenant) => ({
   database: tenant.db_name,
   synchronize: true,
   logging: true,
-  entities: Entities,
+  entities: [
+    ...Entities,
+    OidcCredential,
+    OidcClient,
+    OidcIssuer,
+    OidcFederatedProvider,
+    OidcVerifier,
+  ],
   schema: getSchemaName(tenant.id),
 });
 

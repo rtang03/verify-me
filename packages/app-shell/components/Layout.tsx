@@ -36,6 +36,7 @@ import SettingsOutlinedIcon from '@material-ui/icons/SettingsOutlined';
 import VisibilityOffOutlinedIcon from '@material-ui/icons/VisibilityOffOutlined';
 import VisibilityOutlinedIcon from '@material-ui/icons/VisibilityOutlined';
 import clsx from 'clsx';
+import Footer from 'components/Footer';
 import sortBy from 'lodash/sortBy';
 import { signIn, useSession } from 'next-auth/client';
 import Head from 'next/head';
@@ -45,7 +46,6 @@ import type { PaginatedTenant } from '../types';
 import { isClient, useReSWR, useStyles, useLocalStorage } from '../utils';
 import AvatarMd5 from './AvatarMd5';
 import { sideBar } from './sidebar';
-import Footer from 'components/Footer';
 
 interface State {
   openAccount: boolean;
@@ -53,7 +53,7 @@ interface State {
   openSwitchTenant: boolean;
 }
 
-const Layout: FC<{ title?: string; shouldShow?: any; refresh?: boolean }> = ({
+const Layout: FC<{ title?: string; shouldShow?: any; refresh?: any }> = ({
   children,
   title = 'No Title',
   shouldShow,

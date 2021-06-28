@@ -54,7 +54,7 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   useEffect(() => {
     setSlugLocal(localStorage.getItem('slug'));
     setTenantIdLocal(localStorage.getItem('tenantId'));
-  }, [session, toggleStorage]);
+  }, [tenantInfo]);
 
   // Update Tenant
   const { val: updateResult, updater } = useFetcher<PsqlUpdated>();
@@ -65,8 +65,11 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const [editMode, setEdit] = useState(false);
   const handleEdit = ({ target: { checked } }: ChangeEvent<HTMLInputElement>) => setEdit(checked);
 
+  // this tenant page may be different from tenant in localStorage
+  const isActiveTenant = tenantInfo?.id === tenantIdLocal;
+
   return (
-    <Layout title="Tenant" refresh={toggleStorage}>
+    <Layout title="Tenant" refresh={tenantInfo}>
       <Main
         title={slug?.toUpperCase() || 'Tenant details'}
         subtitle={tenantInfo?.name || 'Tenant profile'}
@@ -75,10 +78,15 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         parentUrl="/dashboard"
         isLoading={tenantLoading}
         isError={tenantError && !tenantLoading}>
+        {!!tenantInfo && !isActiveTenant && (
+          <>This is not default tenant. Please switch to {tenantInfo?.slug?.toUpperCase()}</>
+        )}
         {/* IF NOT ACTIVATE */}
-        {!!tenantInfo && !tenantInfo.activated && <Activation tenantInfo={tenantInfo} />}
+        {!!tenantInfo && isActiveTenant && !tenantInfo.activated && (
+          <Activation tenantInfo={tenantInfo} />
+        )}
         {/* IF ACTIVATE */}
-        {!!tenantInfo && tenantInfo.activated && (
+        {!!tenantInfo && isActiveTenant && tenantInfo.activated && (
           <Formik
             initialValues={{ name: tenantInfo.name || '', enabled: false }}
             validateOnChange={true}

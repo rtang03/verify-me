@@ -20,19 +20,6 @@ const ENV_VAR = {
   DB_PASSWORD: process.env.TYPEORM_PASSWORD,
   DB_NAME: process.env.TYPEORM_DATABASE,
 };
-// const connectionOptions: ConnectionOptions = {
-//   name: 'default',
-//   type: 'postgres',
-//   host: ENV_VAR.HOST,
-//   port: ENV_VAR.PORT,
-//   username: ENV_VAR.DB_USERNAME,
-//   password: ENV_VAR.DB_PASSWORD,
-//   database: ENV_VAR.DB_NAME,
-//   synchronize: false,
-//   logging: true,
-//   schema: 'public',
-//   entities: Entities,
-// };
 
 const commonConnectionOptions: ConnectionOptions = {
   name: 'default',

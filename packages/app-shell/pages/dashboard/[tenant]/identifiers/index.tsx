@@ -16,6 +16,7 @@ import CardHeaderAvatar from 'components/CardHeaderAvatar';
 import DropdownMenu from 'components/DropdownMenu';
 import GlossaryTerms, { TERMS } from 'components/GlossaryTerms';
 import HelpDialog from 'components/HelpDialog';
+import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import ProTip from 'components/ProTip';
@@ -107,6 +108,12 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                       error={!!webDid?.error}
                     />
                   </CardActions>
+                  <CardContent>
+                    {webDid?.error && !webDid?.loading && <Error error={webDid?.error} />}
+                    {show && (webDid?.error || webDid?.data) && !webDid?.loading && (
+                      <RawContent title="Result" content={webDid} />
+                    )}
+                  </CardContent>
                 </Card>
               </Form>
             )}

@@ -7,6 +7,7 @@ import type { Connection } from 'typeorm';
 import type { TenantManager } from '../types';
 import type { TTAgent } from '../utils';
 import { createDidDocument, exposedMethods } from '../utils';
+import { createOidcRoute } from './createOidcRoute';
 
 const debug = Debug('utils:createAgentRouter');
 const getAliasForRequest = (req: Request) => encodeURIComponent(req.hostname);
@@ -114,6 +115,8 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
       res.status(Status.NOT_FOUND).send(e);
     }
   });
+
+  router.use('/oidc', createOidcRoute());
 
   // 5. messaging router
   router.use(text({ type: '*/*' }));

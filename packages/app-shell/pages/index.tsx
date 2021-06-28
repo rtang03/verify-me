@@ -4,7 +4,6 @@ import Grid from '@material-ui/core/Grid';
 import SvgIcon from '@material-ui/core/SvgIcon';
 import { grey } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import Footer from 'components/Footer';
 import Layout from 'components/Layout';
 import type { NextPage } from 'next';
 import { useSession } from 'next-auth/client';

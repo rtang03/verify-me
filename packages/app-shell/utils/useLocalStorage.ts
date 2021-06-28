@@ -29,5 +29,6 @@ export const useLocalStorage = () => {
     dark,
     setDark,
     setActiveTenant,
+    setToggleStorage
   };
 };

@@ -12,9 +12,7 @@ import {
   createActionsRouter,
   createAgentRouter,
 } from '../controllers';
-import { Accounts } from '../entities/Accounts';
-import { Tenant } from '../entities/Tenant';
-import { Users } from '../entities/Users';
+import { Accounts, Tenant, Users } from '../entities';
 import { createTenantManager } from './createTenantManager';
 
 export const createHttpServer: (option: {
