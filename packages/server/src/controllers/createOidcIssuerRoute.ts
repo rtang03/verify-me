@@ -1,15 +1,15 @@
 import Debug from 'debug';
 import { Request } from 'express';
 import Status from 'http-status';
-import { Connection, getConnection } from 'typeorm';
+import { getConnection } from 'typeorm';
 import { OidcCredential, OidcFederatedProvider, OidcIssuer } from '../entities';
 import type { CommonResponse, Paginated } from '../types';
 import { createRestRoute, isCreateOidcIssuerArgs } from '../utils';
 
 interface RequestWithVhost extends Request {
   vhost?: any;
-  dbConnection?: Promise<Connection>;
   tenantId?: string;
+  issuerId?: string;
 }
 
 const debug = Debug('utils:createOidcRoute');
@@ -27,6 +27,9 @@ export const createOidcIssuerRoute = () =>
         hasMore: false,
         items,
       };
+
+      debug('GET /oidc/:id, %O', data);
+
       if (data) res.status(Status.OK).send({ status: 'OK', data });
       else res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND' });
     },

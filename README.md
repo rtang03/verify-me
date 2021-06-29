@@ -27,3 +27,21 @@ https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth
 auth0 callback for Registra application when using next-auth
 http://localhost:3000/api/auth/callback/auth0
 
+https://localhost/oidc/issuers/bb41301f-0fc6-406d-ac34-3afeb003769e/callback
+
+Interaction {
+returnTo: 'https://issuer.example.com/oidc/issuers/bb41301f-0fc6-406d-ac34-3afeb003769e/auth/FbwEVmrFS-A9fmPasnXEl',
+prompt: { name: 'login', reasons: [ 'no_session' ], details: {} },
+lastSubmission: undefined,
+params: {
+client_id: 'foo',
+nonce: 'foobar',
+redirect_uri: 'https://jwt.io',
+response_type: 'id_token',
+scope: 'openid'
+},
+session: undefined,
+kind: 'Interaction',
+jti: 'FbwEVmrFS-A9fmPasnXEl',
+exp: 1624963821
+}

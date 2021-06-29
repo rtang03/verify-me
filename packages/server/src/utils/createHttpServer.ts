@@ -1,3 +1,4 @@
+import { resolve } from 'path';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express, json, urlencoded } from 'express';
@@ -55,6 +56,8 @@ export const createHttpServer: (option: {
   const accountsRepo = getConnection('default').getRepository(Accounts);
   const app = express();
 
+  app.set('view engine', 'ejs');
+  app.set('views', resolve(__dirname, '..', '..', 'views'));
   app.use(json());
   app.use(cookieParser());
   app.use(urlencoded({ extended: true }));

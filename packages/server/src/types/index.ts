@@ -41,6 +41,9 @@ export * from './didDocument';
 export * from './createTenantArgs';
 export * from './updateTenantArgs';
 export * from './tenantManager';
+export * from './createOidcIssuerClientArgs';
+export * from './createOidcIssuerArgs';
+export * from './createTenantArgs';
 
 export type PaginatedDIDDocument = Paginated<DidDocument>;
 export type GetPaginatedDidDocument = CommonResponse<Paginated<DidDocument>>;

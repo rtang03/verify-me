@@ -6,3 +6,4 @@ export * from './setupVeramo';
 export * from './createHttpServer';
 export * from './createTenantManager';
 export * from './createDidDocument';
+export * from './createPsqlAdapter';

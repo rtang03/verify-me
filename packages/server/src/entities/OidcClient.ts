@@ -6,6 +6,12 @@ export class OidcClient {
   id: string;
 
   @Column({ type: 'varchar', length: 255, nullable: false })
+  issuerId: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: false })
+  secret: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: false })
   name: string;
 
   @Column({ type: 'simple-array', nullable: false })
