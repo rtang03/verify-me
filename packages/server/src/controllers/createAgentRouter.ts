@@ -116,6 +116,7 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
     }
   });
 
+  // OIDC Router
   router.use('/oidc', createOidcRoute());
 
   // 5. messaging router

@@ -45,3 +45,5 @@ kind: 'Interaction',
 jti: 'FbwEVmrFS-A9fmPasnXEl',
 exp: 1624963821
 }
+
+https://dashslab.us.auth0.com/v2/logout?client_id=cGExcP4cy3eljzlhghBhToRP46bP3bLY&returnTo=google.com

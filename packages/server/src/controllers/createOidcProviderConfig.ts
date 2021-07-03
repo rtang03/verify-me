@@ -1,9 +1,10 @@
 import type { ClientAuthMethod, Configuration, ResponseType } from 'oidc-provider';
-// import { createPsqlAdapter } from '../utils';
+// import { adapter } from '../utils/oidcKnexAdapter';
 
 export const createOidcProviderConfig = () => {
   return <Configuration>{
-    // adapter: createPsqlAdapter,
+    // Todo: it is not working
+    // adapter: adapter,
     clients: [
       {
         client_id: 'foo',
