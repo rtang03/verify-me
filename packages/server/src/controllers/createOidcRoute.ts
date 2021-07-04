@@ -25,6 +25,7 @@ const debug = Debug('utils:createOidcRoute');
 
 // TODO: fix it
 const issuerUrl = 'http://issuer.example.com';
+
 const setNoCache = (req: Request, res: Response, next: NextFunction) => {
   res.set('Pragma', 'no-cache');
   res.set('Cache-Control', 'no-cache, no-store');
@@ -108,7 +109,7 @@ export const createOidcRoute = () => {
         if (!openIdConfig) return next(new Error('missing openid-configuration'));
 
         // Use federatedProvider
-        const url = openIdConfig[CONIG.TOKEN]; // 'https://dashslab.us.auth0.com/oauth/token';
+        const url = openIdConfig[CONIG.TOKEN];
         const body = new URLSearchParams();
         body.append('grant_type', 'authorization_code');
         body.append('client_id', req.issuer.federatedProvider.clientId);

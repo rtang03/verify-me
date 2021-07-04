@@ -1,28 +1,32 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import type { AdapterPayload } from 'oidc-provider';
+import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 @Entity()
-export class OidcPayload {
+export class OidcPayload implements AdapterPayload {
   @PrimaryColumn()
   id: string;
 
-  @PrimaryColumn()
+  @Column()
   type: number;
 
   @Column({ type: 'text' })
   payload: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   grantId: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   userCode: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Index('oidc_payload_uid', { unique: false })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   uid: string;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamp', nullable: true })
   expiresAt: Date;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamp', nullable: true })
   consumedAt: Date;
+
+  [key: string]: unknown;
 }

@@ -1,5 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
+// https://openid.net/specs/openid-connect-registration-1_0.html
 @Entity()
 export class OidcClient {
   @PrimaryGeneratedColumn('uuid')
