@@ -43,7 +43,6 @@
     "lodash": "^4.17.21",
     "jose2": "npm:jose@^2.0.4",
     "jwt-decode": "^3.1.2",
-    "knex": "^0.95.6",
     "oidc-provider": "^7.5.1",
     "pg": "^8.6.0",
     "rimraf": "^3.0.2",

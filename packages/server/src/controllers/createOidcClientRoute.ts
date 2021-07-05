@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto';
 import Debug from 'debug';
-import { Request } from 'express';
+import type { Request } from 'express';
 import Status from 'http-status';
 import { getConnection } from 'typeorm';
 import { OidcClient } from '../entities';
@@ -42,15 +42,15 @@ export const createOidcClientRoute = () =>
       if (isCreateOidcIssuerClientArgs(body)) {
         const clientRepo = getConnection(req.tenantId).getRepository(OidcClient);
         const client = new OidcClient();
-        client.name = body.name;
-        client.redirectUris = body.redirectUris;
-        client.responseTypes = body.responseTypes;
-        client.grantTypes = body.grantTypes;
-        client.tokenEndpointAuthMethod = body.tokenEndpointAuthMethod;
-        client.idTokenSignedResponseAlg = body.idTokenSignedResponseAlg;
-        client.applicationType = body.applicationType;
+        client.client_name = body.client_name;
+        client.redirect_uris = body.redirect_uris;
+        client.response_types = body.response_types;
+        client.grant_types = body.grant_types;
+        client.token_endpoint_auth_method = body.token_endpoint_auth_method;
+        client.id_token_signed_response_alg = body.id_token_signed_response_alg;
+        client.application_type = body.application_type;
         client.issuerId = issuerId;
-        client.secret = randomBytes(12).toString('hex');
+        client.client_secret = randomBytes(12).toString('hex');
 
         const data = await clientRepo.save(client);
 

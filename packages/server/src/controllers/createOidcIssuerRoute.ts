@@ -65,9 +65,10 @@ export const createOidcIssuerRoute = () =>
         credential.name = body.credential.name;
         credential.type = body.credential.type;
 
+        const defaultUrl = `https://${req.hostname}/oidc/issuers/callback`;
         const provider = new OidcFederatedProvider();
         provider.url = body.federatedProvider.url;
-        provider.callbackUrl = body.federatedProvider.callbackUrl;
+        provider.callbackUrl = body?.federatedProvider?.callbackUrl || defaultUrl;
         provider.scope = body.federatedProvider.scope;
         provider.clientId = body.federatedProvider.clientId;
         provider.clientSecret = body.federatedProvider.clientSecret;

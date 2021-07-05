@@ -6,27 +6,27 @@ export class OidcPayload implements AdapterPayload {
   @PrimaryColumn()
   id: string;
 
-  @Column()
-  type: number;
+  @Column({ nullable: true })
+  type?: number;
 
-  @Column({ type: 'text' })
-  payload: string;
-
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  grantId: string;
+  @Column({ type: 'text', nullable: true })
+  payload?: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  userCode: string;
+  grantId?: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  userCode?: string;
 
   @Index('oidc_payload_uid', { unique: false })
   @Column({ type: 'varchar', length: 255, nullable: true })
-  uid: string;
+  uid?: string;
 
   @Column({ type: 'timestamp', nullable: true })
-  expiresAt: Date;
+  expiresAt?: Date;
 
   @Column({ type: 'timestamp', nullable: true })
-  consumedAt: Date;
+  consumedAt?: Date;
 
   [key: string]: unknown;
 }

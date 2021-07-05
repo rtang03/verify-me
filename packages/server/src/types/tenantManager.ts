@@ -1,5 +1,6 @@
 import type { Connection } from 'typeorm';
 import type { TTAgent } from '../utils';
+import { Provider } from 'oidc-provider';
 
 export type TenantStatus = {
   isActivated: boolean;
@@ -8,6 +9,7 @@ export type TenantStatus = {
 };
 
 export type TenantManager = {
+  createOrGetOidcProvider: (uri: string, tenantId: string) => Provider;
   activiate: (tenantId: string) => Promise<boolean>;
   connectAllDatabases: () => Promise<void>;
   deactivate: (tenantId: string) => Promise<boolean>;

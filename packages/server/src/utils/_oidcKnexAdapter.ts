@@ -1,4 +1,5 @@
 import Debug from 'debug';
+import type { Adapter } from 'oidc-provider';
 import { getConnection, Repository } from 'typeorm';
 import { OidcPayload } from '../entities';
 
@@ -28,7 +29,7 @@ const parseResult: (input: OidcPayload) => OidcPayload = (data) =>
     ...(data.consumedAt && { consumed: true }),
   };
 
-export class OidcPsqlAdapter {
+export class OidcPsqlAdapter implements Adapter {
   type: number;
   repo: Repository<OidcPayload>;
 

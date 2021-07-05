@@ -117,7 +117,7 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
   });
 
   // OIDC Router
-  router.use('/oidc', createOidcRoute());
+  router.use('/oidc', createOidcRoute(tenantManager));
 
   // 5. messaging router
   router.use(text({ type: '*/*' }));

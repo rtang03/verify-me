@@ -1,9 +1,11 @@
+import { ClientAuthMethod, ResponseType, SigningAlgorithmWithNone } from 'oidc-provider';
+
 export type CreateOidcIssuerClientArgs = {
-  name: string;
-  redirectUris: string[];
-  responseTypes?: string[];
-  grantTypes?: string[];
-  tokenEndpointAuthMethod?: string;
-  idTokenSignedResponseAlg?: string;
-  applicationType?: string;
+  client_name: string;
+  redirect_uris: string[];
+  response_types?: ResponseType[];
+  grant_types?: string[];
+  token_endpoint_auth_method?: ClientAuthMethod;
+  id_token_signed_response_alg?: SigningAlgorithmWithNone;
+  application_type?: 'web' | 'native';
 };

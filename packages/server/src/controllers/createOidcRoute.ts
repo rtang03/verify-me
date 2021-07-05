@@ -8,10 +8,10 @@ import jwt_decode from 'jwt-decode';
 import { Provider } from 'oidc-provider';
 import { getConnection } from 'typeorm';
 import { OidcIssuer, Tenant } from '../entities';
+import type { TenantManager } from '../types';
 import { CONIG, fetchOpenIdConfiguration } from '../utils';
 import { createOidcClientRoute } from './createOidcClientRoute';
 import { createOidcIssuerRoute } from './createOidcIssuerRoute';
-import { createOidcProviderConfig } from './createOidcProviderConfig';
 
 interface RequestWithVhost extends Request {
   vhost?: any;
@@ -19,12 +19,10 @@ interface RequestWithVhost extends Request {
   tenantId?: string;
   issuer?: OidcIssuer;
   openIdConfig?: any;
+  oidcProvider?: Provider;
 }
 
 const debug = Debug('utils:createOidcRoute');
-
-// TODO: fix it
-const issuerUrl = 'http://issuer.example.com';
 
 const setNoCache = (req: Request, res: Response, next: NextFunction) => {
   res.set('Pragma', 'no-cache');
@@ -32,12 +30,9 @@ const setNoCache = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
-export const createOidcRoute = () => {
+export const createOidcRoute = (tenantManger: TenantManager) => {
   const router = Router();
   const tenantRepo = getConnection('default').getRepository(Tenant);
-
-  // OIDC Provider
-  const oidc = new Provider(issuerUrl, createOidcProviderConfig());
 
   // add tenantId / slug to req
   router.use(async (req: RequestWithVhost, res, next) => {
@@ -52,19 +47,12 @@ export const createOidcRoute = () => {
     debug('tenantId: ', tenant.id);
     req.tenantId = tenant.id;
 
-    // retrieve federatedProvider
-    // TODO: here assumes one tenant has only one federatedIssuer. May change later
-    const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
-
-    req.issuer = await issuerRepo.findOne(req.issuerId, {
-      relations: ['credential', 'federatedProvider'],
-    });
     next();
   });
 
-  // parse issuer_id
+  // parse issuer_id and add client registration
   router.use(
-    '/issuers/:issuer_id/clients',
+    '/issuers/:issuer_id/reg',
     async (req: RequestWithVhost, res, next) => {
       req.issuerId = req.params.issuer_id;
       next();
@@ -87,9 +75,17 @@ export const createOidcRoute = () => {
       try {
         const code = req.query.code as string;
         const state = req.query.state;
+        const oidc = tenantManger.createOrGetOidcProvider(`https://${req.hostname}`, req.tenantId);
+        const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
+        const issuer = await issuerRepo.findOne(req.issuerId, {
+          relations: ['credential', 'federatedProvider'],
+        });
 
         const { uid, prompt, params } = await oidc.interactionDetails(req, res);
+        debug('prompt: %O', prompt);
         // prompt returns { name: 'login', reasons: [ 'no_session' ], details: {} }
+
+        debug('params, %O', params);
         // params returns {
         //   client_id: 'foo',
         //   nonce: 'foobar',
@@ -104,7 +100,7 @@ export const createOidcRoute = () => {
         }
 
         // fetch OpenId Configuration
-        const openIdConfigUrl = req.issuer?.federatedProvider?.url;
+        const openIdConfigUrl = issuer?.federatedProvider?.url;
         const openIdConfig = openIdConfigUrl && (await fetchOpenIdConfiguration(openIdConfigUrl));
         if (!openIdConfig) return next(new Error('missing openid-configuration'));
 
@@ -112,10 +108,10 @@ export const createOidcRoute = () => {
         const url = openIdConfig[CONIG.TOKEN];
         const body = new URLSearchParams();
         body.append('grant_type', 'authorization_code');
-        body.append('client_id', req.issuer.federatedProvider.clientId);
-        body.append('client_secret', req.issuer.federatedProvider.clientSecret);
+        body.append('client_id', issuer.federatedProvider.clientId);
+        body.append('client_secret', issuer.federatedProvider.clientSecret);
         body.append('code', code);
-        body.append('redirect_uri', req.issuer.federatedProvider.callbackUrl);
+        body.append('redirect_uri', issuer.federatedProvider.callbackUrl);
 
         // this fetch will give the tls warning
         // (node:34683) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification
@@ -145,8 +141,8 @@ export const createOidcRoute = () => {
           //   iat: 1625135903,
           //   exp: 1625171903,
           // };
-          const decoded: any = jwt_decode(token.id_token);
-          const result = { login: { accountId: decoded?.sub } };
+          const id_token: any = jwt_decode(token.id_token);
+          const result = { login: { accountId: id_token?.sub }, id_token };
           await oidc.interactionFinished(req, res, result, { mergeWithLastSubmission: false });
         } else {
           const error = await response.text();
@@ -162,16 +158,21 @@ export const createOidcRoute = () => {
   // kick off interaction
   router.get('/issuers/interaction/:uid', setNoCache, async (req: RequestWithVhost, res, next) => {
     try {
+      const oidc = tenantManger.createOrGetOidcProvider(`https://${req.hostname}`, req.tenantId);
+      const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
+      const issuer = await issuerRepo.findOne(req.issuerId, {
+        relations: ['credential', 'federatedProvider'],
+      });
       const details = await oidc.interactionDetails(req, res);
 
-      // debug('see what else is available to you for interaction views');
-      // debug('%O', details);
+      debug('see what else is available to you for interaction views');
+      debug('%O', details);
 
       const { uid, prompt, params } = details;
       const client = await oidc.Client.find(params.client_id as string);
 
       // fetch OpenId Configuration
-      const openIdConfigUrl = req.issuer?.federatedProvider?.url;
+      const openIdConfigUrl = issuer?.federatedProvider?.url;
       const openIdConfig = openIdConfigUrl && (await fetchOpenIdConfiguration(openIdConfigUrl));
       if (!openIdConfig) return next(new Error('missing openid-configuration'));
 
@@ -179,8 +180,8 @@ export const createOidcRoute = () => {
       if (prompt.name === 'login') {
         const loginUrl = openIdConfig[CONIG.AUTH];
         const response_type = 'code';
-        const client_id = req.issuer.federatedProvider.clientId;
-        const redirect_uri = req.issuer.federatedProvider.callbackUrl;
+        const client_id = issuer.federatedProvider.clientId;
+        const redirect_uri = issuer.federatedProvider.callbackUrl;
 
         // todo: fix it
         const scope = 'openid%20profile%20email';
@@ -205,100 +206,115 @@ export const createOidcRoute = () => {
     }
   });
 
-  router.post('/issuers/interaction/:uid/confirm', setNoCache, async (req, res, next) => {
-    try {
-      const interactionDetails = await oidc.interactionDetails(req, res);
-      // interactionDetails returns {
-      //   returnTo:
-      //     'https://issuer.example.com/oidc/issuers/bb41301f-0fc6-406d-ac34-3afeb003769e/auth/h_2x-LM_dtOMWwMbaMT0z',
-      //   prompt: {
-      //     name: 'consent',
-      //     reasons: ['op_scopes_missing'],
-      //     details: { missingOIDCScope: [ 'openid' ] },
-      //   },
-      //   lastSubmission: { login: { accountId: '123' } },
-      //   params: {
-      //     client_id: 'foo',
-      //     nonce: 'foobar',
-      //     redirect_uri: 'https://jwt.io',
-      //     response_type: 'id_token',
-      //     scope: 'openid',
-      //   },
-      //   session: {
-      //     accountId: '123',
-      //     uid: 'PuxEdm_qmftcY3X8S18-u',
-      //     cookie: 'J78548H3n1JC58XfoEmRs',
-      //   },
-      // };
-      debug('after pressing confirm');
-      debug('%O', interactionDetails);
+  router.post(
+    '/issuers/interaction/:uid/confirm',
+    setNoCache,
+    async (req: RequestWithVhost, res, next) => {
+      try {
+        const oidc = tenantManger.createOrGetOidcProvider(`https://${req.hostname}`, req.tenantId);
+        const interactionDetails = await oidc.interactionDetails(req, res);
+        // interactionDetails returns {
+        //   returnTo:
+        //     'https://issuer.example.com/oidc/issuers/bb41301f-0fc6-406d-ac34-3afeb003769e/auth/h_2x-LM_dtOMWwMbaMT0z',
+        //   prompt: {
+        //     name: 'consent',
+        //     reasons: ['op_scopes_missing'],
+        //     details: { missingOIDCScope: [ 'openid' ] },
+        //   },
+        //   lastSubmission: { login: { accountId: '123' } },
+        //   params: {
+        //     client_id: 'foo',
+        //     nonce: 'foobar',
+        //     redirect_uri: 'https://jwt.io',
+        //     response_type: 'id_token',
+        //     scope: 'openid',
+        //   },
+        //   session: {
+        //     accountId: '123',
+        //     uid: 'PuxEdm_qmftcY3X8S18-u',
+        //     cookie: 'J78548H3n1JC58XfoEmRs',
+        //   },
+        // };
+        debug('after pressing confirm');
+        debug('%O', interactionDetails);
 
-      const {
-        prompt: { name, details },
-        params,
-        session: { accountId },
-      } = interactionDetails;
+        const {
+          prompt: { name, details },
+          params,
+          session: { accountId },
+        } = interactionDetails;
 
-      assert.strictEqual(name, 'consent');
+        assert.strictEqual(name, 'consent');
 
-      let { grantId } = interactionDetails;
-      let grant;
+        let { grantId } = interactionDetails;
+        let grant;
 
-      if (grantId) {
-        // we'll be modifying existing grant in existing session
-        grant = await oidc.Grant.find(grantId);
-      } else {
-        // we're establishing a new grant
-        grant = new oidc.Grant({
-          accountId,
-          clientId: params.client_id as string,
-        });
-      }
-
-      if (details.missingOIDCScope) {
-        grant.addOIDCScope((details.missingOIDCScope as string[]).join(' '));
-        // use grant.rejectOIDCScope to reject a subset or the whole thing
-      }
-      if (details.missingOIDCClaims) {
-        grant.addOIDCClaims(details.missingOIDCClaims as any);
-        // use grant.rejectOIDCClaims to reject a subset or the whole thing
-      }
-      if (details.missingResourceScopes) {
-        // eslint-disable-next-line no-restricted-syntax
-        for (const [indicator, scopes] of Object.entries(details.missingResourceScopes)) {
-          grant.addResourceScope(indicator, scopes.join(' '));
-          // use grant.rejectResourceScope to reject a subset or the whole thing
+        if (grantId) {
+          // we'll be modifying existing grant in existing session
+          grant = await oidc.Grant.find(grantId);
+        } else {
+          // we're establishing a new grant
+          grant = new oidc.Grant({
+            accountId,
+            clientId: params.client_id as string,
+          });
         }
+
+        if (details.missingOIDCScope) {
+          grant.addOIDCScope((details.missingOIDCScope as string[]).join(' '));
+          // use grant.rejectOIDCScope to reject a subset or the whole thing
+        }
+        if (details.missingOIDCClaims) {
+          grant.addOIDCClaims(details.missingOIDCClaims as any);
+          // use grant.rejectOIDCClaims to reject a subset or the whole thing
+        }
+        if (details.missingResourceScopes) {
+          // eslint-disable-next-line no-restricted-syntax
+          for (const [indicator, scopes] of Object.entries(details.missingResourceScopes)) {
+            grant.addResourceScope(indicator, scopes.join(' '));
+            // use grant.rejectResourceScope to reject a subset or the whole thing
+          }
+        }
+
+        grantId = await grant.save();
+
+        const consent: any = {};
+        if (!interactionDetails.grantId) {
+          // we don't have to pass grantId to consent, we're just modifying existing one
+          consent.grantId = grantId;
+        }
+
+        const result = { consent };
+        await oidc.interactionFinished(req, res, result, { mergeWithLastSubmission: true });
+      } catch (err) {
+        next(err);
       }
+    }
+  );
 
-      grantId = await grant.save();
-
-      const consent: any = {};
-      if (!interactionDetails.grantId) {
-        // we don't have to pass grantId to consent, we're just modifying existing one
-        consent.grantId = grantId;
+  router.post(
+    '/issuers/interaction/:uid/abort',
+    setNoCache,
+    async (req: RequestWithVhost, res, next) => {
+      try {
+        const oidc = tenantManger.createOrGetOidcProvider(`https://${req.hostname}`, req.tenantId);
+        const result = {
+          error: 'access_denied',
+          error_description: 'End-User aborted interaction',
+        };
+        await oidc.interactionFinished(req, res, result, { mergeWithLastSubmission: false });
+      } catch (err) {
+        next(err);
       }
-
-      const result = { consent };
-      await oidc.interactionFinished(req, res, result, { mergeWithLastSubmission: true });
-    } catch (err) {
-      next(err);
     }
-  });
+  );
 
-  router.post('/issuers/interaction/:uid/abort', setNoCache, async (req, res, next) => {
-    try {
-      const result = {
-        error: 'access_denied',
-        error_description: 'End-User aborted interaction',
-      };
-      await oidc.interactionFinished(req, res, result, { mergeWithLastSubmission: false });
-    } catch (err) {
-      next(err);
-    }
+  router.use('/issuers/:id', (req: RequestWithVhost, res) => {
+    const oidc = tenantManger.createOrGetOidcProvider(`https://${req.hostname}`, req.tenantId);
+    return oidc
+      ? oidc.callback()(req, res)
+      : res.status(Status.BAD_REQUEST).send({ error: 'Oidc provider not found' });
   });
-
-  router.use('/issuers/:id', oidc.callback());
 
   // RESTful route for "Issuers" entity
   // Note: must be placed at last

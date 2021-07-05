@@ -34,4 +34,6 @@ export const isCreateOidcIssuerArgs = (input: any): input is CreateOidcIssuerArg
   input?.credential?.name !== undefined;
 
 export const isCreateOidcIssuerClientArgs = (input: any): input is CreateOidcIssuerClientArgs =>
-  input?.name !== undefined && input?.redirectUris !== undefined;
+  input?.redirect_uris !== undefined &&
+  input?.response_types !== undefined &&
+  input?.grant_types !== undefined;

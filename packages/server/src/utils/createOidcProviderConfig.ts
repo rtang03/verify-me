@@ -1,18 +1,9 @@
 import type { Configuration } from 'oidc-provider';
-import { OidcPsqlAdapter } from '../utils/oidcPsqlAdapter';
+import { createOidcAdapter } from './createOidcAdapter';
 
-export const createOidcProviderConfig = () => {
+export const createOidcProviderConfig = (connectionName: string) => {
   return <Configuration>{
-    adapter: OidcPsqlAdapter,
-    // clients: [
-    // {
-    //   client_id: 'foo',
-    //   redirect_uris: ['https://jwt.io'], // using jwt.io as redirect_uri to show the ID Token contents
-    //   response_types: ['id_token' as ResponseType],
-    //   grant_types: ['implicit'],
-    //   token_endpoint_auth_method: 'none' as ClientAuthMethod,
-    // },
-    // ],
+    adapter: createOidcAdapter(connectionName),
     interactions: {
       url: (ctx, interaction) => {
         // See example
@@ -83,5 +74,8 @@ export const createOidcProviderConfig = () => {
       Session: 1209600 /* 14 days in seconds */,
     },
     acrValues: ['0'],
+    // pkce: {
+    //   methods: ['S256'],
+    // },
   };
 };

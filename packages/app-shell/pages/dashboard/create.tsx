@@ -47,11 +47,11 @@ const TenantCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   // used for "Set Active"
   const { toggleStorage, setToggleStorage } = useLocalStorage();
   useEffect(() => {
-    setToggleStorage((val) => !val);
-  }, [session, val?.data]);
+    setToggleStorage((value) => ++value);
+  }, [session, val]);
 
   return (
-    <Layout title="Tenant" refresh={toggleStorage}>
+    <Layout title="Tenant" refresh={val}>
       <Main
         session={session}
         parentText="Dashboard"

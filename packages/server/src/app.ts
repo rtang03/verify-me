@@ -4,7 +4,7 @@ import http from 'http';
 import https from 'https';
 import util from 'util';
 import type { ConnectionOptions } from 'typeorm';
-import { Accounts, OidcPayload, Sessions, Tenant, Users } from './entities';
+import { Accounts, Sessions, Tenant, Users } from './entities';
 import { createHttpServer } from './utils';
 
 const ENV_VAR = {
@@ -29,7 +29,7 @@ const commonConnectionOptions: ConnectionOptions = {
   synchronize: true,
   logging: true,
   schema: 'public',
-  entities: [Tenant, Accounts, Sessions, Users, OidcPayload],
+  entities: [Tenant, Accounts, Sessions, Users],
 };
 
 (async () => {
