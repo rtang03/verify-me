@@ -3,7 +3,7 @@ import type { Adapter, AdapterPayload } from 'oidc-provider';
 import { getConnection } from 'typeorm';
 import { OidcClient, OidcPayload } from '../entities';
 
-const debug = Debug('utils:createOidcAdapter');
+const debug = Debug('utils:createOidcRoute');
 const TCLIENT = 7;
 const types = [
   'Session',
@@ -54,7 +54,7 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
       payload: AdapterPayload,
       expiresIn: number
     ): Promise<undefined | void> {
-      debug('id: %s', id);
+      debug('Upsert-id: %s', id);
       debug('payload: %O', payload);
 
       const expiresAt = getExpireAt(expiresIn);
@@ -70,7 +70,7 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
       const preload = await oidcPayloadRepo.preload(item);
       const data = await oidcPayloadRepo.save(preload ?? item);
 
-      debug('upsert: %O', data);
+      debug('Upsert-result: %O', data);
     }
 
     /**
@@ -81,6 +81,8 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
      * @param {string} id Identifier of oidc-provider model
      */
     async find(id: string): Promise<AdapterPayload | undefined | void> {
+      debug('Find-id: %s', id);
+
       const repo = (
         {
           [TCLIENT]: (clientId: string) => oidcClientRepo.findOne({ client_id: clientId }),
@@ -90,7 +92,7 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
       const data = await repo;
       const result = this.type === TCLIENT ? data : parseResult(data as OidcPayload);
 
-      debug('findById, %O', result);
+      debug('Find-result, %O', result);
       return result;
     }
 
@@ -103,10 +105,12 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
      * @param {string} userCode the user_code value associated with a DeviceCode instance
      */
     async findByUserCode(userCode: string): Promise<AdapterPayload | undefined | void> {
+      debug('FindByUserCode-userCode: %s', userCode);
+
       const data = await oidcPayloadRepo.findOne({ userCode, type: this.type });
       const result = parseResult(data);
 
-      debug('findByUserCode, %O', result);
+      debug('FindByUserCode-result, %O', result);
 
       return result;
     }
@@ -119,10 +123,12 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
      * @param {string} uid the uid value associated with a Session instance
      */
     async findByUid(uid: string): Promise<AdapterPayload | undefined | void> {
+      debug('FindByUid-id: %s', uid);
+
       const data = await oidcPayloadRepo.findOne({ uid, type: this.type });
       const result = parseResult(data);
 
-      debug('findByUid, %O', result);
+      debug('FindByUid-result, %O', result);
 
       return result;
     }
@@ -136,11 +142,13 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
      * @param {string} id Identifier of oidc-provider model
      */
     async consume(id: string): Promise<undefined | void> {
+      debug('Consume: %s', id);
+
       if (this.type === TCLIENT) throw new Error('fatal error: invalid types');
 
       const data = oidcPayloadRepo.update({ id, type: this.type }, { consumedAt: new Date() });
 
-      debug('consume, %O', data);
+      debug('Consume-result, %O', data);
     }
 
     /**
@@ -151,11 +159,13 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
      * @param {string} id Identifier of oidc-provider model
      */
     async destroy(id: string): Promise<undefined | void> {
+      debug('Destroy-id: %s', id);
+
       if (this.type === TCLIENT) throw new Error('fatal error: invalid types');
 
       const data = oidcPayloadRepo.delete({ id, type: this.type });
 
-      debug('destroy, %O', data);
+      debug('Destroy-result, %O', data);
     }
 
     /**
@@ -166,11 +176,13 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
      * @param {string} grantId the grantId value associated with a this model's instance
      */
     async revokeByGrantId(grantId: string): Promise<undefined | void> {
+      debug('RevokeByGrandId: grantId', grantId);
+
       if (this.type === TCLIENT) throw new Error('fatal error: invalid types');
 
       const data = oidcPayloadRepo.delete({ grantId, type: this.type });
 
-      debug('revokeByGrantId, %O', data);
+      debug('RevokeByGrantId-result, %O', data);
     }
   };
 };

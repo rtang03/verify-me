@@ -29,35 +29,18 @@ export const createOidcProviderConfig = (connectionName: string) => {
     cookies: {
       keys: ['some secret key', 'and also the old rotated away some time ago', 'and one more'],
     },
-    findAccount: async (ctx, id) => {
-      // Todo: get claim from here
+    // see https://github.com/panva/node-oidc-provider/tree/main/docs#findaccount
+    findAccount: async (ctx, sub, token) => {
       return {
-        accountId: id,
-        claims: async () => {
-          return { sub: id, email: 'tangross@hotmail.com' };
+        accountId: sub,
+        async claims(use, scope, claims, rejected) {
+          return { sub, email: 'tangross@hotmail.com', email_verified: false };
         },
       };
     },
     claims: {
-      address: ['address'],
       email: ['email', 'email_verified'],
-      phone: ['phone_number', 'phone_number_verified'],
-      profile: [
-        'birthdate',
-        'family_name',
-        'gender',
-        'given_name',
-        'locale',
-        'middle_name',
-        'name',
-        'nickname',
-        'picture',
-        'preferred_username',
-        'profile',
-        'updated_at',
-        'website',
-        'zoneinfo',
-      ],
+      openid: ['sub'],
     },
     features: {
       devInteractions: { enabled: false }, // defaults to true
@@ -74,8 +57,10 @@ export const createOidcProviderConfig = (connectionName: string) => {
       Session: 1209600 /* 14 days in seconds */,
     },
     acrValues: ['0'],
-    // pkce: {
-    //   methods: ['S256'],
-    // },
+    scopes: ['openid', 'offline_access'],
+    pkce: {
+      methods: ['plain'],
+      pkceRequired: (ctx, client) => true,
+    },
   };
 };

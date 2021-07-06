@@ -54,6 +54,8 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
   router.use(
     '/issuers/:issuer_id/reg',
     async (req: RequestWithVhost, res, next) => {
+      debug('USE /issuers/%s/reg', req.params.issuer_id);
+
       req.issuerId = req.params.issuer_id;
       next();
     },
@@ -63,6 +65,8 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
   // federated OIDC provide callback here, to exchange token
   // this endpoint will redirect to /issuers/interaction/:uid/login
   router.get('/issuers/callback', (req, res) => {
+    debug('GET /oidc/issuers/callback');
+
     const url = `/oidc/issuers/interaction/${req.query.state}/login?code=${req.query.code}&state=${req.query.state}`;
     res.writeHead(302, { Location: url });
     res.end();
@@ -75,16 +79,19 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
       try {
         const code = req.query.code as string;
         const state = req.query.state;
-        const oidc = tenantManger.createOrGetOidcProvider(`https://${req.hostname}`, req.tenantId);
+        const oidc = tenantManger.createOrGetOidcProvider(
+          `https://${req.hostname}/oidc/issuers/${req.issuerId}`,
+          req.tenantId
+        );
         const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
         const issuer = await issuerRepo.findOne(req.issuerId, {
           relations: ['credential', 'federatedProvider'],
         });
 
         const { uid, prompt, params } = await oidc.interactionDetails(req, res);
+        debug('GET /oidc/issuers/interaction/%s/login', uid);
         debug('prompt: %O', prompt);
         // prompt returns { name: 'login', reasons: [ 'no_session' ], details: {} }
-
         debug('params, %O', params);
         // params returns {
         //   client_id: 'foo',
@@ -142,7 +149,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           //   exp: 1625171903,
           // };
           const id_token: any = jwt_decode(token.id_token);
-          const result = { login: { accountId: id_token?.sub }, id_token };
+          const result = { login: { accountId: id_token?.sub, acr: '0' }, id_token };
           await oidc.interactionFinished(req, res, result, { mergeWithLastSubmission: false });
         } else {
           const error = await response.text();
@@ -158,13 +165,17 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
   // kick off interaction
   router.get('/issuers/interaction/:uid', setNoCache, async (req: RequestWithVhost, res, next) => {
     try {
-      const oidc = tenantManger.createOrGetOidcProvider(`https://${req.hostname}`, req.tenantId);
+      const oidc = tenantManger.createOrGetOidcProvider(
+        `https://${req.hostname}/oidc/issuers/${req.issuerId}`,
+        req.tenantId
+      );
       const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
       const issuer = await issuerRepo.findOne(req.issuerId, {
         relations: ['credential', 'federatedProvider'],
       });
       const details = await oidc.interactionDetails(req, res);
 
+      debug('GET /oidc/issuers/interaction/%s', details.uid);
       debug('see what else is available to you for interaction views');
       debug('%O', details);
 
@@ -183,7 +194,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         const client_id = issuer.federatedProvider.clientId;
         const redirect_uri = issuer.federatedProvider.callbackUrl;
 
-        // todo: fix it
+        // this scope is default scope, used in Auth0.com
         const scope = 'openid%20profile%20email';
 
         // uid (session id) is used as state
@@ -211,7 +222,10 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     setNoCache,
     async (req: RequestWithVhost, res, next) => {
       try {
-        const oidc = tenantManger.createOrGetOidcProvider(`https://${req.hostname}`, req.tenantId);
+        const oidc = tenantManger.createOrGetOidcProvider(
+          `https://${req.hostname}/oidc/issuers/${req.issuerId}`,
+          req.tenantId
+        );
         const interactionDetails = await oidc.interactionDetails(req, res);
         // interactionDetails returns {
         //   returnTo:
@@ -235,7 +249,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         //     cookie: 'J78548H3n1JC58XfoEmRs',
         //   },
         // };
-        debug('after pressing confirm');
+        debug('POST /oidc/issuers/interaction/%s/confirm', interactionDetails.uid);
         debug('%O', interactionDetails);
 
         const {
@@ -297,7 +311,13 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     setNoCache,
     async (req: RequestWithVhost, res, next) => {
       try {
-        const oidc = tenantManger.createOrGetOidcProvider(`https://${req.hostname}`, req.tenantId);
+        const oidc = tenantManger.createOrGetOidcProvider(
+          `https://${req.hostname}/oidc/issuers/${req.issuerId}`,
+          req.tenantId
+        );
+        const interactionDetails = await oidc.interactionDetails(req, res);
+        debug('POST /oidc/issuers/interaction/%s/abort', interactionDetails.uid);
+
         const result = {
           error: 'access_denied',
           error_description: 'End-User aborted interaction',
@@ -310,7 +330,12 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
   );
 
   router.use('/issuers/:id', (req: RequestWithVhost, res) => {
-    const oidc = tenantManger.createOrGetOidcProvider(`https://${req.hostname}`, req.tenantId);
+    const oidc = tenantManger.createOrGetOidcProvider(
+      `https://${req.hostname}/oidc/issuers/${req.issuerId}`,
+      req.tenantId
+    );
+    debug('USE /oidc/issuers/:id');
+
     return oidc
       ? oidc.callback()(req, res)
       : res.status(Status.BAD_REQUEST).send({ error: 'Oidc provider not found' });
