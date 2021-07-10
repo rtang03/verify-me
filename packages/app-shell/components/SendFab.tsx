@@ -33,11 +33,11 @@ const useStyles = makeStyles((theme: Theme) => {
       zIndex: 1,
     },
     submit: {
-      color: dark ? grey[100] : grey[900],
-      backgroundColor: dark ? grey[900] : grey[100],
+      color: dark ? grey[900] : grey[100],
+      backgroundColor: dark ? grey[100] : grey[900],
       '&:hover': {
-        color: dark ? grey[900] : grey[100],
-        backgroundColor: dark ? grey[100] : grey[900],
+        color: dark ? grey[100] : grey[900],
+        backgroundColor: dark ? grey[900] : grey[100],
       },
     },
   });

@@ -2,9 +2,19 @@ import util from 'util';
 import { Entities } from '@veramo/data-store';
 import Debug from 'debug';
 import includes from 'lodash/includes';
+import { Provider } from 'oidc-provider';
 import { Connection, ConnectionOptions, createConnection, getConnection } from 'typeorm';
-import { Tenant } from '../entities/Tenant';
+import {
+  Tenant,
+  OidcCredential,
+  OidcClient,
+  OidcIssuer,
+  OidcFederatedProvider,
+  OidcVerifier,
+  OidcPayload,
+} from '../entities';
 import type { TenantManager, TenantStatus } from '../types';
+import { createOidcProviderConfig } from './createOidcProviderConfig';
 import type { TTAgent } from './setupVeramo';
 import { setupVeramo } from './setupVeramo';
 
@@ -19,7 +29,15 @@ const createConnOption: (tenant: Tenant) => ConnectionOptions = (tenant) => ({
   database: tenant.db_name,
   synchronize: true,
   logging: true,
-  entities: Entities,
+  entities: [
+    ...Entities,
+    OidcCredential,
+    OidcClient,
+    OidcIssuer,
+    OidcFederatedProvider,
+    OidcVerifier,
+    OidcPayload,
+  ],
   schema: getSchemaName(tenant.id),
 });
 
@@ -28,12 +46,20 @@ const debug = Debug('createTenantManager');
 export const createTenantManager: (commonConnection: Connection) => TenantManager = (
   commonConnection
 ) => {
+  // connectionPromises' key is "tenantId"
   let connectionPromises: Record<string, Promise<Connection>>;
-  // NOTE: agents' key is "slug"; NOT "tenantId"
+  // agents' key is "slug"
   const agents: Record<string, TTAgent> = {};
+  // oidcProvider's key is "tenantId"
+  const oidcProivders: Record<string, Provider> = {};
   const tenantRepo = getConnection('default').getRepository(Tenant);
 
   return {
+    createOrGetOidcProvider: (hostname, tenantId, issuerId) => {
+      const uri = `https://${hostname}/oidc/issuers/${issuerId}`;
+      oidcProivders[tenantId] ??= new Provider(uri, createOidcProviderConfig(tenantId, issuerId));
+      return oidcProivders[tenantId];
+    },
     activiate: async (tenantId) => {
       let tenant: Tenant;
       let isTenantExist: boolean;

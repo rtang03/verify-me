@@ -1,6 +1,7 @@
+import { resolve } from 'path';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express, { Express, json } from 'express';
+import express, { Express, json, urlencoded } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { Connection, ConnectionOptions, createConnection, getConnection } from 'typeorm';
@@ -12,9 +13,7 @@ import {
   createActionsRouter,
   createAgentRouter,
 } from '../controllers';
-import { Accounts } from '../entities/Accounts';
-import { Tenant } from '../entities/Tenant';
-import { Users } from '../entities/Users';
+import { Accounts, Tenant, Users } from '../entities';
 import { createTenantManager } from './createTenantManager';
 
 export const createHttpServer: (option: {
@@ -57,9 +56,11 @@ export const createHttpServer: (option: {
   const accountsRepo = getConnection('default').getRepository(Accounts);
   const app = express();
 
+  app.set('view engine', 'ejs');
+  app.set('views', resolve(__dirname, '..', '..', 'views'));
   app.use(json());
   app.use(cookieParser());
-  app.use(express.urlencoded({ extended: true }));
+  app.use(urlencoded({ extended: true }));
   app.use(morgan('dev'));
   app.use(helmet());
   baseUrl && app.use(cors({ origin: baseUrl }));

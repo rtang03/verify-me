@@ -1,8 +1,9 @@
 import Card from '@material-ui/core/Card';
 import CardHeader from '@material-ui/core/CardHeader';
 import SvgIcon from '@material-ui/core/SvgIcon';
-import Typography from '@material-ui/core/Typography';
-import { makeStyles, Theme } from '@material-ui/core/styles';
+import { red, blue } from '@material-ui/core/colors';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import ReportProblemOutlinedIcon from '@material-ui/icons/ReportProblemOutlined';
 import React, { ReactFragment } from 'react';
 
 const LightBulbIcon = (props: React.ComponentProps<any>) => (
@@ -11,27 +12,55 @@ const LightBulbIcon = (props: React.ComponentProps<any>) => (
   </SvgIcon>
 );
 
-const useStyles = makeStyles((theme: Theme) => ({
-  root: {
-    margin: theme.spacing(2, 0, 2),
-  },
-  lightBulb: {
-    verticalAlign: 'middle',
-    marginRight: theme.spacing(1),
-  },
-}));
+const useStyles = makeStyles((theme: Theme) => {
+  const dark = theme.palette.type === 'dark';
+  const grey = theme.palette.grey;
 
-const ProTip: React.FC<{ text: string | ReactFragment }> = ({ text }) => {
+  return createStyles({
+    root: {
+      margin: theme.spacing(1, 0, 1),
+    },
+    card: {
+      backgroundColor: dark ? grey[700] : grey[100],
+      'border-color': dark ? grey[300] : grey[700],
+      'border-left': `8px solid ${theme.palette.divider}`,
+      'border-right': `0px`,
+      'border-top': `0px`,
+      'border-bottom': `0px`,
+    },
+    lightBulb: {
+      'font-size': 'large',
+      color: blue[500],
+      verticalAlign: 'middle',
+      marginRight: theme.spacing(1),
+    },
+    danger: {
+      color: red[500],
+      verticalAlign: 'middle',
+      marginRight: theme.spacing(1),
+    },
+  });
+});
+
+const ProTip: React.FC<{ text: string | ReactFragment; tipType?: string }> = ({
+  text,
+  tipType = 'lightBulb',
+}) => {
   const classes = useStyles();
 
+  const icon = {
+    danger: <ReportProblemOutlinedIcon className={classes.danger} />,
+  }[tipType] || <LightBulbIcon className={classes.lightBulb} />;
+
   return (
-    <Card variant="outlined">
+    <Card className={classes.card} variant="outlined">
       <CardHeader
-        avatar={<LightBulbIcon className={classes.lightBulb} />}
+        className={classes.root}
+        avatar={icon}
         title={
-          <Typography className={classes.root} color="inherit">
+          <div className={classes.root} color="inherit">
             {text}
-          </Typography>
+          </div>
         }
       />
     </Card>

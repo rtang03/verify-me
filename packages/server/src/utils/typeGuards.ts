@@ -1,6 +1,7 @@
 import type { IIdentifier } from '@veramo/core';
 import { Credential } from '@veramo/data-store';
-import { Tenant } from '../entities/Tenant';
+import { Tenant } from '../entities';
+import type { CreateOidcIssuerArgs, CreateOidcIssuerClientArgs } from '../types';
 
 export const isIdentitifer = (input: any): input is IIdentifier =>
   input.did !== undefined &&
@@ -27,3 +28,12 @@ export const isTenant = (input: any): input is Tenant =>
   input?.db_username !== undefined &&
   input?.db_password !== undefined &&
   input?.db_port !== undefined;
+
+// Todo: full other condition later
+export const isCreateOidcIssuerArgs = (input: any): input is CreateOidcIssuerArgs =>
+  input?.credential?.name !== undefined;
+
+export const isCreateOidcIssuerClientArgs = (input: any): input is CreateOidcIssuerClientArgs =>
+  input?.redirect_uris !== undefined &&
+  input?.response_types !== undefined &&
+  input?.grant_types !== undefined;

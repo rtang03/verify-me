@@ -2,8 +2,7 @@ import Status from 'http-status';
 import intersection from 'lodash/intersection';
 import omit from 'lodash/omit';
 import { Repository } from 'typeorm';
-import { Tenant } from '../entities/Tenant';
-import { Users } from '../entities/Users';
+import { Tenant, Users } from '../entities';
 import type { CommonResponse, CreateTenantArgs, Paginated } from '../types';
 import { createRestRoute } from '../utils';
 

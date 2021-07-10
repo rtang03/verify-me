@@ -4,10 +4,7 @@ import http from 'http';
 import https from 'https';
 import util from 'util';
 import type { ConnectionOptions } from 'typeorm';
-import { Accounts } from './entities/Accounts';
-import { Sessions } from './entities/Sessions';
-import { Tenant } from './entities/Tenant';
-import { Users } from './entities/Users';
+import { Accounts, Sessions, Tenant, Users } from './entities';
 import { createHttpServer } from './utils';
 
 const ENV_VAR = {
@@ -20,19 +17,6 @@ const ENV_VAR = {
   DB_PASSWORD: process.env.TYPEORM_PASSWORD,
   DB_NAME: process.env.TYPEORM_DATABASE,
 };
-// const connectionOptions: ConnectionOptions = {
-//   name: 'default',
-//   type: 'postgres',
-//   host: ENV_VAR.HOST,
-//   port: ENV_VAR.PORT,
-//   username: ENV_VAR.DB_USERNAME,
-//   password: ENV_VAR.DB_PASSWORD,
-//   database: ENV_VAR.DB_NAME,
-//   synchronize: false,
-//   logging: true,
-//   schema: 'public',
-//   entities: Entities,
-// };
 
 const commonConnectionOptions: ConnectionOptions = {
   name: 'default',
@@ -42,7 +26,7 @@ const commonConnectionOptions: ConnectionOptions = {
   username: ENV_VAR.DB_USERNAME,
   password: ENV_VAR.DB_PASSWORD,
   database: ENV_VAR.DB_NAME,
-  synchronize: false,
+  synchronize: true,
   logging: true,
   schema: 'public',
   entities: [Tenant, Accounts, Sessions, Users],

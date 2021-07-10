@@ -17,9 +17,9 @@ import { Form, Field, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import Link from 'next/link';
-import React from 'react';
+import React, { useEffect } from 'react';
 import type { PartialTenant } from 'types';
-import { useFetcher } from 'utils';
+import { useFetcher, useLocalStorage } from 'utils';
 import * as yup from 'yup';
 
 const validation = yup.object({
@@ -44,8 +44,14 @@ const TenantCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const user_id = (session as any)?.user?.id;
   const newTenant = (body: { slug: string; user_id: string }) => poster('/api/tenants', body);
 
+  // used for "Set Active"
+  const { toggleStorage, setToggleStorage } = useLocalStorage();
+  useEffect(() => {
+    setToggleStorage((value) => ++value);
+  }, [session, val]);
+
   return (
-    <Layout title="Tenant">
+    <Layout title="Tenant" refresh={val}>
       <Main
         session={session}
         parentText="Dashboard"

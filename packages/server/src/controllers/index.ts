@@ -5,3 +5,6 @@ export * from './createUserRoute';
 export * from './createAccountRoute';
 export * from './createActionsRouter';
 export * from './createAgentRouter';
+export * from './createOidcIssuerRoute';
+export * from './createOidcRoute';
+export * from './createOidcClientRoute';

@@ -5,7 +5,7 @@ import Providers from 'next-auth/providers';
 import type { ConnectionOptions } from 'typeorm';
 
 export const nextauthOptions: any = (connectionOptions: ConnectionOptions) => ({
-  theme: 'light' as any,
+  theme: 'auto' as any,
   // https://next-auth.js.org/configuration/providers
   providers: [
     Providers.Auth0({

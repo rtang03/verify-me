@@ -64,7 +64,7 @@ const SubmitButton: React.FC<{
   return (
     <div className={classes.root}>
       <div className={classes.wrapper}>
-        {!success && !error && !!tooltip && (
+        {!success && !error && !disabled && !!tooltip && (
           <Tooltip title={tooltip}>
             <Button
               variant="outlined"
@@ -76,6 +76,17 @@ const SubmitButton: React.FC<{
               {text}
             </Button>
           </Tooltip>
+        )}
+        {!success && !error && disabled && !!tooltip && (
+          <Button
+            variant="outlined"
+            color="inherit"
+            size="large"
+            className={buttonClassname}
+            disabled={disabled}
+            onClick={() => !loading && submitForm()}>
+            {text}
+          </Button>
         )}
         {!success && !error && !tooltip && (
           <Button

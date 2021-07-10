@@ -1,5 +1,5 @@
 import { green } from '@material-ui/core/colors';
-import { makeStyles, Theme } from '@material-ui/core/styles';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 
 const drawerWidth = 240;
 
@@ -7,7 +7,7 @@ export const useStyles = makeStyles((theme: Theme) => {
   const dark = theme.palette.type === 'dark';
   const grey = theme.palette.grey;
 
-  return {
+  return createStyles({
     root: {
       flexGrow: 1,
       display: 'flex',
@@ -71,5 +71,10 @@ export const useStyles = makeStyles((theme: Theme) => {
       backgroundColor: grey[500],
     },
     submit: { width: '15ch', margin: theme.spacing(3, 3, 3) },
-  };
+    footer: {
+      position: 'relative',
+      bottom: 0,
+      width: '100%',
+    }
+  });
 });

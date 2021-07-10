@@ -69,7 +69,7 @@ const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
     tenantIdLocal,
     setSlugLocal,
     setTenantIdLocal,
-    setActiveTenant,
+    setActiveTenant
   } = useLocalStorage();
   useEffect(() => {
     setSlugLocal(localStorage.getItem('slug'));
@@ -78,7 +78,7 @@ const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
 
   return (
     // once the localStorage changes by "toggleStorage", will trigger page refresh in Layout
-    <Layout title="Tenant" refresh={toggleStorage}>
+    <Layout title="Tenant" refresh={data}>
       <Main
         session={session}
         title="Tenants"
