@@ -156,7 +156,7 @@
             </li>
         <% } %>
     </ul>
-    <form autocomplete="off" action="/oidc/issuers/interaction/<%= uid %>/confirm" method="post">
+    <form autocomplete="off" action="/oidc/issuers/<%= issuerId %>/interaction/<%= uid %>/confirm" method="post">
         <button autofocus type="submit" class="login login-submit">Continue</button>
     </form>
     <div class="login-help">

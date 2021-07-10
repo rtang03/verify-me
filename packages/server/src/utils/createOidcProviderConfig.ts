@@ -1,52 +1,83 @@
 import type { Configuration } from 'oidc-provider';
 import { createOidcAdapter } from './createOidcAdapter';
 
-export const createOidcProviderConfig = (connectionName: string) => {
+export const createOidcProviderConfig = (connectionName: string, issuerId: string) => {
   return <Configuration>{
+    acrValues: ['0'],
     adapter: createOidcAdapter(connectionName),
-    interactions: {
-      url: (ctx, interaction) => {
-        // See example
-        // Interaction {
-        //   iat: 1624974703,
-        //   exp: 1624975703,
-        //   returnTo:
-        //     'https://issuer.example.com/oidc/issuers/bb41301f-0fc6-406d-ac34-3afeb003769e/auth/SbjO7-Sb7l2qgYUywXUgB',
-        //   prompt: { name: 'login', reasons: ['no_session'], details: {} },
-        //   params: {
-        //     client_id: 'foo',
-        //     nonce: 'foobar',
-        //     redirect_uri: 'https://jwt.io',
-        //     response_type: 'id_token',
-        //     scope: 'openid',
-        //   },
-        //   kind: 'Interaction',
-        //   jti: 'SbjO7-Sb7l2qgYUywXUgB',
-        // };
-        return `/oidc/issuers/interaction/${interaction.uid}`;
-      },
+    claims: {
+      address: ['address'],
+      email: ['email', 'email_verified'],
+      phone: ['phone_number', 'phone_number_verified'],
+      profile: [
+        'birthdate',
+        'family_name',
+        'gender',
+        'given_name',
+        'locale',
+        'middle_name',
+        'name',
+        'nickname',
+        'picture',
+        'preferred_username',
+        'profile',
+        'updated_at',
+        'website',
+        'zoneinfo',
+      ],
+      openid: ['sub'],
     },
+    conformIdTokenClaims: true,
     cookies: {
       keys: ['some secret key', 'and also the old rotated away some time ago', 'and one more'],
+    },
+    extraParams: ['did'],
+    extraTokenClaims: (ctx, token) => {
+      // add to accessToken via resource indicator
+      return {
+        'urn:oidc-provider:example:foo': 'bar',
+      };
     },
     // see https://github.com/panva/node-oidc-provider/tree/main/docs#findaccount
     findAccount: async (ctx, sub, token) => {
       return {
         accountId: sub,
-        async claims(use, scope, claims, rejected) {
-          return { sub, email: 'tangross@hotmail.com', email_verified: false };
+        claims: async (use, scope, claims, rejected) => {
+          // id_token will return only sub
+          // console.log('claims: ', claims);
+          // claims:  { email: { essential: true } }
+          return { sub };
         },
       };
     },
-    claims: {
-      email: ['email', 'email_verified'],
-      openid: ['sub'],
-    },
     features: {
+      claimsParameter: { enabled: true }, // defaults to false
       devInteractions: { enabled: false }, // defaults to true
       deviceFlow: { enabled: true }, // defaults to false
-      revocation: { enabled: true }, // defaults to false
       registration: { enabled: true },
+      resourceIndicators: {
+        enabled: false,
+        // defaultResource: async (ctx) => {
+        //   return undefined;
+        // },
+        // getResourceServerInfo: async (ctx, resourceIndicator, client) => {
+        //   return {
+        //     scope: 'oidc oidc_credential',
+        //     audience: client.clientId,
+        //     accessTokenTTL: 2 * 60 * 60, // 2 hours
+        //     accessTokenFormat: 'jwt',
+        //     jwt: { sign: { alg: 'RS256' } },
+        //   };
+        // },
+        // useGrantedResource: async (ctx, model) => {
+        //   return true;
+        // },
+      },
+      revocation: { enabled: true }, // defaults to false
+      userinfo: { enabled: true },
+    },
+    interactions: {
+      url: (ctx, interaction) => `/oidc/issuers/${issuerId}/interaction/${interaction.uid}`,
     },
     ttl: {
       AuthorizationCode: 600 /* 10 minutes in seconds */,
@@ -56,11 +87,19 @@ export const createOidcProviderConfig = (connectionName: string) => {
       Interaction: 3600 /* 1 hour in seconds */,
       Session: 1209600 /* 14 days in seconds */,
     },
-    acrValues: ['0'],
-    scopes: ['openid', 'offline_access'],
     pkce: {
-      methods: ['plain'],
+      methods: ['S256', 'plain'],
       pkceRequired: (ctx, client) => true,
     },
+    responseTypes: [
+      'code',
+      'id_token',
+      'id_token token',
+      'code id_token',
+      'code token',
+      'code id_token token',
+      'none',
+    ],
+    scopes: ['openid', 'offline_access', 'oidc_credential'],
   };
 };

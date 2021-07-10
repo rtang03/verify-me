@@ -64,42 +64,34 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
   // federated OIDC provide callback here, to exchange token
   // this endpoint will redirect to /issuers/interaction/:uid/login
-  router.get('/issuers/callback', (req, res) => {
-    debug('GET /oidc/issuers/callback');
+  router.get('/issuers/:issuer_id/callback', (req, res) => {
+    debug('GET /oidc/issuers/:issuer_id/callback');
+    const issuerId = req.params.issuer_id;
+    const url = `/oidc/issuers/${issuerId}/interaction/${req.query.state}/login?code=${req.query.code}&state=${req.query.state}`;
 
-    const url = `/oidc/issuers/interaction/${req.query.state}/login?code=${req.query.code}&state=${req.query.state}`;
     res.writeHead(302, { Location: url });
     res.end();
   });
 
   router.get(
-    '/issuers/interaction/:uid/login',
+    '/issuers/:issuer_id/interaction/:uid/login',
     setNoCache,
     async (req: RequestWithVhost, res, next) => {
       try {
+        const issuerId = req.params.issuer_id;
         const code = req.query.code as string;
         const state = req.query.state;
-        const oidc = tenantManger.createOrGetOidcProvider(
-          `https://${req.hostname}/oidc/issuers/${req.issuerId}`,
-          req.tenantId
-        );
+        const oidc = tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
         const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
-        const issuer = await issuerRepo.findOne(req.issuerId, {
+        const issuer = await issuerRepo.findOne(issuerId, {
           relations: ['credential', 'federatedProvider'],
         });
 
         const { uid, prompt, params } = await oidc.interactionDetails(req, res);
-        debug('GET /oidc/issuers/interaction/%s/login', uid);
+
+        debug('GET /oidc/issuers/:issuer_id/interaction/%s/login', uid);
         debug('prompt: %O', prompt);
-        // prompt returns { name: 'login', reasons: [ 'no_session' ], details: {} }
         debug('params, %O', params);
-        // params returns {
-        //   client_id: 'foo',
-        //   nonce: 'foobar',
-        //   redirect_uri: 'https://jwt.io',
-        //   response_type: 'id_token',
-        //   scope: 'openid'
-        // }
 
         if (state !== uid) {
           // this handles replay attack
@@ -109,6 +101,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         // fetch OpenId Configuration
         const openIdConfigUrl = issuer?.federatedProvider?.url;
         const openIdConfig = openIdConfigUrl && (await fetchOpenIdConfiguration(openIdConfigUrl));
+
         if (!openIdConfig) return next(new Error('missing openid-configuration'));
 
         // Use federatedProvider
@@ -124,7 +117,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         // (node:34683) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification
         const response = await fetch(url, { method: 'POST', body });
         if (response.status === Status.OK) {
-          const token = await response.json();
+          const tokens: { access_token: string; id_token: string } = await response.json();
           // {
           //   access_token: 'oYNaAuIgHw_pzyet-hLxJfjU64vKBjTu',
           //   id_token:
@@ -148,8 +141,17 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           //   iat: 1625135903,
           //   exp: 1625171903,
           // };
-          const id_token: any = jwt_decode(token.id_token);
-          const result = { login: { accountId: id_token?.sub, acr: '0' }, id_token };
+
+          // retrieve id_token
+          const id_token: any = jwt_decode(tokens.id_token);
+
+          // retrieve userInfo
+          const userInfoUrl = openIdConfig[CONIG.ME];
+          const userInfo = await fetch(userInfoUrl, {
+            headers: { authorization: `Bearer ${tokens.access_token}` },
+          }).then((r) => r.json());
+
+          const result = { login: { accountId: id_token?.sub, acr: '0' }, id_token, userInfo };
           await oidc.interactionFinished(req, res, result, { mergeWithLastSubmission: false });
         } else {
           const error = await response.text();
@@ -163,93 +165,104 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
   );
 
   // kick off interaction
-  router.get('/issuers/interaction/:uid', setNoCache, async (req: RequestWithVhost, res, next) => {
-    try {
-      const oidc = tenantManger.createOrGetOidcProvider(
-        `https://${req.hostname}/oidc/issuers/${req.issuerId}`,
-        req.tenantId
-      );
-      const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
-      const issuer = await issuerRepo.findOne(req.issuerId, {
-        relations: ['credential', 'federatedProvider'],
-      });
-      const details = await oidc.interactionDetails(req, res);
-
-      debug('GET /oidc/issuers/interaction/%s', details.uid);
-      debug('see what else is available to you for interaction views');
-      debug('%O', details);
-
-      const { uid, prompt, params } = details;
-      const client = await oidc.Client.find(params.client_id as string);
-
-      // fetch OpenId Configuration
-      const openIdConfigUrl = issuer?.federatedProvider?.url;
-      const openIdConfig = openIdConfigUrl && (await fetchOpenIdConfiguration(openIdConfigUrl));
-      if (!openIdConfig) return next(new Error('missing openid-configuration'));
-
-      // redirect to federatedProvider
-      if (prompt.name === 'login') {
-        const loginUrl = openIdConfig[CONIG.AUTH];
-        const response_type = 'code';
-        const client_id = issuer.federatedProvider.clientId;
-        const redirect_uri = issuer.federatedProvider.callbackUrl;
-
-        // this scope is default scope, used in Auth0.com
-        const scope = 'openid%20profile%20email';
-
-        // uid (session id) is used as state
-        const url = `${loginUrl}?response_type=${response_type}&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}&state=${uid}`;
-
-        res.writeHead(Status.FOUND, { Location: url });
-        res.end();
-      } else {
-        // Authorize
-        res.render('interaction', {
-          client,
-          uid,
-          details: prompt.details,
-          params,
-          title: 'Authorize',
-        });
-      }
-    } catch (err) {
-      return next(err);
-    }
-  });
-
-  router.post(
-    '/issuers/interaction/:uid/confirm',
+  router.get(
+    '/issuers/:issuer_id/interaction/:uid',
     setNoCache,
     async (req: RequestWithVhost, res, next) => {
       try {
-        const oidc = tenantManger.createOrGetOidcProvider(
-          `https://${req.hostname}/oidc/issuers/${req.issuerId}`,
-          req.tenantId
-        );
+        const issuerId = req.params.issuer_id;
+        const oidc = tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
+        const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
+        const issuer = await issuerRepo.findOne(issuerId, {
+          relations: ['credential', 'federatedProvider'],
+        });
+        const details = await oidc.interactionDetails(req, res);
+
+        debug('GET /oidc/issuers/:issuer_id/interaction/%s', details.uid);
+        debug('see what else is available to you for interaction views');
+        debug('%O', details);
+
+        const { uid, prompt, params } = details;
+        const client = await oidc.Client.find(params.client_id as string);
+
+        // fetch OpenId Configuration
+        const openIdConfigUrl = issuer?.federatedProvider?.url;
+        const openIdConfig = openIdConfigUrl && (await fetchOpenIdConfiguration(openIdConfigUrl));
+
+        if (!openIdConfig) return next(new Error('missing openid-configuration'));
+
+        // redirect to federatedProvider
+        if (prompt.name === 'login') {
+          const loginUrl = openIdConfig[CONIG.AUTH];
+          const response_type = 'code';
+          const client_id = issuer.federatedProvider.clientId;
+          const redirect_uri = issuer.federatedProvider.callbackUrl;
+
+          // this scope is default scope, used in Auth0.com
+          const scope = 'openid%20profile%20email';
+
+          // uid (session id) is used as state
+          const url = `${loginUrl}?response_type=${response_type}&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}&state=${uid}`;
+
+          res.writeHead(Status.FOUND, { Location: url });
+          res.end();
+        } else {
+          // Authorize
+
+          // todo: XXXXXX, Grant is checked before calling it
+          // console.log('========>>>>', params);
+          //   client_id: '2843faca-8911-45ac-b605-f15c5556b88e',
+          //     code_challenge: '1234567890123456789012345678901234567890123456',
+          //     code_challenge_method: 'plain',
+          //     nonce: 'foobar',
+          //     redirect_uri: 'https://jwt.io',
+          //     response_type: 'code id_token token',
+          //     scope: 'openid email profile',
+          //     claims: '{ "userinfo": { "email": { "essential": true } }, "id_token": { "email": { "essential": true } } }',
+          //     did: 'did:web:issuer.example.com'
+          // }
+          res.render('interaction', {
+            client,
+            uid,
+            details: prompt.details,
+            params,
+            title: 'Authorize',
+            issuerId,
+          });
+        }
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  router.post(
+    '/issuers/:issuer_id/interaction/:uid/confirm',
+    setNoCache,
+    async (req: RequestWithVhost, res, next) => {
+      try {
+        const issuerId = req.params.issuer_id;
+        const oidc = tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
         const interactionDetails = await oidc.interactionDetails(req, res);
-        // interactionDetails returns {
-        //   returnTo:
-        //     'https://issuer.example.com/oidc/issuers/bb41301f-0fc6-406d-ac34-3afeb003769e/auth/h_2x-LM_dtOMWwMbaMT0z',
-        //   prompt: {
-        //     name: 'consent',
-        //     reasons: ['op_scopes_missing'],
-        //     details: { missingOIDCScope: [ 'openid' ] },
-        //   },
-        //   lastSubmission: { login: { accountId: '123' } },
-        //   params: {
-        //     client_id: 'foo',
+        // returnTo:
+        //   'https://issuer.example.com/oidc/issuers/bb41301f-0fc6-406d-ac34-3afeb003769e/auth/h_2x-LM_dtOMWwMbaMT0z',
+        // prompt: {
+        //   name: 'consent',
+        //     reasons: [ 'op_scopes_missing', 'op_claims_missing' ],
+        //     details: { missingOIDCScope: [Array], missingOIDCClaims: [Array] }
+        // },
+        // params: {
+        //   client_id: '2843faca-8911-45ac-b605-f15c5556b88e',
+        //     code_challenge: '1234567890123456789012345678901234567890123456',
+        //     code_challenge_method: 'plain',
         //     nonce: 'foobar',
         //     redirect_uri: 'https://jwt.io',
-        //     response_type: 'id_token',
-        //     scope: 'openid',
-        //   },
-        //   session: {
-        //     accountId: '123',
-        //     uid: 'PuxEdm_qmftcY3X8S18-u',
-        //     cookie: 'J78548H3n1JC58XfoEmRs',
-        //   },
-        // };
-        debug('POST /oidc/issuers/interaction/%s/confirm', interactionDetails.uid);
+        //     response_type: 'code id_token token',
+        //     scope: 'openid email profile',
+        //     claims: '{ "userinfo": { "email": { "essential": true } }, "id_token": { "email": { "essential": true } } }',
+        //     did: 'did:web:issuer.example.com'
+        // },
+        debug('POST /oidc/issuers/:issuer_id/interaction/%s/confirm', interactionDetails.uid);
         debug('%O', interactionDetails);
 
         const {
@@ -299,6 +312,9 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         }
 
         const result = { consent };
+
+        // todo: issuer verifiable credential here
+
         await oidc.interactionFinished(req, res, result, { mergeWithLastSubmission: true });
       } catch (err) {
         next(err);
@@ -307,16 +323,15 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
   );
 
   router.post(
-    '/issuers/interaction/:uid/abort',
+    '/issuers/:issuer_id/interaction/:uid/abort',
     setNoCache,
     async (req: RequestWithVhost, res, next) => {
       try {
-        const oidc = tenantManger.createOrGetOidcProvider(
-          `https://${req.hostname}/oidc/issuers/${req.issuerId}`,
-          req.tenantId
-        );
+        const issuerId = req.params.issuer_id;
+        const oidc = tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
         const interactionDetails = await oidc.interactionDetails(req, res);
-        debug('POST /oidc/issuers/interaction/%s/abort', interactionDetails.uid);
+
+        debug('POST /oidc/issuers/:issuer_id/interaction/%s/abort', interactionDetails.uid);
 
         const result = {
           error: 'access_denied',
@@ -330,11 +345,10 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
   );
 
   router.use('/issuers/:id', (req: RequestWithVhost, res) => {
-    const oidc = tenantManger.createOrGetOidcProvider(
-      `https://${req.hostname}/oidc/issuers/${req.issuerId}`,
-      req.tenantId
-    );
-    debug('USE /oidc/issuers/:id');
+    const issuerId = req.params.id;
+    const oidc = tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
+
+    debug('USE /oidc/issuers/:issuer_id');
 
     return oidc
       ? oidc.callback()(req, res)

@@ -54,6 +54,7 @@ export const createOidcIssuerRoute = () =>
 
       if (isCreateOidcIssuerArgs(body)) {
         const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
+        const providerRepo = getConnection(req.tenantId).getRepository(OidcFederatedProvider);
 
         // Todo: implement check later
         // const isExist = await issuerRepo.findOne({  });
@@ -65,10 +66,10 @@ export const createOidcIssuerRoute = () =>
         credential.name = body.credential.name;
         credential.type = body.credential.type;
 
-        const defaultUrl = `https://${req.hostname}/oidc/issuers/callback`;
+        // const defaultUrl = `https://${req.hostname}/oidc/issuers/callback`;
         const provider = new OidcFederatedProvider();
         provider.url = body.federatedProvider.url;
-        provider.callbackUrl = body?.federatedProvider?.callbackUrl || defaultUrl;
+        // provider.callbackUrl = body?.federatedProvider?.callbackUrl || defaultUrl;
         provider.scope = body.federatedProvider.scope;
         provider.clientId = body.federatedProvider.clientId;
         provider.clientSecret = body.federatedProvider.clientSecret;
@@ -79,6 +80,12 @@ export const createOidcIssuerRoute = () =>
         issuer.claimMappings = body.claimMappings;
 
         const data = await issuerRepo.save(issuer);
+
+        // update the callbackUrl
+        const issuerId = data.id;
+        const federatedProviderId = data.federatedProvider.id;
+        const callbackUrl = `https://${req.hostname}/oidc/issuers/${issuerId}/callback`;
+        await providerRepo.update(federatedProviderId, { callbackUrl });
 
         debug('POST /oidc/issuers, %O', data);
 

@@ -55,8 +55,9 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
   const tenantRepo = getConnection('default').getRepository(Tenant);
 
   return {
-    createOrGetOidcProvider: (uri, tenantId) => {
-      oidcProivders[tenantId] ??= new Provider(uri, createOidcProviderConfig(tenantId));
+    createOrGetOidcProvider: (hostname, tenantId, issuerId) => {
+      const uri = `https://${hostname}/oidc/issuers/${issuerId}`;
+      oidcProivders[tenantId] ??= new Provider(uri, createOidcProviderConfig(tenantId, issuerId));
       return oidcProivders[tenantId];
     },
     activiate: async (tenantId) => {
