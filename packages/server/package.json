@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "dev": "npm run build && node dist/app",
-    "dev:sudo": "npm run build && sudo DEBUG=utils:createOidcRoute NODE_TLS_REJECT_UNAUTHORIZED=\"0\" node dist/app",
+    "dev:sudo": "npm run build && sudo DEBUG=utils:createAgentRouter NODE_TLS_REJECT_UNAUTHORIZED=\"0\" node dist/app",
     "clean": "rimraf dist",
     "build": "yarn clean && tsc",
     "prebuild": "rimraf dist",

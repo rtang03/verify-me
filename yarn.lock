@@ -2075,6 +2075,11 @@
   dependencies:
     "@types/express" "*"
 
+"@types/cookie@^0.4.1":
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/@types/cookie/-/cookie-0.4.1.tgz#bfd02c1f2224567676c1545199f87c3a861d878d"
+  integrity sha512-XW/Aa8APYr6jSVVA1y/DEIZX0/GMKLEVekNG727R8cs56ahETkRAy/3DR7+fJyh7oUgGwNQaRfXCun0+KbWY7Q==
+
 "@types/cookiejar@*":
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/@types/cookiejar/-/cookiejar-2.1.2.tgz#66ad9331f63fe8a3d3d9d8c6e3906dd10f6446e8"
@@ -9254,7 +9259,7 @@ openapi-types@^8.0.0:
   resolved "https://registry.yarnpkg.com/openapi-types/-/openapi-types-8.0.0.tgz#7e1979538798d31a3c3bfed667e5e9295402f9bc"
   integrity sha512-dcHYyCDOAy4QQTrur5Sn1L3lPVspB7rd04Rw/Q7AsMvfV797IiWgmKziFCbq8VhnBoREU/SPPSBDxtK9Biwa1g==
 
-openid-client@^4.2.3:
+openid-client@^4.2.3, openid-client@^4.7.4:
   version "4.7.4"
   resolved "https://registry.yarnpkg.com/openid-client/-/openid-client-4.7.4.tgz#bd9978456d53d38adb89856b14a8fbd094f7732e"
   integrity sha512-n+RURXYuR0bBZo9i0pn+CXZSyg5JYQ1nbwEwPQvLE7EcJt/vMZ2iIMjLehl5DvCN53XUoPVZs9KAE5r6d9fxsw==

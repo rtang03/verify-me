@@ -1,4 +1,3 @@
-import type { ICredentialsForSdr, VerifiableCredential } from '@verify/server';
 import { useState, useEffect, useCallback } from 'react';
 
 interface ValidationState {

@@ -97,6 +97,13 @@ accesstoken
 should we use resource === did ???
 what is the relationship between issuer and DID?
 
-https://jwt.io/#code=Z765LqX4MtYxvLQR3mFEwi3J5G-1rKxWkwiH8rNs-_j&id_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImtleXN0b3JlLUNIQU5HRS1NRSJ9.eyJzdWIiOiJhdXRoMHw2MDU5YWVkNGFhNzgwMzAwNmEyMGQ4MjQiLCJub25jZSI6ImZvb2JhciIsImF0X2hhc2giOiI5am9ubU80Yjd4eGlhSkY0LVlOVENBIiwiY19oYXNoIjoiTFVidzNXWV9nUjBfNUZnUnp4WGF6QSIsImF1ZCI6IjI4NDNmYWNhLTg5MTEtNDVhYy1iNjA1LWYxNWM1NTU2Yjg4ZSIsImV4cCI6MTYyNTgzOTUxMywiaWF0IjoxNjI1ODM1OTEzLCJpc3MiOiJodHRwczovL2lzc3Vlci5leGFtcGxlLmNvbS9vaWRjL2lzc3VlcnMvMGFjNmQyOTItMTg2OC00NGQzLWExNjEtOTIzMDUyZTExZmI4In0.mZj3-Rq9kHPZGn5vohzFIutFMFTmg6QuIeSM4YdnLAHGpiW5gMYHRtexppxflAIsRiZI3wmwImCx6IGOTE_jZKgpbV73PHlif-zyLySIt4G0RClioV3zJwlMOhg2rpyLTN6ygMYtfF9gGV9rEeGAQdnxSFCsn8lQT8vR-kv_Hv4wdW7i3uEblNlLywtgLfOKS3_P2bDPA_fOp_LwMGbYgPSnGVDKai6AUHdrshseOD0fM-D-5W58N4uLJWFnS1I_XZxZREWVMSJE7wZNTS1rrO-YMIH9aS8BZomG6emA7hXtS2xqWNQc8kC73AXE0_RYNndY7PLmwD9F_o2g27eFuA&access_token=6-42-NdXuhB8bXrEJDWiZQIOS05hNXypTscGQCH9QxA&expires_in=3600&token_type=Bearer&scope=openid%20email%20oidc_credential
+https://darutk.medium.com/illustrated-device-flow-rfc-8628-d23d6d311acc
+https://darutk.medium.com/ciba-a-new-authentication-authorization-technology-in-2019-explained-by-an-implementer-d1e0ac1311b4
+https://github.com/panva/node-oidc-provider/blob/main/example/my_adapter.js
+https://github.com/panva/node-openid-client/tree/main/docs
+https://learn.mattr.global/api-reference/v1.0.1#tag/OIDC-Verifier-Client
+https://github.com/mattrglobal/sample-apps/blob/main/oidc-client-react/package.json
+https://github.com/wso2/product-is/issues/6835
 
-{"iat":1625835808,"exp":1627045408,"accountId":"auth0|6059aed4aa7803006a20d824","clientId":"2843faca-8911-45ac-b605-f15c5556b88e","openid":{"scope":"openid email oidc_credential","claims":["email"]},"kind":"Grant","jti":"bFw6ilGFDvNXLPwxc0u_kObYONMoSOWjIVlrObmiqHi"}
+### THE GOAL
+https://github.com/bcgov/vc-authn-oidc/tree/master/docs

@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "rp:dev": "nodemon",
+    "rp:dev": "NODE_TLS_REJECT_UNAUTHORIZED=\"0\" nodemon",
     "clean": "rimraf dist && rimraf build",
     "build": "npm run clean && next build && tsc --project ./tsconfig.server.json",
     "start": "NODE_ENV=production node dist/server/index.js",
@@ -17,6 +17,7 @@
     "@material-ui/core": "^4.11.3",
     "@material-ui/icons": "^4.11.2",
     "@material-ui/lab": "^4.0.0-alpha.57",
+    "cookie": "^0.4.1",
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
     "date-fns": "^2.22.1",
@@ -31,7 +32,7 @@
     "lodash": "^4.17.21",
     "morgan": "^1.10.0",
     "next": "^10.2.0",
-    "next-auth": "3.19.2",
+    "openid-client": "^4.7.4",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-json-tree": "^0.15.0",
@@ -40,6 +41,7 @@
     "yup": "^0.32.9"
   },
   "devDependencies": {
+    "@types/cookie": "^0.4.1",
     "@types/cors": "^2.8.10",
     "@types/cookie-parser": "^1.4.2",
     "@types/debug": "^4.1.5",
