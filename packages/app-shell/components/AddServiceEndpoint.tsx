@@ -59,7 +59,8 @@ const AddServiceEndpoint: React.FC<{
       validationSchema={validation}
       onSubmit={async ({ type, serviceEndpoint, description }, { setSubmitting }) => {
         setSubmitting(true);
-        const id = `service#${did}`;
+        // see https://github.com/uport-project/veramo/blob/next/packages/remote-server/src/default-did.ts
+        const id = `${did}#msg-didcomm`;
         await newService({ did, service: { id, type, serviceEndpoint, description } }).then(() =>
           setSubmitting(false)
         );
@@ -82,7 +83,7 @@ const AddServiceEndpoint: React.FC<{
               size="small"
               component={TextField}
               name={'type'}
-              placeholder={'Messaging'}
+              placeholder={'DIDCommMessaging'}
               variant="outlined"
               margin="normal"
             />
@@ -101,16 +102,15 @@ const AddServiceEndpoint: React.FC<{
             />
             <br />
             <Field
-              disabled={!!addServiceEP.data}
+              disabled={true}
               className={classes.serviceTextField}
               label="Description"
               size="small"
               component={TextField}
               name={'description'}
-              placeholder={'Messaging Endpoint'}
+              placeholder={'Handles incoming DIDComm messages'}
               variant="outlined"
               margin="normal"
-              autoFocus={true}
             />
           </CardContent>
           <CardActions>

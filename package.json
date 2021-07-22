@@ -20,9 +20,14 @@
     "lint": "lerna run --stream --scope @microfrontend/* lint",
     "clean": "lerna run --stream --scope @microfrontend/* --parallel clean"
   },
-  "workspaces": [
-    "packages/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ],
+    "nohoist": [
+      "uint8arrays"
+    ]
+  },
   "devDependencies": {
     "lerna": "^4.0.0",
     "prettier": "^2.2.1",
@@ -53,5 +58,8 @@
     "requirePragma": false,
     "insertPragma": false,
     "printWidth": 100
+  },
+  "resolutions": {
+    "uint8arrays": "2.1.5"
   }
 }

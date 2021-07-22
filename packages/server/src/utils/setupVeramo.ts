@@ -28,7 +28,7 @@ export type TTAgent = TAgent<
   context?: IDataStoreORM;
 };
 
-export const setupVeramo = (connection: Promise<Connection>) =>
+export const setupVeramo = (connection: Promise<any>) =>
   createAgent<
     IDIDManager &
       IKeyManager &
