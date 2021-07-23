@@ -71,7 +71,6 @@ const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
     setTenantIdLocal,
     setActiveTenant
   } = useLocalStorage();
-
   useEffect(() => {
     setSlugLocal(localStorage.getItem('slug'));
     setTenantIdLocal(localStorage.getItem('tenantId'));

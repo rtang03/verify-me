@@ -26,7 +26,7 @@ const validation = yup.object({
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
-    typeTextField: { width: '15ch' },
+    typeTextField: { width: '50ch' },
     serviceTextField: { width: '50ch' },
     cardHeaderAvatar: {
       color: grey[900],
@@ -44,8 +44,10 @@ const AddServiceEndpoint: React.FC<{
   const classes = useStyles();
   const { slug } = tenantInfo;
   const { val: addServiceEP, poster: add } = useFetcher<{ success: boolean }>();
-  const newService = (body: IDIDManagerAddServiceArgs) =>
-    mutate(url, add(`/api/tenants/didManagerAddService?slug=${slug}`, body));
+  const newService = async (body: IDIDManagerAddServiceArgs) => {
+    await add(`/api/tenants/didManagerAddService?slug=${slug}`, body);
+    await mutate(url);
+  };
   const defaultService = (slug && domain && `${getTenantUrl(slug, domain, secure)}`) || '';
 
   return (
@@ -84,6 +86,7 @@ const AddServiceEndpoint: React.FC<{
               component={TextField}
               name={'type'}
               placeholder={'DIDCommMessaging'}
+              value={'DIDCommMessaging'}
               variant="outlined"
               margin="normal"
             />
@@ -105,10 +108,10 @@ const AddServiceEndpoint: React.FC<{
               disabled={true}
               className={classes.serviceTextField}
               label="Description"
+              value={'Handles incoming DIDComm messages'}
               size="small"
               component={TextField}
               name={'description'}
-              placeholder={'Handles incoming DIDComm messages'}
               variant="outlined"
               margin="normal"
             />

@@ -4,6 +4,7 @@ import CardHeader from '@material-ui/core/CardHeader';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import type { VerifiablePresentation } from '@verify/server';
 import { withAuth } from 'components';
+import AvatarMd5 from 'components/AvatarMd5';
 import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
@@ -15,7 +16,6 @@ import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { useReSWR, useTenant } from 'utils';
-import AvatarMd5 from '../../../../components/AvatarMd5';
 
 const pattern = "d.M.yyyy HH:mm:ss 'GMT' XXX (z)";
 const useStyles = makeStyles((theme: Theme) =>

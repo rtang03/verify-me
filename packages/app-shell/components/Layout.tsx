@@ -21,7 +21,7 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 import { grey } from '@material-ui/core/colors';
-import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
+import { createTheme, ThemeProvider } from '@material-ui/core/styles';
 import Brightness4Icon from '@material-ui/icons/Brightness4';
 import Brightness5Icon from '@material-ui/icons/Brightness5';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
@@ -135,7 +135,7 @@ const Layout: FC<{ title?: string; shouldShow?: any; refresh?: any }> = ({
 
   // DARK THEME
   const theme = React.useMemo(
-    () => createMuiTheme({ palette: { type: dark ? 'dark' : 'light' } }),
+    () => createTheme({ palette: { type: dark ? 'dark' : 'light' } }),
     [dark]
   );
   // END of DARK THEME

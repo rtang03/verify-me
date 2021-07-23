@@ -80,8 +80,10 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
             onSubmit={async ({ username }, { setSubmitting }) => {
               setSubmitting(true);
               const key = slug ? `/api/users/${username}?slug=${slug}` : null;
-              const newUser = (body: IDIDManagerGetOrCreateArgs) =>
-                mutate(key, poster(`/api/tenants/didManagerCreate?slug=${slug}`, body));
+              const newUser = async (body: IDIDManagerGetOrCreateArgs) => {
+                await poster(`/api/tenants/didManagerCreate?slug=${slug}`, body);
+                await mutate(key);
+              };
               await newUser({ alias: `${nonFqUrl}:users:${username}` }).then(() =>
                 setSubmitting(false)
               );

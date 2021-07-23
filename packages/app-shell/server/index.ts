@@ -36,7 +36,6 @@ app
   .prepare()
   .then(async () => {
     // let connection: Connection;
-
     try {
       await createConnection(connectionOptions);
     } catch (e) {
@@ -77,7 +76,6 @@ app
     });
 
     server.use((req, res) => app.getRequestHandler()(req, res));
-
     http.createServer(server).listen(port, () => {
       console.log(`server running at http://localhost:${port}`);
     });

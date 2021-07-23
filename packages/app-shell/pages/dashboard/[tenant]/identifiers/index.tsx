@@ -10,13 +10,13 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PlusOneIcon from '@material-ui/icons/PlusOne';
 import ReceiptOutlinedIcon from '@material-ui/icons/ReceiptOutlined';
 import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
-import type { DidDocument } from '@verify/server';
+import { DidDocument } from '@verify/server';
 import { withAuth } from 'components';
 import CardHeaderAvatar from 'components/CardHeaderAvatar';
 import DropdownMenu from 'components/DropdownMenu';
+import Error from 'components/Error';
 import GlossaryTerms, { TERMS } from 'components/GlossaryTerms';
 import HelpDialog from 'components/HelpDialog';
-import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import ProTip from 'components/ProTip';
@@ -53,8 +53,10 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
 
   // Create Web Did
   const { val: webDid, poster } = useFetcher<IIdentifier>();
-  const newDid = async (body: IDIDManagerGetOrCreateArgs) =>
-    mutate(url, poster(`/api/tenants/didManagerCreate?slug=${slug}`, body));
+  const newDid = async (body: IDIDManagerGetOrCreateArgs) => {
+    await poster(`/api/tenants/didManagerCreate?slug=${slug}`, body);
+    await mutate(url);
+  };
 
   // form state - helpDialog
   const [openHelp, setHelpOpen] = React.useState(false);
@@ -119,7 +121,7 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             )}
           </Formik>
         )}
-        {tenantInfo?.activated && data && (
+        {tenantInfo?.activated && data?.id && (
           <>
             <QuickAction
               link={`/dashboard/${tenantInfo?.id}/identifiers/service`}

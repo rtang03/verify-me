@@ -36,8 +36,10 @@ const RemoveServiceEndpoint: React.FC<{
 
   // delete service endpoint
   const { val: removeServiceEP, poster: remove } = useFetcher<{ success: boolean }>();
-  const removeService = (body: IDIDManagerRemoveServiceArgs) =>
-    mutate(url, remove(`/api/tenants/didManagerRemoveService?slug=${slug}`, body));
+  const removeService = async (body: IDIDManagerRemoveServiceArgs) => {
+    await remove(`/api/tenants/didManagerRemoveService?slug=${slug}`, body);
+    await mutate(url);
+  };
 
   // form state
   const [openConfirm, setConfirmOpen] = React.useState(false);

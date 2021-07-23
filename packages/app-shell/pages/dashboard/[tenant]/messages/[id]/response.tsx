@@ -243,7 +243,8 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
                                                 value={JSON.stringify(vc)}
                                               />
                                             }
-                                            label={vc.credentialSubject[claim.claimType]}
+                                            label={vc.verifiableCredential.credentialSubject[claim.claimType]}
+                                            // label={vc.credentialSubject[claim.claimType]}
                                           />
                                         ))}
                                       </RadioGroup>

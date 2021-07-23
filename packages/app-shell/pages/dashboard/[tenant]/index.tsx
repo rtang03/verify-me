@@ -44,13 +44,8 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
   // used for "Set Active"
-  const {
-    toggleStorage,
-    tenantIdLocal,
-    setSlugLocal,
-    setTenantIdLocal,
-    setActiveTenant,
-  } = useLocalStorage();
+  const { toggleStorage, tenantIdLocal, setSlugLocal, setTenantIdLocal, setActiveTenant } =
+    useLocalStorage();
   useEffect(() => {
     setSlugLocal(localStorage.getItem('slug'));
     setTenantIdLocal(localStorage.getItem('tenantId'));
@@ -58,8 +53,10 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
 
   // Update Tenant
   const { val: updateResult, updater } = useFetcher<PsqlUpdated>();
-  const updateTenant = async (body: any) =>
-    mutate(`${baseUrl}?id=${tenantInfo?.id}`, updater(`${baseUrl}?id=${tenantInfo?.id}`, body));
+  const updateTenant = async (body: any) => {
+    await updater(`${baseUrl}?id=${tenantInfo?.id}`, body);
+    await mutate(`${baseUrl}?id=${tenantInfo?.id}`);
+  };
 
   // Edit Mode
   const [editMode, setEdit] = useState(false);
