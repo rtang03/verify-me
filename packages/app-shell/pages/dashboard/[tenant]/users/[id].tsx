@@ -48,8 +48,9 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
   const id = router.query.id as string; // this is "IIdentifier.alias"
   const url = slug ? `/api/users/${id}?slug=${slug}&id={id}` : null;
   const { data, isLoading, isError, error } = useReSWR<IIdentifier>(url, !!slug);
+  // see https://github.com/uport-project/veramo/blob/next/packages/remote-server/src/default-did.ts
   const isMessagingExist = data?.services
-    ?.map(({ type }) => type === 'Messaging')
+    ?.map(({ type }) => type === 'DIDCommMessaging')
     .reduce((prev, curr) => prev || curr, false);
   const services = data?.services;
 

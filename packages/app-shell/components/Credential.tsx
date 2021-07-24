@@ -32,7 +32,7 @@ const Credential: React.FC<{ vc: VerifiableCredential; compact?: boolean }> = ({
   const { issuer, type, issuanceDate } = vc;
 
   return (
-    <div>
+    <React.Fragment>
       {!compact && (
         <CardHeader
           className={classes.root}
@@ -94,9 +94,8 @@ const Credential: React.FC<{ vc: VerifiableCredential; compact?: boolean }> = ({
             <CardHeader subheader="Credential subjects" />
             <CardContent className={classes.muiTextField}>
               {Object.entries<string>(vc.credentialSubject).map(([key, value], index) => (
-                <>
+                <React.Fragment key={index}>
                   <MuiTextField
-                    key={index}
                     disabled={true}
                     size="small"
                     label={key}
@@ -110,13 +109,13 @@ const Credential: React.FC<{ vc: VerifiableCredential; compact?: boolean }> = ({
                     }}
                   />
                   <br />
-                </>
+                </React.Fragment>
               ))}
             </CardContent>
           </Card>
         </CardContent>
       )}
-    </div>
+    </React.Fragment>
   );
 };
 

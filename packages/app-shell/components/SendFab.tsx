@@ -4,6 +4,7 @@ import Tooltip from '@material-ui/core/Tooltip';
 import { green } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/Check';
+import EnhancedEncryptionIcon from '@material-ui/icons/EnhancedEncryptionOutlined';
 import ErrorOutlineOutlinedIcon from '@material-ui/icons/ErrorOutlineOutlined';
 import MailOutlineIcon from '@material-ui/icons/MailOutline';
 import clsx from 'clsx';

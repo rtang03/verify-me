@@ -53,8 +53,8 @@ const AddServiceEndpoint: React.FC<{
   return (
     <Formik
       initialValues={{
-        type: 'Messaging',
-        description: '',
+        type: 'DIDCommMessaging',
+        description: 'Handles incoming DIDComm messages',
         serviceEndpoint: defaultService,
       }}
       validateOnChange={true}

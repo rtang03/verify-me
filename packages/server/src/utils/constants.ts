@@ -51,4 +51,9 @@ export const exposedMethods: string[] = [
   'getVerifiableCredentialsForSdr',
   'validatePresentationAgainstSdr',
   'createProfilePresentation',
+  // below is v2
+  'packDIDCommMessage',
+  'sendDIDCommMessage',
+  'getDidCommMessageMediaType',
+  'unpackDIDCommMessage',
 ];

@@ -7,7 +7,10 @@ import type {
   VerifiablePresentation,
   VerifiableCredential,
 } from '@veramo/core';
-import { ICreateVerifiablePresentationArgs } from '@veramo/credential-w3c';
+import {
+  ICreateVerifiablePresentationArgs,
+  ICreateVerifiableCredentialArgs,
+} from '@veramo/credential-w3c';
 import type {
   FindArgs,
   TClaimsColumns,
@@ -18,7 +21,14 @@ import type {
   UniqueVerifiableCredential,
   UniqueVerifiablePresentation,
 } from '@veramo/data-store';
-import type { ISendMessageDIDCommAlpha1Args } from '@veramo/did-comm';
+import type {
+  ISendMessageDIDCommAlpha1Args,
+  IPackDIDCommMessageArgs,
+  IPackedDIDCommMessage,
+  IUnpackDIDCommMessageArgs,
+  IDIDCommMessage,
+  DIDCommMessagePacking,
+} from '@veramo/did-comm';
 import type {
   ICredentialRequestInput,
   ICreateSelectiveDisclosureRequestArgs,
@@ -82,6 +92,12 @@ export {
   ISelectiveDisclosure,
   IValidatePresentationAgainstSdrArgs,
   ICreateProfileCredentialsArgs,
+  ICreateVerifiableCredentialArgs,
+  IPackDIDCommMessageArgs,
+  IPackedDIDCommMessage,
+  IUnpackDIDCommMessageArgs,
+  IDIDCommMessage,
+  DIDCommMessagePacking,
 };
 
 // workaround: the original ISelectiveDisclosureRequest is incorrectly typed.
@@ -93,3 +109,12 @@ export type ISelectiveDisclosureRequest = {
   replyUrl?: string;
   claims: ICredentialRequestInput[];
 };
+
+// workaround: the original type does not export
+// source: https://github.com/uport-project/veramo/blob/next/packages/did-comm/src/didcomm.ts
+export interface ISendDIDCommMessageArgs {
+  packedMessage: IPackedDIDCommMessage;
+  messageId: string;
+  returnTransportId?: string;
+  recipientDidUrl: string;
+}

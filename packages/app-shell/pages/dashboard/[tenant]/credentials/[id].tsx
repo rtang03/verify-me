@@ -5,8 +5,15 @@ import InputAdornment from '@material-ui/core/InputAdornment';
 import MuiTextField from '@material-ui/core/TextField';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import ExtensionIcon from '@material-ui/icons/Extension';
-import type { VerifiableCredential, IMessage } from '@veramo/core';
-import type { ISendMessageDIDCommAlpha1Args } from '@veramo/did-comm';
+import type {
+  VerifiableCredential,
+  IMessage,
+  ISendDIDCommMessageArgs,
+  IPackDIDCommMessageArgs,
+  ISendMessageDIDCommAlpha1Args,
+  IDIDCommMessage,
+  IPackedDIDCommMessage,
+} from '@verify/server';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import Credential from 'components/Credential';
@@ -26,19 +33,36 @@ import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { useFetcher, useReSWR, useTenant } from 'utils';
+import { v4 as uuidv4 } from 'uuid';
 
 const pattern = "d.M.yyyy HH:mm:ss 'GMT' XXX (z)";
-const getSendMessageDIDCommAlpha1Args: (
-  vc: VerifiableCredential
-) => ISendMessageDIDCommAlpha1Args = (vc) => ({
-  data: {
+const getSendMessageDIDCommAlpha1Args: (vc: VerifiableCredential) => ISendMessageDIDCommAlpha1Args =
+  (vc) => ({
+    data: {
+      from: vc.issuer.id,
+      to: vc.credentialSubject.id as string,
+      type: 'jwt',
+      body: vc.proof.jwt,
+    },
+    save: true,
+  });
+// see example https://github.com/veramolabs/agent-explorer/blob/main/src/components/standard/CreateRequest.tsx
+const getPackDIDCommMessageArgs: (vc: VerifiableCredential) => IPackDIDCommMessageArgs = (vc) => {
+  const id = uuidv4();
+  const message: IDIDCommMessage = {
+    type: 'application/didcomm-encrypted+json',
+    // type: 'veramo.io/chat/v1/basicmessage',
     from: vc.issuer.id,
     to: vc.credentialSubject.id as string,
-    type: 'jwt',
+    id,
     body: vc.proof.jwt,
-  },
-  save: true,
-});
+  };
+  return {
+    message,
+    packing: 'authcrypt',
+  };
+  // return { message, packing: 'anoncrypt' };
+};
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
@@ -70,6 +94,11 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
   const { val: result, poster } = useFetcher<IMessage>();
   const sendMessage = (body: ISendMessageDIDCommAlpha1Args) =>
     poster(`/api/tenants/sendMessageDIDCommAlpha1?slug=${slug}`, body);
+
+  // Pack Message
+  const { val: packedMessage, poster: pack } = useFetcher<IPackedDIDCommMessage>();
+  const packDIDCommMessage = (body: IPackDIDCommMessageArgs) =>
+    pack(`/api/tenants/packDIDCommMessage?slug=${slug}`, body);
 
   return (
     <Layout title="Credential" shouldShow={[show, setShow]}>
@@ -104,24 +133,25 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
                   initialValues={{}}
                   onSubmit={async (_, { setSubmitting }) => {
                     setSubmitting(true);
-                    await sendMessage(getSendMessageDIDCommAlpha1Args(vc));
+                    const message = getPackDIDCommMessageArgs(vc);
+                    await packDIDCommMessage(message);
+                    // await sendMessage(getSendMessageDIDCommAlpha1Args(vc));
                     setSubmitting(false);
                   }}>
                   {({ isSubmitting, submitForm }) => (
                     <Form>
-                      <CardContent>
-                        <ProTip text="Warning: Need to revisit this feature; temporarily disabled." />
-                      </CardContent>
+                      {/*<CardContent>*/}
+                      {/*  <ProTip text="Warning: Need to revisit this feature; temporarily disabled." />*/}
+                      {/*</CardContent>*/}
                       <CardHeader
                         className={classes.root}
-                        title="Send Credential"
-                        subheader="Click icon to send to Subject's service endpoint"
+                        title="Pack Credential"
+                        subheader="Click icon to pack it into DIDComm message"
                       />
                       <CardContent className={classes.mail}>
-                        {/*** TODO. This may be issue, which send credential directly. Disable it; review later. ***/}
                         <SendFab
                           loading={isSubmitting}
-                          disabled={true || isSubmitting || !vc || !!result?.data}
+                          disabled={isSubmitting || !vc || !!result?.data}
                           submitForm={submitForm}
                           success={!!result?.data}
                           error={!!result?.error}
@@ -158,9 +188,9 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
                           </CardContent>
                         </Card>
                       </CardContent>
-                      <Result isTenantExist={!!tenantInfo} result={result} />
-                      {show && result?.data && (
-                        <RawContent content={result.data} title="Raw Send-message result" />
+                      <Result isTenantExist={!!tenantInfo} result={packedMessage} />
+                      {show && packedMessage?.data && (
+                        <RawContent content={packedMessage.data} title="Raw Pack-message result" />
                       )}
                     </Form>
                   )}

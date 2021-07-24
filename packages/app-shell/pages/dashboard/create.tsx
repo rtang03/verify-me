@@ -45,7 +45,7 @@ const TenantCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const newTenant = (body: { slug: string; user_id: string }) => poster('/api/tenants', body);
 
   // used for "Set Active"
-  const { toggleStorage, setToggleStorage } = useLocalStorage();
+  const { toggleStorage, setToggleStorage, setSlugLocal, setTenantIdLocal } = useLocalStorage();
   useEffect(() => {
     setToggleStorage((value) => ++value);
   }, [session, val]);

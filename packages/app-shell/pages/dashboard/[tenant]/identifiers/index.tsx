@@ -86,7 +86,9 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             initialValues={{}}
             onSubmit={async (_, { setSubmitting }) => {
               setSubmitting(true);
-              await newDid({ alias: nonFqUrl as string }).then(() => setSubmitting(false));
+              await newDid({ alias: nonFqUrl as string, options: { keyType: 'Ed25519' } }).then(
+                () => setSubmitting(false)
+              );
             }}>
             {({ isSubmitting, submitForm }) => (
               <Form>
