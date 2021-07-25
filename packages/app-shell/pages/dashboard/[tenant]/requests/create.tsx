@@ -36,7 +36,7 @@ import jwt_decode from 'jwt-decode';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
-import { useFetcher, useTenant } from 'utils';
+import { useFetcher, useNextAuthUser, useTenant } from 'utils';
 import * as yup from 'yup';
 
 interface AddClaimArgs {
@@ -70,6 +70,9 @@ const useStyles = makeStyles((theme: Theme) =>
 const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session.user.id);
 
   // Show Raw Content
   const [show, setShow] = useState(false);
@@ -130,7 +133,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   }
 
   return (
-    <Layout title="Request" shouldShow={[show, setShow]}>
+    <Layout title="Request" shouldShow={[show, setShow]} user={activeUser}>
       <Main
         session={session}
         title="Selective Disclosure Request"

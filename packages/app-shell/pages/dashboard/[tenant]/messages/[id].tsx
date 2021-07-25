@@ -2,6 +2,7 @@ import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
+import Typography from '@material-ui/core/Typography';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import type {
   IPresentationValidationResult,
@@ -27,8 +28,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import type { PaginatedMessage } from 'types';
-import { useFetcher, useReSWR, useTenant } from 'utils';
-import Typography from '@material-ui/core/Typography';
+import { useFetcher, useNextAuthUser, useReSWR, useTenant } from 'utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({ root: { margin: theme.spacing(3, 1, 2) } })
@@ -38,6 +38,9 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const router = useRouter();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session.user.id);
 
   // Show Raw Content
   const [show, setShow] = useState(false);
@@ -81,7 +84,7 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
   // END
 
   return (
-    <Layout title="Message" shouldShow={[show, setShow]}>
+    <Layout title="Message" shouldShow={[show, setShow]} user={activeUser}>
       <Main
         session={session}
         title="Message"

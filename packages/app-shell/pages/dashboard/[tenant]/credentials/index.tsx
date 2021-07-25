@@ -52,7 +52,7 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
 
   return (
-    <Layout title="Credentials" shouldShow={[show, setShow]}>
+    <Layout title="Credentials" shouldShow={[show, setShow]} user={session.user}>
       <Main
         session={session}
         title="Credentials"

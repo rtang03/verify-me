@@ -101,7 +101,7 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
     pack(`/api/tenants/packDIDCommMessage?slug=${slug}`, body);
 
   return (
-    <Layout title="Credential" shouldShow={[show, setShow]}>
+    <Layout title="Credential" shouldShow={[show, setShow]} user={session.user}>
       <Main
         session={session}
         title="Credential"

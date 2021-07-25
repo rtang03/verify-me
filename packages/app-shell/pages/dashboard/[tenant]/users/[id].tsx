@@ -25,7 +25,7 @@ import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
-import { useReSWR, useTenant } from 'utils';
+import { useNextAuthUser, useReSWR, useTenant } from 'utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -40,6 +40,9 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const router = useRouter();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session.user.id);
 
   // Show Raw Content
   const [show, setShow] = useState(false);
@@ -66,7 +69,7 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
   const handleMenuClose = () => setAnchorEl(null);
 
   return (
-    <Layout title="User" shouldShow={[show, setShow]}>
+    <Layout title="User" shouldShow={[show, setShow]} user={activeUser}>
       <Main
         session={session}
         title="User Identifier"

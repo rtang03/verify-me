@@ -125,7 +125,7 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
   const { selected, onSelect, valid: selectCredentialValid } = useSelectedCredentials(claims || []);
 
   return (
-    <Layout title="Response" shouldShow={[show, setShow]}>
+    <Layout title="Response" shouldShow={[show, setShow]} user={session.user}>
       <Main
         session={session}
         title="Selective Disclosure Response"

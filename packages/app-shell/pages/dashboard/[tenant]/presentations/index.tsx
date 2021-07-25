@@ -18,7 +18,7 @@ import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import type { PaginatedVerifiablePresentation } from 'types';
-import { usePagination, useReSWR, useTenant } from 'utils';
+import { useNextAuthUser, usePagination, useReSWR, useTenant } from 'utils';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
@@ -30,6 +30,11 @@ const useStyles = makeStyles((theme: Theme) =>
 const PresentationIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session.user.id);
+
+  // Pagination
   const { cursor, pageChange } = usePagination(PAGESIZE);
 
   // Show Raw Content
@@ -47,7 +52,7 @@ const PresentationIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
 
   return (
-    <Layout title="Presentation" shouldShow={[show, setShow]}>
+    <Layout title="Presentation" shouldShow={[show, setShow]} user={activeUser}>
       <Main
         session={session}
         title="Presentation"

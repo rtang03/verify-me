@@ -32,7 +32,7 @@ const IdentifiersServicePage: NextPage<{ session: Session }> = ({ session }) => 
   const services = didDoc?.service;
 
   return (
-    <Layout title="DID Document" shouldShow={[show, setShow]}>
+    <Layout title="DID Document" shouldShow={[show, setShow]} user={session.user}>
       <Main
         session={session}
         title="DID Document"

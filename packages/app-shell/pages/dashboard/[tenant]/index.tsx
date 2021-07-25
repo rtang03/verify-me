@@ -18,9 +18,9 @@ import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 import { mutate } from 'swr';
-import { useFetcher, useLocalStorage, useTenant } from 'utils';
+import { useFetcher, useActiveTenant, useTenant, useNextAuthUser } from 'utils';
 import * as yup from 'yup';
 
 const baseUrl = '/api/tenants';
@@ -41,15 +41,14 @@ type PsqlUpdated = { affected: number };
 
 const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
+
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session.user.id);
+
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
-  // used for "Set Active"
-  const { toggleStorage, tenantIdLocal, setSlugLocal, setTenantIdLocal, setActiveTenant } =
-    useLocalStorage();
-  useEffect(() => {
-    setSlugLocal(localStorage.getItem('slug'));
-    setTenantIdLocal(localStorage.getItem('tenantId'));
-  }, [tenantInfo]);
+  // Used for "Set Active"
+  const { activeTenant, updateActiveTenant } = useActiveTenant(activeUser?.active_tenant);
 
   // Update Tenant
   const { val: updateResult, updater } = useFetcher<PsqlUpdated>();
@@ -62,11 +61,10 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const [editMode, setEdit] = useState(false);
   const handleEdit = ({ target: { checked } }: ChangeEvent<HTMLInputElement>) => setEdit(checked);
 
-  // this tenant page may be different from tenant in localStorage
-  const isActiveTenant = tenantInfo?.id === tenantIdLocal;
+  const isActiveTenant = tenantInfo?.id === activeTenant?.id;
 
   return (
-    <Layout title="Tenant" refresh={tenantInfo}>
+    <Layout title="Tenant" user={activeUser}>
       <Main
         title={slug?.toUpperCase() || 'Tenant details'}
         subtitle={tenantInfo?.name || 'Tenant profile'}
@@ -107,11 +105,11 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                           className={classes.button}
                           size="small"
                           color="inherit"
-                          disabled={tenantIdLocal === tenantInfo.id}
-                          onClick={() =>
-                            setActiveTenant(tenantInfo.id || '', tenantInfo.slug || '')
+                          disabled={activeTenant?.id === tenantInfo.id}
+                          onClick={async () =>
+                            updateActiveTenant(session.user.id as string, tenantInfo.id as string)
                           }>
-                          {tenantIdLocal === tenantInfo.id ? 'Default' : 'Set Default'}
+                          {activeTenant?.id === tenantInfo.id ? 'Default' : 'Set Default'}
                         </Button>
                       )
                     }

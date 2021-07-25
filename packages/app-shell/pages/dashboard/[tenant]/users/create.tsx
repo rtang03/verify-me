@@ -24,7 +24,7 @@ import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import { mutate } from 'swr';
-import { getTenantUrl, useFetcher, useTenant } from 'utils';
+import { getTenantUrl, useFetcher, useNextAuthUser, useTenant } from 'utils';
 import * as yup from 'yup';
 
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
@@ -54,6 +54,9 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const fqUrl = slug && domain && getTenantUrl(slug, domain);
   const nonFqUrl = fqUrl?.replace('https://', '').replace('http://', '');
 
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session.user.id);
+
   // Show Raw Content
   const [show, setShow] = useState(false);
 
@@ -61,7 +64,7 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const { val: userDid, poster } = useFetcher<IIdentifier>();
 
   return (
-    <Layout title="User" shouldShow={[show, setShow]}>
+    <Layout title="User" shouldShow={[show, setShow]} user={activeUser}>
       <Main
         session={session}
         title="Create User"

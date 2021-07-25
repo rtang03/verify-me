@@ -44,7 +44,7 @@ const Footer: React.FC<any> = () => {
         className={classes.grid}
         container
         direction="row"
-        justify="flex-start"
+        justifyContent="flex-start"
         alignItems="flex-start">
         <Grid item xs={2}>
           <Grid container direction="column">

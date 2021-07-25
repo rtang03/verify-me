@@ -18,7 +18,7 @@ import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { Fragment, useState } from 'react';
 import type { PaginatedMessage } from 'types';
-import { usePagination, useReSWR, useTenant } from 'utils';
+import { useNextAuthUser, usePagination, useReSWR, useTenant } from 'utils';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
@@ -30,6 +30,11 @@ const useStyles = makeStyles((theme: Theme) =>
 const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session.user.id);
+
+  // Pagination
   const { cursor, pageChange } = usePagination(PAGESIZE);
 
   // Show Raw Content
@@ -45,7 +50,7 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   // Delete Message
 
   return (
-    <Layout title="Messages" shouldShow={[show, setShow]}>
+    <Layout title="Messages" shouldShow={[show, setShow]} user={activeUser}>
       <Main
         session={session}
         title="Inbox"
@@ -92,9 +97,7 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                     <MessageCard message={item} tenantInfo={tenantInfo} />
                     {show && item.type === 'w3c.vc' && (
                       <RawContent
-                        content={item?.credentials?.map((cred) =>
-                          omit(cred, '@context', 'type')
-                        )}
+                        content={item?.credentials?.map((cred) => omit(cred, '@context', 'type'))}
                       />
                     )}
                     {show && item.type === 'w3c.vp' && (
@@ -104,9 +107,7 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                         )}
                       />
                     )}
-                    {show && item.type === 'sdr' && (
-                      <RawContent content={omit(item, 'type')} />
-                    )}
+                    {show && item.type === 'sdr' && <RawContent content={omit(item, 'type')} />}
                   </Fragment>
                 ))}
             </CardContent>

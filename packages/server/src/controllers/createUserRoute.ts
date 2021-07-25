@@ -1,7 +1,7 @@
 import Status from 'http-status';
 import intersection from 'lodash/intersection';
 import { Repository } from 'typeorm';
-import { Users } from '../entities/Users';
+import { Users } from '../entities';
 import { CommonResponse, Paginated } from '../types';
 import { createRestRoute } from '../utils';
 

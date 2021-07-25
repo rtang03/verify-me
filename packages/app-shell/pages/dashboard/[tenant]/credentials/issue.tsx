@@ -81,7 +81,7 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
   const handleHelpClose = () => setHelpOpen(false);
 
   return (
-    <Layout title="Credential" shouldShow={[show, setShow]}>
+    <Layout title="Credential" shouldShow={[show, setShow]} user={session.user}>
       <Main
         session={session}
         title="Issue Credential"

@@ -70,7 +70,7 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const handleMenuClose = () => setAnchorEl(null);
 
   return (
-    <Layout title="Identifiers" shouldShow={[show, setShow]}>
+    <Layout title="Identifiers" shouldShow={[show, setShow]} user={session.user}>
       <Main
         session={session}
         title="Did Document"
