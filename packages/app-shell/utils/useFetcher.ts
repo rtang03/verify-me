@@ -5,6 +5,7 @@ interface State<TData = any> {
   data: TData | null;
   loading: boolean;
   error: any;
+  status?: string;
 }
 
 const createFetcher: <TValue>(

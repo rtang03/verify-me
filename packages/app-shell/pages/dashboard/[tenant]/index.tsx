@@ -63,8 +63,11 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
 
   const isActiveTenant = tenantInfo?.id === activeTenant?.id;
 
+  // Show Raw Content
+  const [show, setShow] = useState(false);
+
   return (
-    <Layout title="Tenant" user={activeUser}>
+    <Layout title="Tenant" shouldShow={[show, setShow]} user={activeUser}>
       <Main
         title={slug?.toUpperCase() || 'Tenant details'}
         subtitle={tenantInfo?.name || 'Tenant profile'}
@@ -78,7 +81,7 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         )}
         {/* IF NOT ACTIVATE */}
         {!!tenantInfo && isActiveTenant && !tenantInfo.activated && (
-          <Activation tenantInfo={tenantInfo} />
+          <Activation tenantInfo={tenantInfo} show={show}/>
         )}
         {/* IF ACTIVATE */}
         {!!tenantInfo && isActiveTenant && tenantInfo.activated && (
