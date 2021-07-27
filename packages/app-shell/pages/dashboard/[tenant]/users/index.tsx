@@ -41,7 +41,7 @@ const UsersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const { cursor, pageChange } = usePagination(PAGESIZE);
 
   // activeUser will pass active_tenant to Layout.ts
-  const { activeUser } = useNextAuthUser(session.user.id);
+  const { activeUser } = useNextAuthUser(session?.user?.id);
 
   // Show Raw Content
   const [show, setShow] = useState(false);

@@ -4,9 +4,9 @@ import Tooltip from '@material-ui/core/Tooltip';
 import { green } from '@material-ui/core/colors';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/Check';
-import EnhancedEncryptionIcon from '@material-ui/icons/EnhancedEncryptionOutlined';
 import ErrorOutlineOutlinedIcon from '@material-ui/icons/ErrorOutlineOutlined';
 import MailOutlineIcon from '@material-ui/icons/MailOutline';
+import VerifiedUserOutlinedIcon from '@material-ui/icons/VerifiedUserOutlined';
 import clsx from 'clsx';
 import React from 'react';
 
@@ -51,12 +51,18 @@ const SendFab: React.FC<{
   submitForm: () => Promise<any>;
   success: boolean;
   error?: boolean;
-}> = ({ tooltip, disabled, loading, submitForm, success, error }) => {
+  icon?: 'mail' | 'pack';
+}> = ({ tooltip, disabled, loading, submitForm, success, error, icon }) => {
   const classes = useStyles();
 
   const buttonClassname = clsx({
     [classes.submit]: !success && !error,
   });
+  icon ??= 'mail';
+  const FabIconButton = {
+    mail: () => MailOutlineIcon,
+    pack: () => VerifiedUserOutlinedIcon,
+  }[icon]();
 
   return (
     <div className={classes.root}>
@@ -68,7 +74,7 @@ const SendFab: React.FC<{
               className={buttonClassname}
               disabled={disabled}
               onClick={() => !loading && submitForm()}>
-              <MailOutlineIcon />
+              <FabIconButton />
             </Fab>
           </Tooltip>
         )}
@@ -78,7 +84,7 @@ const SendFab: React.FC<{
             className={buttonClassname}
             disabled={disabled}
             onClick={() => !loading && submitForm()}>
-            <MailOutlineIcon />
+            <FabIconButton />
           </Fab>
         )}
         {!!success && !error && (

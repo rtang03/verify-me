@@ -43,7 +43,7 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
 
   // activeUser will pass active_tenant to Layout.ts
-  const { activeUser } = useNextAuthUser(session.user.id);
+  const { activeUser } = useNextAuthUser(session?.user?.id);
 
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 

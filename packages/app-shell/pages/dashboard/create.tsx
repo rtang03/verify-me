@@ -45,7 +45,7 @@ const TenantCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const newTenant = (body: { slug: string; user_id: string }) => poster('/api/tenants', body);
 
   // activeUser will pass active_tenant to Layout.ts
-  const { activeUser } = useNextAuthUser(session.user.id);
+  const { activeUser } = useNextAuthUser(session?.user?.id);
 
   // used for "Set Active" AFTER tenant creation, IF no active_tenant detected
   const { updateActiveTenantResult, updateActiveTenant } = useActiveTenant(

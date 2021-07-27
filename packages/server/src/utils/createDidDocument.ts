@@ -14,7 +14,8 @@ import type { IIdentifier, TKeyType} from '@veramo/core';
 //   service: identifier.services,
 // });
 
-// https://github.com/uport-project/veramo/blob/next/packages/remote-server/src/web-did-doc-router.ts
+// Refactor from https://github.com/uport-project/veramo/blob/next/packages/remote-server/src/web-did-doc-router.ts
+// Note: this DidDocument defintition is instable api
 const keyMapping: Record<TKeyType, string> = {
   Secp256k1: 'EcdsaSecp256k1VerificationKey2019',
   Ed25519: 'Ed25519VerificationKey2018',

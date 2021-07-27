@@ -87,9 +87,10 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                 await poster(`/api/tenants/didManagerCreate?slug=${slug}`, body);
                 await mutate(key);
               };
-              await newUser({ alias: `${nonFqUrl}:users:${username}` }).then(() =>
-                setSubmitting(false)
-              );
+              await newUser({
+                alias: `${nonFqUrl}:users:${username}`,
+                options: { keyType: 'Ed25519' },
+              }).then(() => setSubmitting(false));
             }}>
             {({ values: { username }, isSubmitting, errors, submitForm }) => (
               <Form>

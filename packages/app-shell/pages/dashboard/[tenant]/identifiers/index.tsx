@@ -29,7 +29,7 @@ import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import { mutate } from 'swr';
-import { getTenantUrl, useFetcher, useReSWR, useTenant } from 'utils';
+import { getTenantUrl, useFetcher, useNextAuthUser, useReSWR, useTenant } from 'utils';
 
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const useStyles = makeStyles((theme: Theme) =>
@@ -41,6 +41,10 @@ const useStyles = makeStyles((theme: Theme) =>
 const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session?.user?.id);
+
   const fqUrl = tenantInfo?.slug && domain && getTenantUrl(tenantInfo?.slug, domain);
   const nonFqUrl = fqUrl?.replace('https://', '').replace('http://', '');
 
@@ -70,7 +74,7 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const handleMenuClose = () => setAnchorEl(null);
 
   return (
-    <Layout title="Identifiers" shouldShow={[show, setShow]} user={session.user}>
+    <Layout title="Identifiers" shouldShow={[show, setShow]} user={activeUser}>
       <Main
         session={session}
         title="Did Document"

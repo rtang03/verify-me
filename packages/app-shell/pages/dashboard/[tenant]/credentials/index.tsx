@@ -18,7 +18,7 @@ import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import type { PaginatedVerifiableCredential } from 'types';
-import { usePagination, useReSWR, useTenant } from 'utils';
+import { useNextAuthUser, usePagination, useReSWR, useTenant } from 'utils';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
@@ -32,12 +32,15 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
   const { cursor, pageChange } = usePagination(PAGESIZE);
 
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session?.user?.id);
+
   // Show Raw Content
   const [show, setShow] = useState(false);
 
   // Query Credentials
   // TODO: need to refine the where-clause
-  const args = { where: [{ column: 'subject', op: 'IsNull', not: true }], };
+  const args = { where: [{ column: 'subject', op: 'IsNull', not: true }] };
   const shouldFetch = !!slug && !!tenantInfo?.activated;
   const url = slug
     ? `/api/credentials?slug=${slug}&cursor=${cursor}&pagesize=${PAGESIZE}&args=${JSON.stringify(
@@ -52,7 +55,7 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
 
   return (
-    <Layout title="Credentials" shouldShow={[show, setShow]} user={session.user}>
+    <Layout title="Credentials" shouldShow={[show, setShow]} user={activeUser}>
       <Main
         session={session}
         title="Credentials"

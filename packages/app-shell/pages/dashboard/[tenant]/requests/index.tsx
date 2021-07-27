@@ -11,7 +11,7 @@ const RequestIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
   // activeUser will pass active_tenant to Layout.ts
-  const { activeUser } = useNextAuthUser(session.user.id);
+  const { activeUser } = useNextAuthUser(session?.user?.id);
 
   return (
     <Layout title="Request" user={activeUser}>

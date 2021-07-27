@@ -28,7 +28,7 @@ const Page: NextPage<{ session: Session }> = ({ session }) => {
   const { data, error } = useSWR<CommonResponse<UserInfo>>('/api/userinfo');
 
   // activeUser will pass active_tenant to Layout.ts
-  const { activeUser } = useNextAuthUser(session.user.id);
+  const { activeUser } = useNextAuthUser(session?.user?.id);
 
   return (
     <Layout title="Profile" user={activeUser}>

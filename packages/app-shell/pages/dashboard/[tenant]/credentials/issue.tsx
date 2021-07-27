@@ -26,7 +26,13 @@ import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import JSONTree from 'react-json-tree';
 import type { Claim } from 'types';
-import { claimToObject, useFetcher, getCreateVerifiableCredentialArgs, useTenant } from 'utils';
+import {
+  claimToObject,
+  useFetcher,
+  getCreateVerifiableCredentialArgs,
+  useTenant,
+  useNextAuthUser,
+} from 'utils';
 import * as yup from 'yup';
 
 // @see https://github.com/veramolabs/agent-explorer/blob/next/src/components/widgets/IssueCredential.tsx
@@ -48,6 +54,9 @@ const validation = yup.object({
 const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session?.user?.id);
 
   // Show Raw Content
   const [show, setShow] = useState(false);
@@ -81,7 +90,7 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
   const handleHelpClose = () => setHelpOpen(false);
 
   return (
-    <Layout title="Credential" shouldShow={[show, setShow]} user={session.user}>
+    <Layout title="Credential" shouldShow={[show, setShow]} user={activeUser}>
       <Main
         session={session}
         title="Issue Credential"

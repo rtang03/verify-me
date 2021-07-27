@@ -11,7 +11,7 @@ import ServiceEndpoint from 'components/ServiceEndpoint';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
-import { useReSWR, useTenant } from 'utils';
+import { useNextAuthUser, useReSWR, useTenant } from 'utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -23,6 +23,9 @@ const IdentifiersServicePage: NextPage<{ session: Session }> = ({ session }) => 
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session?.user?.id);
+
   // Show Raw Content
   const [show, setShow] = useState(false);
 
@@ -32,7 +35,7 @@ const IdentifiersServicePage: NextPage<{ session: Session }> = ({ session }) => 
   const services = didDoc?.service;
 
   return (
-    <Layout title="DID Document" shouldShow={[show, setShow]} user={session.user}>
+    <Layout title="DID Document" shouldShow={[show, setShow]} user={activeUser}>
       <Main
         session={session}
         title="DID Document"

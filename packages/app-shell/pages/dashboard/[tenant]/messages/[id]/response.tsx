@@ -39,7 +39,7 @@ import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React, { Fragment, useState, useEffect } from 'react';
 import type { PaginatedIIdentifier } from 'types';
-import { useFetcher, useReSWR, useSelectedCredentials, useTenant } from 'utils';
+import { useFetcher, useNextAuthUser, useReSWR, useSelectedCredentials, useTenant } from 'utils';
 
 const PAGESIZE = 25;
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
@@ -68,6 +68,9 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const router = useRouter();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session?.user?.id);
 
   // Show Raw Content
   const [show, setShow] = useState(false);
@@ -125,7 +128,7 @@ const MessagesResponsePage: NextPage<{ session: Session }> = ({ session }) => {
   const { selected, onSelect, valid: selectCredentialValid } = useSelectedCredentials(claims || []);
 
   return (
-    <Layout title="Response" shouldShow={[show, setShow]} user={session.user}>
+    <Layout title="Response" shouldShow={[show, setShow]} user={activeUser}>
       <Main
         session={session}
         title="Selective Disclosure Response"

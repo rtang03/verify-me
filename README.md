@@ -107,3 +107,6 @@ https://github.com/wso2/product-is/issues/6835
 
 ### THE GOAL
 https://github.com/bcgov/vc-authn-oidc/tree/master/docs
+
+https://datatracker.ietf.org/doc/html/draft-madden-jose-ecdh-1pu-03
+https://github.com/hyperledger/aries-rfcs/blob/master/features/0334-jwe-envelope/README.md

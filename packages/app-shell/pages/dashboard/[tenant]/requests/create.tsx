@@ -72,7 +72,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
   // activeUser will pass active_tenant to Layout.ts
-  const { activeUser } = useNextAuthUser(session.user.id);
+  const { activeUser } = useNextAuthUser(session?.user?.id);
 
   // Show Raw Content
   const [show, setShow] = useState(false);

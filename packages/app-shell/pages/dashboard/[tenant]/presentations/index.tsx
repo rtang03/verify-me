@@ -32,7 +32,7 @@ const PresentationIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
   // activeUser will pass active_tenant to Layout.ts
-  const { activeUser } = useNextAuthUser(session.user.id);
+  const { activeUser } = useNextAuthUser(session?.user?.id);
 
   // Pagination
   const { cursor, pageChange } = usePagination(PAGESIZE);

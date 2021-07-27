@@ -53,7 +53,7 @@ const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
 
   // activeUser will pass active_tenant to Layout.ts
-  const { activeUser } = useNextAuthUser(session.user.id);
+  const { activeUser } = useNextAuthUser(session?.user?.id);
 
   // Pagination
   const { cursor, pageChange } = usePagination(PAGESIZE);
