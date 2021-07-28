@@ -44,7 +44,6 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
 
   // Show Raw Content
   const [show, setShow] = useState(false);
-  // END
 
   // Query Message
   const id = router.query.id as string; // hash
@@ -52,7 +51,6 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
   const { data, isLoading, isError, error } = useReSWR<IMessage>(url, !!slug);
   const isOutGoingMessage = data?.metaData?.[0]?.type === 'DIDComm-sent';
   const canValidate = !isOutGoingMessage && data?.type === 'w3c.vp';
-  // END
 
   // Query Outgoing SDR, max 100 SDR
   const args = {
@@ -105,6 +103,16 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
               <MessageCard isFull={true} tenantInfo={tenantInfo} message={data} />
               {show && <RawContent title="Raw Message" content={data} />}
             </CardContent>
+            {(data?.data as any)?.type?.[0] === 'VerifiableCredential' && (
+              <CardContent>
+                <QuickAction
+                  link={`/dashboard/${tenantInfo?.id}/messages/${id}/saveCredential`}
+                  label="Save Credential"
+                  disabled={!tenantInfo?.id}
+                />
+              </CardContent>
+            )}
+            {/* TODO: BELOW CODE ARE NO LONGER VALID FOR RECEIVING CREDENTIAL; IT IS GOOD FOR SDR, NEED REVIEW */}
             {/*** SHOW RESPONSE BUTTON, if it is Incomming Message ***/}
             {data.type === 'sdr' && data?.metaData?.[0]?.type === 'DIDComm' && (
               <CardContent>

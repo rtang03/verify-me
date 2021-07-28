@@ -56,4 +56,5 @@ export const exposedMethods: string[] = [
   'sendDIDCommMessage',
   'getDidCommMessageMediaType',
   'unpackDIDCommMessage',
+  'discoverDid',
 ];

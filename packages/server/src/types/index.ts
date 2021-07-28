@@ -6,6 +6,7 @@ import type {
   IDIDManagerDeleteArgs,
   VerifiablePresentation,
   VerifiableCredential,
+  IDataStoreSaveVerifiableCredentialArgs,
 } from '@veramo/core';
 import {
   ICreateVerifiablePresentationArgs,
@@ -28,6 +29,7 @@ import type {
   IUnpackDIDCommMessageArgs,
   IDIDCommMessage,
   DIDCommMessagePacking,
+  IUnpackedDIDCommMessage,
 } from '@veramo/did-comm';
 import type {
   ICredentialRequestInput,
@@ -98,6 +100,8 @@ export {
   IUnpackDIDCommMessageArgs,
   IDIDCommMessage,
   DIDCommMessagePacking,
+  IUnpackedDIDCommMessage,
+  IDataStoreSaveVerifiableCredentialArgs,
 };
 
 // workaround: the original ISelectiveDisclosureRequest is incorrectly typed.

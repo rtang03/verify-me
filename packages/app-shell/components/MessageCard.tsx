@@ -70,10 +70,14 @@ const MessageCard: React.FC<{ isFull?: boolean; message: IMessage; tenantInfo: T
   tenantInfo,
 }) => {
   const classes = useStyles();
-  const { id, createdAt, from, to, metaData, type } = message;
+  const { id, from, to, metaData, type } = message;
   const getMessageType = (messageType: string) =>
-    ({ 'w3c.vp': 'Presentation', sdr: 'SD Request', 'w3c.vc': 'Credential' }[messageType] ||
-    'unknown type');
+    ({
+      'w3c.vp': 'Presentation',
+      sdr: 'SD Request',
+      'w3c.vc': 'Credential',
+      'application/didcomm-encrypted+json': 'DidCommV2',
+    }[messageType] || 'unknown type');
 
   return (
     <>
@@ -102,7 +106,6 @@ const MessageCard: React.FC<{ isFull?: boolean; message: IMessage; tenantInfo: T
         <div className={classes.details}>
           <TextField value={from} label="From" />
           <TextField value={to} label="To" />
-          <TextField value={format(new Date(createdAt as any), pattern)} label="Created At" />
           {metaData?.map((item, index) => (
             <TextField key={index} value={JSON.stringify(item)} label="MetaData" />
           ))}
@@ -110,7 +113,7 @@ const MessageCard: React.FC<{ isFull?: boolean; message: IMessage; tenantInfo: T
       </Card>
       {isFull && (
         <Card variant="outlined" className={classes.full}>
-          {message?.data && <RawContent title="Data" content={message.data} />}
+          {message?.data && <RawContent title="Data" content={{ data: message.data }} />}
         </Card>
       )}
     </>
