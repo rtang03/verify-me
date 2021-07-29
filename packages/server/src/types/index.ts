@@ -7,6 +7,7 @@ import type {
   VerifiablePresentation,
   VerifiableCredential,
   IDataStoreSaveVerifiableCredentialArgs,
+  IDataStoreDeleteVerifiableCredentialArgs,
 } from '@veramo/core';
 import {
   ICreateVerifiablePresentationArgs,
@@ -102,6 +103,7 @@ export {
   DIDCommMessagePacking,
   IUnpackedDIDCommMessage,
   IDataStoreSaveVerifiableCredentialArgs,
+  IDataStoreDeleteVerifiableCredentialArgs,
 };
 
 // workaround: the original ISelectiveDisclosureRequest is incorrectly typed.

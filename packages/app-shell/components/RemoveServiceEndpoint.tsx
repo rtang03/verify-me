@@ -1,5 +1,6 @@
 import CardHeader from '@material-ui/core/CardHeader';
 import IconButton from '@material-ui/core/IconButton';
+import Tooltip from '@material-ui/core/Tooltip';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import DeleteOutlineOutlinedIcon from '@material-ui/icons/DeleteOutlineOutlined';
 import LanguageIcon from '@material-ui/icons/Language';
@@ -67,9 +68,11 @@ const RemoveServiceEndpoint: React.FC<{
             title="Service endpoint"
             subheader="Used for Did-Comm Messaging"
             action={
-              <IconButton onClick={handleOpen}>
-                <DeleteOutlineOutlinedIcon />
-              </IconButton>
+              <Tooltip title="Delete service endpoint">
+                <IconButton onClick={handleOpen}>
+                  <DeleteOutlineOutlinedIcon />
+                </IconButton>
+              </Tooltip>
             }
           />
           <ConfirmationDialog

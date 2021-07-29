@@ -1,10 +1,12 @@
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
+import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import MuiTextField from '@material-ui/core/TextField';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import ExtensionIcon from '@material-ui/icons/Extension';
+import HelpOutlineOutlinedIcon from '@material-ui/icons/HelpOutlineOutlined';
 import type {
   VerifiableCredential,
   ISendDIDCommMessageArgs,
@@ -29,9 +31,12 @@ import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
-import { useFetcher, useNextAuthUser, useReSWR, useTenant } from 'utils';
+import { getTenantDid, useFetcher, useNextAuthUser, useReSWR, useTenant } from 'utils';
 import { v4 as uuidv4 } from 'uuid';
+import HelpDialog from '../../../../components/HelpDialog';
+import GlossaryTerms, { TERMS } from '../../../../components/GlossaryTerms';
 
+const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const pattern = "d.M.yyyy HH:mm:ss 'GMT' XXX (z)";
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -68,7 +73,7 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
       from: vc.issuer.id,
       to: vc.credentialSubject.id as string,
       id: messageId,
-      body: vc // vc.proof.jwt,
+      body: vc, // vc.proof.jwt,
     };
     return { message, packing: 'authcrypt' };
   };
@@ -114,6 +119,20 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
   const sendDIDCommMessage = (body: ISendDIDCommMessageArgs) =>
     poster(`/api/tenants/sendDIDCommMessage?slug=${slug}`, body);
 
+  // check if you are recipient, or originating issuer
+  // Only if the originating issuer (not recipient) can pack and send it
+  const isRecipient: () => boolean | undefined = () => {
+    // active tenant's Web DID
+    const tenantDid = slug && getTenantDid(slug, domain as string);
+    const subject = vc?.credentialSubject?.id;
+    return subject && tenantDid ? subject.startsWith(tenantDid) : undefined;
+  };
+
+  // form state - helpDialog
+  const [openHelp, setHelpOpen] = React.useState(false);
+  const handleHelpOpen = () => setHelpOpen(true);
+  const handleHelpClose = () => setHelpOpen(false);
+
   return (
     <Layout title="Credential" shouldShow={[show, setShow]} user={activeUser}>
       <Main
@@ -134,133 +153,145 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
               avatar={<AvatarMd5 subject={id || 'idle'} image="identicon" />}
               title={JSON.stringify(vc.type, null, 2)}
               subheader={format(new Date(vc.issuanceDate), pattern)}
+              action={
+                <IconButton onClick={handleHelpOpen}>
+                  <HelpOutlineOutlinedIcon />
+                </IconButton>
+              }
+            />
+            <HelpDialog
+              open={openHelp}
+              handleClose={handleHelpClose}
+              content={<GlossaryTerms terms={[TERMS.did]} />}
             />
             <CardContent>
               <Card variant="outlined">
-                <Credential vc={vc} />
+                <Credential vc={vc} tenantInfo={tenantInfo} hash={id} />
                 {show && vc && <RawContent content={vc} title="Raw Credential Details" />}
               </Card>
             </CardContent>
-            <CardContent>
-              <Card className={classes.root} variant="outlined">
-                <Formik
-                  initialValues={{}}
-                  onSubmit={async (_, { setSubmitting }) => {
-                    setSubmitting(true);
-                    await packDIDCommMessage(getPackDIDCommMessageArgs(vc));
-                    setSubmitting(false);
-                  }}>
-                  {({ isSubmitting, submitForm }) => (
-                    <Form>
-                      <CardHeader
-                        className={classes.root}
-                        title="Step 1: Pack Credential"
-                        subheader="Click icon to pack it into DIDComm message"
-                      />
-                      <CardContent className={classes.mail}>
-                        <SendFab
-                          loading={isSubmitting}
-                          disabled={isSubmitting || !vc || !!packedMessage?.data?.message}
-                          submitForm={submitForm}
-                          success={!!packedMessage?.data}
-                          error={!!packedMessage?.error}
-                          icon="pack"
-                        />
-                      </CardContent>
-                      <CardContent>
-                        <MessageHeader
-                          from={vc?.issuer.id}
-                          to={vc?.credentialSubject?.id}
-                          createdAt={vc?.issuanceDate}
-                        />
-                      </CardContent>
-                      <CardContent>
-                        <Card variant="outlined">
-                          <CardHeader subheader="Claims" />
-                          <CardContent>
-                            {claims &&
-                              Object.entries(claims).map(([key, value], index) => (
-                                <MuiTextField
-                                  key={index}
-                                  disabled={true}
-                                  size="small"
-                                  label={key}
-                                  value={value}
-                                  InputProps={{
-                                    startAdornment: (
-                                      <InputAdornment position="start">
-                                        <ExtensionIcon />
-                                      </InputAdornment>
-                                    ),
-                                  }}
-                                />
-                              ))}
-                          </CardContent>
-                        </Card>
-                      </CardContent>
-                      <Result isTenantExist={!!tenantInfo} result={packedMessage} />
-                      {show && packedMessage?.data && (
-                        <RawContent content={packedMessage.data} title="Raw Pack-message" />
-                      )}
-                    </Form>
-                  )}
-                </Formik>
-              </Card>
-              {packedMessage?.data && (
+            {!isRecipient() && (
+              <CardContent>
                 <Card className={classes.root} variant="outlined">
                   <Formik
                     initialValues={{}}
                     onSubmit={async (_, { setSubmitting }) => {
                       setSubmitting(true);
-                      await sendDIDCommMessage({
-                        messageId,
-                        packedMessage: packedMessage.data as IPackedDIDCommMessage,
-                        recipientDidUrl: vc.credentialSubject.id as string,
-                      });
+                      await packDIDCommMessage(getPackDIDCommMessageArgs(vc));
                       setSubmitting(false);
                     }}>
                     {({ isSubmitting, submitForm }) => (
                       <Form>
                         <CardHeader
                           className={classes.root}
-                          title="Step 2: Send Credential"
-                          subheader="Click icon to send below message"
+                          title="Step 1: Pack Credential"
+                          subheader="Click icon to pack it into DIDComm message"
                         />
                         <CardContent className={classes.mail}>
                           <SendFab
                             loading={isSubmitting}
-                            disabled={
-                              isSubmitting ||
-                              !vc ||
-                              !packedMessage?.data?.message ||
-                              !!sendMessageResult?.data
-                            }
+                            disabled={isSubmitting || !vc || !!packedMessage?.data?.message}
                             submitForm={submitForm}
-                            success={!!sendMessageResult?.data}
-                            error={!!sendMessageResult?.error}
+                            success={!!packedMessage?.data}
+                            error={!!packedMessage?.error}
+                            icon="pack"
                           />
                         </CardContent>
-                        {packedMessage?.data?.message && (
-                          <CardContent>
-                            <RawContent
-                              title="Message to send"
-                              content={JSON.parse(packedMessage.data.message)}
-                            />
-                          </CardContent>
-                        )}
-                        <Result isTenantExist={!!tenantInfo} result={sendMessageResult} />
-                        {show && sendMessageResult?.data && (
-                          <RawContent
-                            content={{ transportId: sendMessageResult.data, messageId }}
-                            title="Raw Send-message result"
+                        <CardContent>
+                          <MessageHeader
+                            from={vc?.issuer.id}
+                            to={vc?.credentialSubject?.id}
+                            createdAt={vc?.issuanceDate}
                           />
+                        </CardContent>
+                        <CardContent>
+                          <Card variant="outlined">
+                            <CardHeader subheader="Claims" />
+                            <CardContent>
+                              {claims &&
+                                Object.entries(claims).map(([key, value], index) => (
+                                  <MuiTextField
+                                    key={index}
+                                    disabled={true}
+                                    size="small"
+                                    label={key}
+                                    value={value}
+                                    InputProps={{
+                                      startAdornment: (
+                                        <InputAdornment position="start">
+                                          <ExtensionIcon />
+                                        </InputAdornment>
+                                      ),
+                                    }}
+                                  />
+                                ))}
+                            </CardContent>
+                          </Card>
+                        </CardContent>
+                        <Result isTenantExist={!!tenantInfo} result={packedMessage} />
+                        {show && packedMessage?.data && (
+                          <RawContent content={packedMessage.data} title="Raw Pack-message" />
                         )}
                       </Form>
                     )}
                   </Formik>
                 </Card>
-              )}
-            </CardContent>
+                {packedMessage?.data && (
+                  <Card className={classes.root} variant="outlined">
+                    <Formik
+                      initialValues={{}}
+                      onSubmit={async (_, { setSubmitting }) => {
+                        setSubmitting(true);
+                        await sendDIDCommMessage({
+                          messageId,
+                          packedMessage: packedMessage.data as IPackedDIDCommMessage,
+                          recipientDidUrl: vc.credentialSubject.id as string,
+                        });
+                        setSubmitting(false);
+                      }}>
+                      {({ isSubmitting, submitForm }) => (
+                        <Form>
+                          <CardHeader
+                            className={classes.root}
+                            title="Step 2: Send Credential"
+                            subheader="Click icon to send below message"
+                          />
+                          <CardContent className={classes.mail}>
+                            <SendFab
+                              loading={isSubmitting}
+                              disabled={
+                                isSubmitting ||
+                                !vc ||
+                                !packedMessage?.data?.message ||
+                                !!sendMessageResult?.data
+                              }
+                              submitForm={submitForm}
+                              success={!!sendMessageResult?.data}
+                              error={!!sendMessageResult?.error}
+                            />
+                          </CardContent>
+                          {packedMessage?.data?.message && (
+                            <CardContent>
+                              <RawContent
+                                title="Message to send"
+                                content={JSON.parse(packedMessage.data.message)}
+                              />
+                            </CardContent>
+                          )}
+                          <Result isTenantExist={!!tenantInfo} result={sendMessageResult} />
+                          {show && sendMessageResult?.data && (
+                            <RawContent
+                              content={{ transportId: sendMessageResult.data, messageId }}
+                              title="Raw Send-message result"
+                            />
+                          )}
+                        </Form>
+                      )}
+                    </Formik>
+                  </Card>
+                )}
+              </CardContent>
+            )}
           </Card>
         )}
       </Main>

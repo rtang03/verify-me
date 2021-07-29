@@ -265,7 +265,7 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
                   {result?.data && !result.loading && (
                     <>
                       <CardContent>
-                        <Credential vc={result.data} />
+                        <Credential vc={result.data} tenantInfo={tenantInfo} />
                       </CardContent>
                       {show && <RawContent title="Raw Credential" content={result.data} />}
                     </>

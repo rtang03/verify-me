@@ -36,6 +36,7 @@ const useStyles = makeStyles((theme: Theme) => {
     submit: {
       color: dark ? grey[900] : grey[100],
       backgroundColor: dark ? grey[100] : grey[900],
+      transition: 'all 0.5s ease-in-out',
       '&:hover': {
         color: dark ? grey[100] : grey[900],
         backgroundColor: dark ? grey[900] : grey[100],

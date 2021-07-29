@@ -48,6 +48,9 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
 
   // Delete Message
+  const deleteMessage = () => {
+    return null;
+  };
 
   return (
     <Layout title="Messages" shouldShow={[show, setShow]} user={activeUser}>
@@ -64,9 +67,9 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         {isError && !isLoading && <Error error={error} />}
         {tenantInfo?.activated && (
           <QuickAction
-            link={`/dashboard/${tenantInfo?.id}`}
-            label="TBC"
-            icon="send"
+            icon="request"
+            link={`/dashboard/${tenantInfo?.id}/messages/create_sdr`}
+            label="SD Request"
             disabled={!tenantInfo?.id}
           />
         )}

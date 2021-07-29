@@ -37,10 +37,12 @@ const useStyles = makeStyles((theme: Theme) => {
     submit: {
       width: '20ch',
       margin: theme.spacing(3, 1, 3),
+      transition: 'all 0.7s ease-in-out',
       '&:hover': {
         color: dark ? grey[900] : grey[100],
         backgroundColor: dark ? grey[100] : grey[900],
-        'font-weight': 'bold',
+        boxShadow: 'inset rgba(0, 0, 0, 0.3) 0 0 100px, rgba(0, 0, 0, 0.4) 0 -4px 10px',
+        borderColor: dark ? grey[100] : grey[900],
       },
     },
   });

@@ -83,7 +83,7 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                   <BallotOutlinedIcon />
                 </CardHeaderAvatar>
               }
-              title="Active credentials"
+              title="Credentials"
               subheader={<>Total: {data?.total || 0}</>}
             />
             <Pagination

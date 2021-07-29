@@ -48,7 +48,7 @@ const AddServiceEndpoint: React.FC<{
     await add(`/api/tenants/didManagerAddService?slug=${slug}`, body);
     await mutate(url);
   };
-  const defaultService = (slug && domain && `${getTenantUrl(slug, domain, secure)}`) || '';
+  const defaultService = (slug && domain && `${getTenantUrl(slug, domain, secure)}/messaging`) || '';
 
   return (
     <Formik

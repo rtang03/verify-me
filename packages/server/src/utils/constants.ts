@@ -57,4 +57,5 @@ export const exposedMethods: string[] = [
   'getDidCommMessageMediaType',
   'unpackDIDCommMessage',
   'discoverDid',
+  'dataStoreDeleteVerifiableCredential',
 ];

@@ -5,7 +5,6 @@ import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import MuiTextField from '@material-ui/core/TextField';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import DeleteOutlineOutlinedIcon from '@material-ui/icons/DeleteOutlineOutlined';
 import type { IMessage } from '@veramo/core';
 import { format } from 'date-fns';
 import md5 from 'md5';
@@ -38,7 +37,7 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 const GRAVATAR_URI = 'https://www.gravatar.com/avatar/';
 const uri = (subject: string, size: number) =>
-  `${GRAVATAR_URI}${md5(subject)}?s=${size}&d=robohash`;
+  `${GRAVATAR_URI}${md5(subject)}?s=${size}&d=identicon`; // robohash
 const pattern = "d.M.yyyy HH:mm:ss 'GMT' XXX (z)";
 
 const TextField: React.FC<{
@@ -82,28 +81,27 @@ const MessageCard: React.FC<{ isFull?: boolean; message: IMessage; tenantInfo: T
   return (
     <>
       <Card variant="outlined" className={classes.root}>
-        <CardHeader
-          action={
-            <IconButton>
-              <DeleteOutlineOutlinedIcon />
-            </IconButton>
-          }
-        />
+        {/*<CardHeader*/}
+        {/*  action={*/}
+        {/*    <IconButton>*/}
+        {/*      <DeleteOutlineOutlinedIcon />*/}
+        {/*    </IconButton>*/}
+        {/*  }*/}
+        {/*/>*/}
         {isFull && (
           <div>
-            <TextField value={getMessageType(type)} label="Type" />
             <CardMedia className={classes.media} image={uri(id, 200)} />
           </div>
         )}
         {!isFull && (
           <Link href={`/dashboard/${tenantInfo.id}/messages/${id}`}>
             <a>
-              <TextField value={getMessageType(type)} label="Type" />
               <CardMedia className={classes.media} image={uri(id, 200)} />
             </a>
           </Link>
         )}
         <div className={classes.details}>
+          <TextField value={getMessageType(type)} label="Type" />
           <TextField value={from} label="From" />
           <TextField value={to} label="To" />
           {metaData?.map((item, index) => (

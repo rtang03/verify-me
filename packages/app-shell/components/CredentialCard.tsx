@@ -47,7 +47,7 @@ const CredentialCard: React.FC<{
         </a>
       </Link>
       <div className={classes.details}>
-        <Credential vc={vc} compact={true} />
+        <Credential vc={vc} compact={true} tenantInfo={tenantInfo} />
       </div>
     </div>
   );

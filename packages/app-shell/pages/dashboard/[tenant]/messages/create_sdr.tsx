@@ -138,8 +138,8 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
         session={session}
         title="Selective Disclosure Request"
         subtitle="Create Selective-Disclosure-Request"
-        parentText={`Request`}
-        parentUrl={`/dashboard/${tenantInfo?.id}/requests`}
+        parentText={`Message`}
+        parentUrl={`/dashboard/${tenantInfo?.id}/messages`}
         isLoading={tenantLoading}
         isError={tenantError && !tenantLoading}
         tenantInfo={tenantInfo}
