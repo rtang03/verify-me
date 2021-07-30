@@ -5,6 +5,7 @@ import CardHeader from '@material-ui/core/CardHeader';
 import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
+import CloseOutlinedIcon from '@material-ui/icons/CloseOutlined';
 import HelpOutlineOutlinedIcon from '@material-ui/icons/HelpOutlineOutlined';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import VpnKeyOutlinedIcon from '@material-ui/icons/VpnKeyOutlined';
@@ -38,7 +39,6 @@ import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { mutate } from 'swr';
 import { useFetcher, useNextAuthUser, useReSWR, useTenant } from 'utils';
-import CloseOutlinedIcon from '@material-ui/icons/CloseOutlined';
 
 const DID_METHOD = 'did:web';
 const useStyles = makeStyles((theme: Theme) =>
@@ -83,8 +83,12 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
   const handleMenuClose = () => setAnchorEl(null);
 
   // Add Secp256k1 key
-  const { val: createSecp256k1Result, setVal: setValAddKey, poster: _createKey } = useFetcher<IKey>();
-  const { val: addSecp256k1Result, poster: _addKey } = useFetcher<any>();
+  const {
+    val: createSecp256k1Result,
+    setVal: setValAddKey,
+    poster: _createKey,
+  } = useFetcher<IKey>();
+  const { val: addSecp256k1Result, poster: _addKey } = useFetcher<{ success: boolean }>();
   const addKey = async (body: IDIDManagerAddKeyArgs) =>
     _addKey(`/api/tenants/didManagerAddKey?slug=${slug}`, body);
   const createKey = async (body: IKeyManagerCreateArgs) => {
@@ -142,11 +146,15 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
                           <HelpOutlineOutlinedIcon />
                         </IconButton>
                       </Tooltip>,
-                      <Tooltip key="2" title="Add Secp2561 key">
-                        <IconButton onClick={handleOpenAddKey}>
-                          <VpnKeyOutlinedIcon />
-                        </IconButton>
-                      </Tooltip>,
+                      createSecp256k1Result?.data ? (
+                        <React.Fragment />
+                      ) : (
+                        <Tooltip key="2" title="Add Secp2561 key">
+                          <IconButton onClick={handleOpenAddKey}>
+                            <VpnKeyOutlinedIcon />
+                          </IconButton>
+                        </Tooltip>
+                      ),
                     ]}
                   />
                   <ConfirmationDialog
@@ -173,41 +181,38 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
             />
             {/* Add New Key */}
             {createSecp256k1Result?.data && (
-              <Formik
-                initialValues={{}}
-                onSubmit={async (_, { setSubmitting }) => {
-                  setSubmitting(true);
-                  await addKey({
-                    did: `${DID_METHOD}:${id}`,
-                    key: createSecp256k1Result.data as any,
-                  });
-                  setSubmitting(false);
-                }}>
-                {({ isSubmitting, submitForm }) => (
-                  <Form>
-                    <CardContent>
-                      <Card variant="outlined" className={classes.root}>
-                        {/* can dismiss when add-key successfully */}
-                        {addSecp256k1Result?.data && (
-                          <CardHeader
-                            action={
-                              <IconButton
-                                onClick={() =>
-                                  setValAddKey({
-                                    data: null,
-                                    error: null,
-                                    loading: false,
-                                  })
-                                }>
-                                <CloseOutlinedIcon />
-                              </IconButton>
-                            }
-                          />
-                        )}
-                        <RawContent
-                          title="New Key Available"
-                          content={createSecp256k1Result.data}
-                        />
+              <CardContent>
+                <Card variant="outlined" className={classes.root}>
+                  {/* can dismiss when add-key successfully */}
+                  {addSecp256k1Result?.data && (
+                    <CardHeader
+                      action={
+                        <IconButton
+                          onClick={() =>
+                            setValAddKey({
+                              data: null,
+                              error: null,
+                              loading: false,
+                            })
+                          }>
+                          <CloseOutlinedIcon />
+                        </IconButton>
+                      }
+                    />
+                  )}
+                  <RawContent title="New Key Available" content={createSecp256k1Result.data} />
+                  <Formik
+                    initialValues={{}}
+                    onSubmit={async (_, { setSubmitting }) => {
+                      setSubmitting(true);
+                      await addKey({
+                        did: `${DID_METHOD}:${id}`,
+                        key: createSecp256k1Result.data as any,
+                      });
+                      setSubmitting(false);
+                    }}>
+                    {({ isSubmitting, submitForm }) => (
+                      <Form>
                         <CardActions>
                           <SubmitButton
                             tooltip="Add key"
@@ -223,11 +228,11 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
                         {show && addSecp256k1Result && (
                           <RawContent title="Raw add-key result" content={addSecp256k1Result} />
                         )}
-                      </Card>
-                    </CardContent>
-                  </Form>
-                )}
-              </Formik>
+                      </Form>
+                    )}
+                  </Formik>
+                </Card>
+              </CardContent>
             )}
             <CardContent>
               <Card variant="outlined" className={classes.root}>
