@@ -18,6 +18,8 @@ import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import Credential from 'components/Credential';
 import Error from 'components/Error';
+import GlossaryTerms, { TERMS } from 'components/GlossaryTerms';
+import HelpDialog from 'components/HelpDialog';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import MessageHeader from 'components/MessageHeader';
@@ -33,8 +35,6 @@ import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { getTenantDid, useFetcher, useNextAuthUser, useReSWR, useTenant } from 'utils';
 import { v4 as uuidv4 } from 'uuid';
-import HelpDialog from '../../../../components/HelpDialog';
-import GlossaryTerms, { TERMS } from '../../../../components/GlossaryTerms';
 
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const pattern = "d.M.yyyy HH:mm:ss 'GMT' XXX (z)";
@@ -73,7 +73,7 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
       from: vc.issuer.id,
       to: vc.credentialSubject.id as string,
       id: messageId,
-      body: vc, // vc.proof.jwt,
+      body: vc,
     };
     return { message, packing: 'authcrypt' };
   };
@@ -173,6 +173,7 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
             {!isRecipient() && (
               <CardContent>
                 <Card className={classes.root} variant="outlined">
+                  {/* Pack Message */}
                   <Formik
                     initialValues={{}}
                     onSubmit={async (_, { setSubmitting }) => {
@@ -238,6 +239,7 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
                 </Card>
                 {packedMessage?.data && (
                   <Card className={classes.root} variant="outlined">
+                    {/* Send Message */}
                     <Formik
                       initialValues={{}}
                       onSubmit={async (_, { setSubmitting }) => {

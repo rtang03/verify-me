@@ -82,7 +82,7 @@ const UnpackMessagePage: NextPage<{ session: Session }> = ({ session }) => {
                   <CardContent>
                     <ProTip text="Credential Found" />
                   </CardContent>
-                  <Credential vc={message.data as VerifiableCredential} />
+                  <Credential tenantInfo={tenantInfo} vc={message.data as VerifiableCredential} />
                 </Card>
               </CardContent>
             )}

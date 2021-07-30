@@ -9,15 +9,16 @@ import IconButton from '@material-ui/core/IconButton';
 import MuiTextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
-import DoneIcon from '@material-ui/icons/Done';
 import HelpOutlineOutlinedIcon from '@material-ui/icons/HelpOutlineOutlined';
 import PlusOneIcon from '@material-ui/icons/PlusOne';
 import type {
-  ISendMessageDIDCommAlpha1Args,
-  IMessage,
+  IDIDCommMessage,
   Issuer,
   ICredentialRequestInput,
   ICreateSelectiveDisclosureRequestArgs,
+  IPackDIDCommMessageArgs,
+  IPackedDIDCommMessage,
+  ISendDIDCommMessageArgs,
 } from '@verify/server';
 import { withAuth } from 'components';
 import Error from 'components/Error';
@@ -37,6 +38,7 @@ import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import { useFetcher, useNextAuthUser, useTenant } from 'utils';
+import { v4 as uuidv4 } from 'uuid';
 import * as yup from 'yup';
 
 interface AddClaimArgs {
@@ -67,7 +69,7 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
+const Create_SDR: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
@@ -78,14 +80,9 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const [show, setShow] = useState(false);
 
   // Create SDR request
-  const { val: sdrResult, poster } = useFetcher<string>();
+  const { val: sdrResult, poster: _newRequest } = useFetcher<string>();
   const newRequest = (body: ICreateSelectiveDisclosureRequestArgs) =>
-    poster(`/api/requests/create?slug=${slug}`, body);
-
-  // Send Message
-  const { val: result, poster: send } = useFetcher<IMessage>();
-  const sendMessage = (body: ISendMessageDIDCommAlpha1Args) =>
-    send(`/api/tenants/sendMessageDIDCommAlpha1?slug=${slug}`, body);
+    _newRequest(`/api/requests/create?slug=${slug}`, body);
 
   // form state
   const [claimType, setClaimType] = useState<string>('');
@@ -131,6 +128,34 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
     sub = sdr.subject;
     iat = new Date(sdr.iat * 1000).toISOString();
   }
+
+  // DidComm V2 messageId
+  const [messageId, setMessageId] = useState<string>('');
+
+  // see example https://github.com/veramolabs/agent-explorer/blob/main/src/components/standard/CreateRequest.tsx
+  // const [to, setTo] = useState('');
+  // const [from, setFrom] = useState('');
+  const getPackDIDCommMessageArgs: (sdr: string) => IPackDIDCommMessageArgs = (sdr) => {
+    setMessageId(uuidv4());
+    const message: IDIDCommMessage = {
+      type: 'application/didcomm-encrypted+json',
+      from: iss,
+      to: sub,
+      id: messageId,
+      body: { type: ['SDR'], sdr },
+    };
+    return { message, packing: 'authcrypt' };
+  };
+
+  // Send Message
+  const { val: sendMessageResult, poster: _sendDIDCommMessage } = useFetcher<string>();
+  const sendDIDCommMessage = (body: ISendDIDCommMessageArgs) =>
+    _sendDIDCommMessage(`/api/tenants/sendDIDCommMessage?slug=${slug}`, body);
+
+  // Pack Message
+  const { val: packedMessage, poster: pack } = useFetcher<IPackedDIDCommMessage>();
+  const packDIDCommMessage = (body: IPackDIDCommMessageArgs) =>
+    pack(`/api/tenants/packDIDCommMessage?slug=${slug}`, body);
 
   return (
     <Layout title="Request" shouldShow={[show, setShow]} user={activeUser}>
@@ -363,27 +388,71 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                     />
                   </CardActions>
                   {show && sdrResult?.data && (
-                    <RawContent title="Raw SDR" content={sdrResult.data} />
+                    <RawContent title="Raw SDR" content={{ data: sdrResult.data }} />
                   )}
                 </Form>
               )}
             </Formik>
-            {/* Step 2 Send SDR */}
+            {/* Step 2 Pack SDR */}
             <CardContent>
               {sdrResult?.error && !sdrResult?.loading && <Error error={sdrResult.error} />}
               {sdrResult?.data && !sdrResult?.loading && (
+                <Card className={classes.root} variant="outlined">
+                  <Formik
+                    initialValues={{}}
+                    onSubmit={async (_, { setSubmitting }) => {
+                      setSubmitting(true);
+                      await packDIDCommMessage(getPackDIDCommMessageArgs(sdrResult.data as string));
+                      setSubmitting(false);
+                    }}>
+                    {({ isSubmitting, submitForm }) => (
+                      <Form>
+                        <CardHeader
+                          className={classes.root}
+                          title="Step 1: Pack Request"
+                          subheader="Click icon to pack it into DIDComm message"
+                        />
+                        <CardContent>
+                          <SendFab
+                            loading={isSubmitting}
+                            submitForm={submitForm}
+                            icon="pack"
+                            disabled={isSubmitting || !sdrResult?.data || !!packedMessage?.data}
+                            success={!!packedMessage?.data}
+                            error={!!packedMessage?.error}
+                          />
+                        </CardContent>
+                        <CardContent>
+                          <MessageHeader from={iss} to={sub} />
+                          <RawContent
+                            title="Selective Disclosure Request - raw"
+                            content={{ data: sdrResult.data }}
+                          />
+                        </CardContent>
+                        <Result isTenantExist={!!tenantInfo} result={packedMessage} />
+                        {show && packedMessage?.data && (
+                          <RawContent content={packedMessage.data} title="Raw Pack-message" />
+                        )}
+                      </Form>
+                    )}
+                  </Formik>
+                </Card>
+              )}
+            </CardContent>
+            {/* Step 3 Send DidComm SDR */}
+            <CardContent>
+              {packedMessage?.error && !packedMessage?.loading && (
+                <Error error={packedMessage.error} />
+              )}
+              {packedMessage?.data && !packedMessage?.loading && (
                 <Formik
                   initialValues={{}}
                   onSubmit={async (_, { setSubmitting }) => {
                     setSubmitting(true);
-                    await sendMessage({
-                      data: {
-                        to: sub,
-                        from: iss,
-                        type: 'jwt',
-                        body: sdrResult.data as string,
-                      },
-                      save: true,
+                    await sendDIDCommMessage({
+                      messageId,
+                      packedMessage: packedMessage.data as IPackedDIDCommMessage,
+                      recipientDidUrl: sub,
                     });
                     setSubmitting(false);
                   }}>
@@ -391,23 +460,31 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                     <Form>
                       <Card variant="outlined">
                         <CardHeader
-                          avatar={<DoneIcon color="inherit" />}
-                          title="Selective Disclosure Request successfully created."
+                          className={classes.root}
+                          title="Step 2: Selective Disclosure Request"
+                          subheader="Click icon to send below message"
                         />
                         <CardContent className={classes.mail}>
                           <SendFab
-                            tooltip="Send the SDR to the subject"
+                            tooltip="Send the SDR"
                             loading={isSubmitting}
-                            disabled={isSubmitting || !!result.data}
+                            disabled={
+                              isSubmitting ||
+                              !packedMessage?.data?.message ||
+                              !!sendMessageResult?.data
+                            }
                             submitForm={submitForm}
-                            success={!!result?.data}
-                            error={!!result?.error}
+                            success={!!sendMessageResult?.data}
+                            error={!!sendMessageResult?.error}
                           />
                         </CardContent>
                         {iss && sub && <MessageHeader from={iss} to={sub} createdAt={iat} />}
-                        <Result isTenantExist={!!tenantInfo} result={result} />
-                        {show && result?.data && !result.loading && (
-                          <RawContent title="Raw Send result" content={result.data} />
+                        <Result isTenantExist={!!tenantInfo} result={sendMessageResult} />
+                        {show && sendMessageResult?.data && (
+                          <RawContent
+                            title="Raw Send result"
+                            content={{ transportId: sendMessageResult.data, messageId }}
+                          />
                         )}
                       </Card>
                     </Form>
@@ -424,4 +501,4 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default RequestCreatePage;
+export default Create_SDR;
