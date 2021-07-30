@@ -345,7 +345,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                   </CardContent>
                   <CardActions>
                     <SubmitButton
-                      tooltip="Create Request (no send)"
+                      tooltip="Create Request"
                       text={<PlusOneIcon />}
                       submitForm={submitForm}
                       loading={isSubmitting}

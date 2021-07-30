@@ -73,7 +73,7 @@ const Identifier: React.FC<{ identifier: IIdentifier }> = ({ identifier }) => {
           className={classes.root}
           disabled={true}
           size="small"
-          label="Public Key"
+          label={`Public Key / ${key.type}`}
           value={key.publicKeyHex}
           InputProps={{
             startAdornment: (
