@@ -93,7 +93,8 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
   const metaDataType = data?.metaData?.[0]?.type;
   const isVerifiiableCredential =
     messageType === 'VerifiableCredential' && metaDataType === 'DIDComm';
-  const isSelectiveDisclosureRequest = messageType === 'SDR' && metaDataType === 'DIDComm';
+  const isSelectiveDisclosureRequest =
+    messageType === 'selective-disclosure-request' && metaDataType === 'DIDComm';
   const isVerifiablePresentation =
     messageType === 'VerifiablePresentation' && metaDataType === 'DIDComm';
   const title = isVerifiiableCredential

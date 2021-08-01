@@ -13,13 +13,10 @@ import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import CloseOutlinedIcon from '@material-ui/icons/CloseOutlined';
 import PlusOneIcon from '@material-ui/icons/PlusOne';
 import type {
-  IDIDCommMessage,
   Issuer,
   ICredentialRequestInput,
   ICreateSelectiveDisclosureRequestArgs,
-  IPackDIDCommMessageArgs,
   IPackedDIDCommMessage,
-  ISendDIDCommMessageArgs,
 } from '@verify/server';
 import { withAuth } from 'components';
 import Error from 'components/Error';
@@ -27,10 +24,9 @@ import { TERMS } from 'components/GlossaryTerms';
 import HelpButton from 'components/HelpButton';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
-import MessageHeader from 'components/MessageHeader';
+import PackDIDCommMessage from 'components/PackDIDCommMessage';
 import RawContent from 'components/RawContent';
-import Result from 'components/Result';
-import SendFab from 'components/SendFab';
+import SendDIDCommMessage from 'components/SendDIDCommMessage';
 import SubmitButton from 'components/SubmitButton';
 import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
@@ -39,7 +35,6 @@ import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import { useFetcher, useNextAuthUser, useTenant } from 'utils';
-import { v4 as uuidv4 } from 'uuid';
 import * as yup from 'yup';
 
 interface AddClaimArgs {
@@ -127,31 +122,7 @@ const CreateSdr: NextPage<{ session: Session }> = ({ session }) => {
 
   // DidComm V2 messageId
   const [messageId, setMessageId] = useState<string>('');
-
-  // see example https://github.com/veramolabs/agent-explorer/blob/main/src/components/standard/CreateRequest.tsx
-  // TODO: revisit later, if the body's payload, may require more metadata.
-  const getPackDIDCommMessageArgs: (sdr: string) => IPackDIDCommMessageArgs = (sdr) => {
-    setMessageId(uuidv4());
-    const message: IDIDCommMessage = {
-      type: 'application/didcomm-encrypted+json',
-      from: iss,
-      to: sub,
-      id: messageId,
-      created_time: new Date().toISOString(),
-      body: { type: ['SDR'], sdr },
-    };
-    return { message, packing: 'authcrypt' };
-  };
-
-  // Send Message
-  const { val: sendMessageResult, poster: _sendDIDCommMessage } = useFetcher<string>();
-  const sendDIDCommMessage = (body: ISendDIDCommMessageArgs) =>
-    _sendDIDCommMessage(`/api/tenants/sendDIDCommMessage?slug=${slug}`, body);
-
-  // Pack Message
-  const { val: packedMessage, poster: pack } = useFetcher<IPackedDIDCommMessage>();
-  const packDIDCommMessage = (body: IPackDIDCommMessageArgs) =>
-    pack(`/api/tenants/packDIDCommMessage?slug=${slug}`, body);
+  const [packedSdr, setPackedSdr] = useState<IPackedDIDCommMessage>();
 
   return (
     <Layout title="Request" shouldShow={[show, setShow]} user={activeUser}>
@@ -200,7 +171,7 @@ const CreateSdr: NextPage<{ session: Session }> = ({ session }) => {
                     <Field
                       disabled={!!sdrResult?.data}
                       className={classes.longTextField}
-                      label="Issuer"
+                      label="Requester DID"
                       size="small"
                       component={TextField}
                       name={'issuer'}
@@ -214,7 +185,7 @@ const CreateSdr: NextPage<{ session: Session }> = ({ session }) => {
                     <Field
                       disabled={!!sdrResult?.data}
                       className={classes.longTextField}
-                      label="Subject"
+                      label="Subject DID"
                       size="small"
                       component={TextField}
                       name={'subject'}
@@ -227,7 +198,7 @@ const CreateSdr: NextPage<{ session: Session }> = ({ session }) => {
                     <Field
                       disabled={!!sdrResult?.data}
                       className={classes.longTextField}
-                      label="Reply url"
+                      label="Reply url of requester"
                       size="small"
                       component={TextField}
                       name={'replyUrl'}
@@ -296,12 +267,14 @@ const CreateSdr: NextPage<{ session: Session }> = ({ session }) => {
                           )}
                           <CardContent>
                             <div>
-                              <Typography variant="caption">Add one issuer</Typography>
+                              <Typography variant="caption">
+                                Add one issuer offering above claim
+                              </Typography>
                             </div>
                             <MuiTextField
                               disabled={!!sdrResult?.data}
                               className={classes.longTextField}
-                              label="Required Issuer"
+                              label="Required Issuer DID"
                               size="small"
                               name={'requiredIssuer'}
                               placeholder={'Required Issuer'}
@@ -314,7 +287,7 @@ const CreateSdr: NextPage<{ session: Session }> = ({ session }) => {
                             <MuiTextField
                               disabled={!!sdrResult?.data}
                               className={classes.longTextField}
-                              label="Required Issuer Url"
+                              label="Required Issuer Messaging Url"
                               size="small"
                               name={'requiredIssuerUrl'}
                               placeholder={'Required Issuer Url'}
@@ -405,95 +378,42 @@ const CreateSdr: NextPage<{ session: Session }> = ({ session }) => {
                     subheader="Click icon to pack it into DIDComm message"
                     action={<HelpButton terms={[TERMS.did]} />}
                   />
-                  <Formik
-                    initialValues={{}}
-                    onSubmit={async (_, { setSubmitting }) => {
-                      setSubmitting(true);
-                      await packDIDCommMessage(getPackDIDCommMessageArgs(sdrResult.data as string));
-                      setSubmitting(false);
-                    }}>
-                    {({ isSubmitting, submitForm }) => (
-                      <Form>
-                        <CardContent className={classes.mail}>
-                          <SendFab
-                            loading={isSubmitting}
-                            submitForm={submitForm}
-                            icon="pack"
-                            disabled={isSubmitting || !sdrResult?.data || !!packedMessage?.data}
-                            success={!!packedMessage?.data}
-                            error={!!packedMessage?.error}
-                          />
-                        </CardContent>
-                      </Form>
-                    )}
-                  </Formik>
-                  <CardContent>
-                    <MessageHeader from={iss} to={sub} />
-                    <RawContent
-                      title="Selective Disclosure Request - raw"
-                      content={{ data: sdrResult.data }}
-                    />
-                  </CardContent>
-                  <Result isTenantExist={!!tenantInfo} result={packedMessage} />
-                  {show && packedMessage?.data && (
-                    <RawContent content={packedMessage.data} title="Raw Pack-message" />
-                  )}
+                  <PackDIDCommMessage
+                    tenantInfo={tenantInfo}
+                    from={iss}
+                    to={sub}
+                    body={{ type: ['selective-disclosure-request'], sdr: sdrResult.data }}
+                    show={show}
+                    messageId={messageId}
+                    setMessageId={setMessageId}
+                    setPackedMessage={setPackedSdr}
+                  />
                 </Card>
               )}
             </CardContent>
             {/* Step 3 Send DidComm SDR */}
-            <CardContent>
-              {packedMessage?.error && !packedMessage?.loading && (
-                <Error error={packedMessage.error} />
-              )}
-              {packedMessage?.data && !packedMessage?.loading && (
+            {packedSdr && (
+              <CardContent className={classes.root}>
                 <Card variant="outlined">
                   <CardHeader
                     className={classes.root}
                     title="Step 2: Selective Disclosure Request"
                     subheader="Click icon to send below message"
+                    action={<HelpButton terms={[TERMS.did]} />}
                   />
-                  <Formik
-                    initialValues={{}}
-                    onSubmit={async (_, { setSubmitting }) => {
-                      setSubmitting(true);
-                      await sendDIDCommMessage({
-                        messageId,
-                        packedMessage: packedMessage.data as IPackedDIDCommMessage,
-                        recipientDidUrl: sub,
-                      });
-                      setSubmitting(false);
-                    }}>
-                    {({ isSubmitting, submitForm }) => (
-                      <Form>
-                        <CardContent className={classes.mail}>
-                          <SendFab
-                            tooltip="Send the SDR"
-                            loading={isSubmitting}
-                            disabled={
-                              isSubmitting ||
-                              !packedMessage?.data?.message ||
-                              !!sendMessageResult?.data
-                            }
-                            submitForm={submitForm}
-                            success={!!sendMessageResult?.data}
-                            error={!!sendMessageResult?.error}
-                          />
-                        </CardContent>
-                      </Form>
-                    )}
-                  </Formik>
-                  {iss && sub && <MessageHeader from={iss} to={sub} createdAt={iat} />}
-                  <Result isTenantExist={!!tenantInfo} result={sendMessageResult} />
-                  {show && sendMessageResult?.data && (
-                    <RawContent
-                      title="Raw Send result"
-                      content={{ transportId: sendMessageResult.data, messageId }}
-                    />
-                  )}
+                  <SendDIDCommMessage
+                    tenantInfo={tenantInfo}
+                    messageId={messageId}
+                    from={iss}
+                    to={sub}
+                    url={''}
+                    recipientDidUrl={sub}
+                    packedMessage={packedSdr}
+                    show={show}
+                  />
                 </Card>
-              )}
-            </CardContent>
+              </CardContent>
+            )}
           </Card>
         )}
       </Main>

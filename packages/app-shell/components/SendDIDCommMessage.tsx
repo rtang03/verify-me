@@ -67,7 +67,7 @@ const SendDIDCommMessage: React.FC<{
       <Result isTenantExist={!!tenantInfo} result={val} />
       {val?.data && (
         <CardContent>
-          <Typography variant="caption">Transport-id: {val.data}</Typography>
+          <Typography variant="caption">Transport-Id: {val.data}</Typography>
         </CardContent>
       )}
       {show && val?.data && (

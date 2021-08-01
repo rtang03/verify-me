@@ -88,7 +88,7 @@ const ResponseSDR: NextPage<{ session: Session }> = ({ session }) => {
     isError: isMessageError,
   } = useReSWR<IMessage>(url, !!slug);
   const sdr = message?.data?.sdr && (jwt_decode(message?.data?.sdr) as ISelectiveDisclosureRequest);
-  const isCorrectMessageType = message?.data?.type?.[0] === 'SDR';
+  const isCorrectMessageType = message?.data?.type?.[0] === 'selective-disclosure-request';
 
   // Query Identiifer
   const idsUrl = slug ? `/api/users?slug=${slug}&cursor=0&pagesize=${PAGESIZE}` : null;
