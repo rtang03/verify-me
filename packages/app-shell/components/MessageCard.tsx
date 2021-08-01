@@ -1,7 +1,6 @@
 import Card from '@material-ui/core/Card';
 import CardHeader from '@material-ui/core/CardHeader';
 import CardMedia from '@material-ui/core/CardMedia';
-import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import MuiTextField from '@material-ui/core/TextField';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
@@ -11,6 +10,7 @@ import md5 from 'md5';
 import Link from 'next/link';
 import React from 'react';
 import type { TenantInfo } from '../types';
+import { discoverMessageType } from '../utils';
 import RawContent from './RawContent';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -69,25 +69,19 @@ const MessageCard: React.FC<{ isFull?: boolean; message: IMessage; tenantInfo: T
   tenantInfo,
 }) => {
   const classes = useStyles();
-  const { id, from, to, metaData, type } = message;
-  const getMessageType = (messageType: string) =>
+  const { id, from, to, type, createdAt } = message;
+  const getMetaMessageType = (messageType: string) =>
     ({
       'w3c.vp': 'Presentation',
       sdr: 'SD Request',
       'w3c.vc': 'Credential',
       'application/didcomm-encrypted+json': 'DidCommV2',
     }[messageType] || 'unknown type');
+  const { messageType } = discoverMessageType(message);
 
   return (
     <>
       <Card variant="outlined" className={classes.root}>
-        {/*<CardHeader*/}
-        {/*  action={*/}
-        {/*    <IconButton>*/}
-        {/*      <DeleteOutlineOutlinedIcon />*/}
-        {/*    </IconButton>*/}
-        {/*  }*/}
-        {/*/>*/}
         {isFull && (
           <div>
             <CardMedia className={classes.media} image={uri(id, 200)} />
@@ -101,12 +95,12 @@ const MessageCard: React.FC<{ isFull?: boolean; message: IMessage; tenantInfo: T
           </Link>
         )}
         <div className={classes.details}>
-          <TextField value={getMessageType(type)} label="Type" />
+          <TextField value={`${getMetaMessageType(type)}/${messageType}`} label="Type" />
           <TextField value={from} label="From" />
           <TextField value={to} label="To" />
-          {metaData?.map((item, index) => (
-            <TextField key={index} value={JSON.stringify(item)} label="MetaData" />
-          ))}
+          {createdAt && (
+            <TextField value={format(new Date(createdAt), pattern)} label="Created At" />
+          )}
         </div>
       </Card>
       {isFull && (

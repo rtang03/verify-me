@@ -50,7 +50,7 @@ const Presentation: React.FC<{
           title="Verifiable Presentation"
         />
       )}
-      <CardContent className={classes.root}>
+      <CardContent>
         {holder && (
           <div className={classes.muiTextField}>
             <MuiTextField

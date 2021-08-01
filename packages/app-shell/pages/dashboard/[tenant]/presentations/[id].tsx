@@ -6,6 +6,8 @@ import type { VerifiablePresentation } from '@verify/server';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import Error from 'components/Error';
+import { TERMS } from 'components/GlossaryTerms';
+import HelpButton from 'components/HelpButton';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import Presentation from 'components/Presentation';
@@ -67,6 +69,7 @@ const PresentationDetailsPage: NextPage<{ session: Session }> = ({ session }) =>
               title={JSON.stringify(vp.type, null, 2)}
               subheader={format(new Date(vp.issuanceDate as any), pattern)}
               avatar={<AvatarMd5 subject={id || 'idle'} image="identicon" />}
+              action={<HelpButton terms={[TERMS.did]} />}
             />
             <CardContent>
               <Presentation vp={vp} />

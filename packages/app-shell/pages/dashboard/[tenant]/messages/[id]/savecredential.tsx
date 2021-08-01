@@ -27,7 +27,7 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({ root: { margin: theme.spacing(3, 1, 2) } })
 );
 
-const UnpackMessagePage: NextPage<{ session: Session }> = ({ session }) => {
+const SaveCredential: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const router = useRouter();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
@@ -125,4 +125,4 @@ const UnpackMessagePage: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default UnpackMessagePage;
+export default SaveCredential;

@@ -60,6 +60,9 @@ const Credential: React.FC<{
     await poster(`/api/tenants/dataStoreDeleteVerifiableCredential?slug=${slug}`, body);
   };
 
+  // better ui presentation
+  const slimVcType = vc.type.filter((item) => item !== 'VerifiableCredential');
+
   return (
     <React.Fragment>
       {!compact && (
@@ -142,7 +145,7 @@ const Credential: React.FC<{
           disabled={true}
           size="small"
           label="Type"
-          value={JSON.stringify(vc.type, null, 2)}
+          value={JSON.stringify(slimVcType, null, 2)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">

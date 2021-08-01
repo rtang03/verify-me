@@ -7,6 +7,8 @@ import Pagination from '@material-ui/lab/Pagination';
 import { withAuth } from 'components';
 import CardHeaderAvatar from 'components/CardHeaderAvatar';
 import Error from 'components/Error';
+import { TERMS } from 'components/GlossaryTerms';
+import HelpButton from 'components/HelpButton';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import NoRecord from 'components/NoRecord';
@@ -64,16 +66,16 @@ const PresentationIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         tenantInfo={tenantInfo}
         shouldActivate={true}>
         {isError && !isLoading && <Error error={error} />}
-        {tenantInfo?.activated && (
-          <>
-            <QuickAction
-              icon="send"
-              link={`/dashboard/${tenantInfo?.id}/presentations/create`}
-              label="Presentation"
-              disabled={!tenantInfo?.id}
-            />
-          </>
-        )}
+        {/*{tenantInfo?.activated && (*/}
+        {/*  <>*/}
+        {/*    <QuickAction*/}
+        {/*      icon="send"*/}
+        {/*      link={`/dashboard/${tenantInfo?.id}/presentations/create`}*/}
+        {/*      label="Presentation"*/}
+        {/*      disabled={!tenantInfo?.id}*/}
+        {/*    />*/}
+        {/*  </>*/}
+        {/*)}*/}
         {tenantInfo?.activated && !!data?.items?.length && (
           <Card className={classes.root}>
             <CardHeader
@@ -83,8 +85,9 @@ const PresentationIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                   <ScreenShareOutlinedIcon />
                 </CardHeaderAvatar>
               }
-              title="Active presentations"
+              title="Presentations"
               subheader={<>Total: {data?.total || 0}</>}
+              action={<HelpButton terms={[TERMS.did]} />}
             />
             <Pagination
               variant="outlined"
@@ -96,7 +99,7 @@ const PresentationIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             />
             <CardContent>
               {data.items.map(({ verifiablePresentation, hash }, index) => (
-                <Card variant="outlined" key={index}>
+                <Card  className={classes.root} variant="outlined" key={index}>
                   <PresentationCard
                     tenantInfo={tenantInfo}
                     vp={verifiablePresentation}

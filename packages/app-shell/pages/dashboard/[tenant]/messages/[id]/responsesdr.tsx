@@ -398,5 +398,3 @@ const ResponseSDR: NextPage<{ session: Session }> = ({ session }) => {
 export const getServerSideProps = withAuth;
 
 export default ResponseSDR;
-
-// https://www.w3.org/2018/credentials/v1

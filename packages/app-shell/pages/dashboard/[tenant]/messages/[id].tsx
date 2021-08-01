@@ -35,7 +35,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import type { PaginatedMessage } from 'types';
-import { useFetcher, useNextAuthUser, useReSWR, useTenant } from 'utils';
+import { discoverMessageType, useFetcher, useNextAuthUser, useReSWR, useTenant } from 'utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({ root: { margin: theme.spacing(3, 1, 2) } })
@@ -89,21 +89,12 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
   // END
 
   // Message Types
-  const messageType = data?.data?.type?.[0];
-  const metaDataType = data?.metaData?.[0]?.type;
-  const isVerifiiableCredential =
-    messageType === 'VerifiableCredential' && metaDataType === 'DIDComm';
-  const isSelectiveDisclosureRequest =
-    messageType === 'selective-disclosure-request' && metaDataType === 'DIDComm';
-  const isVerifiablePresentation =
-    messageType === 'VerifiablePresentation' && metaDataType === 'DIDComm';
-  const title = isVerifiiableCredential
-    ? 'Verificable Credential'
-    : isSelectiveDisclosureRequest
-    ? 'Selective Disclosure Request'
-    : isVerifiablePresentation
-    ? 'Verifiable Presentation'
-    : 'Unidentified Message';
+  const {
+    messageType,
+    isVerifiablePresentation,
+    isSelectiveDisclosureRequest,
+    isVerifiiableCredential,
+  } = discoverMessageType(data);
 
   // form state - helpDialog
   const [openHelp, setHelpOpen] = React.useState(false);
@@ -132,7 +123,7 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
           <Card className={classes.root}>
             <CardHeader
               className={classes.root}
-              title={title}
+              title={messageType}
               subheader={isOutGoingMessage ? 'Outgoing message' : 'Incoming message'}
               action={
                 <IconButton onClick={handleMenuClick}>
@@ -164,7 +155,7 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
             {isVerifiiableCredential && (
               <CardContent>
                 <QuickAction
-                  link={`/dashboard/${tenantInfo?.id}/messages/${id}/saveCredential`}
+                  link={`/dashboard/${tenantInfo?.id}/messages/${id}/savecredential`}
                   label="Save Credential"
                   disabled={!tenantInfo?.id}
                 />
@@ -175,7 +166,18 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
                 <CardContent>
                   <QuickAction
                     link={`/dashboard/${tenantInfo?.id}/messages/${id}/responsesdr`}
-                    label="RESPONSE"
+                    label="Reply SDR"
+                    disabled={!tenantInfo?.id}
+                  />
+                </CardContent>
+              </CardContent>
+            )}
+            {isVerifiablePresentation && (
+              <CardContent>
+                <CardContent>
+                  <QuickAction
+                    link={`/dashboard/${tenantInfo?.id}/messages/${id}/savepresentation`}
+                    label="Save Presentation"
                     disabled={!tenantInfo?.id}
                   />
                 </CardContent>
