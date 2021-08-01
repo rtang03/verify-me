@@ -11,9 +11,10 @@ import LocationCityIcon from '@material-ui/icons/LocationCity';
 import ScreenShareOutlinedIcon from '@material-ui/icons/ScreenShareOutlined';
 import TodayIcon from '@material-ui/icons/Today';
 import type { VerifiablePresentation } from '@verify/server';
+import { format } from 'date-fns';
 import React from 'react';
 import CardHeaderAvatar from './CardHeaderAvatar';
-import { format } from 'date-fns';
+import RawContent from './RawContent';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -28,10 +29,11 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 const pattern = "d.M.yyyy HH:mm:ss 'GMT' XXX (z)";
 
-const Presentation: React.FC<{ vp: Partial<VerifiablePresentation>; compact?: boolean }> = ({
-  vp,
-  compact,
-}) => {
+const Presentation: React.FC<{
+  vp: Partial<VerifiablePresentation>;
+  compact?: boolean;
+  show?: boolean;
+}> = ({ vp, compact, show }) => {
   const classes = useStyles();
   const { holder, verifier, issuanceDate, verifiableCredential: vcs } = vp;
 
@@ -112,7 +114,7 @@ const Presentation: React.FC<{ vp: Partial<VerifiablePresentation>; compact?: bo
                     disabled={true}
                     size="small"
                     label="Issuer"
-                    value={vc.issuer?.id}
+                    value={vc?.issuer?.id}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -127,7 +129,7 @@ const Presentation: React.FC<{ vp: Partial<VerifiablePresentation>; compact?: bo
                     disabled={true}
                     size="small"
                     label="Type"
-                    value={JSON.stringify(vc.type, null, 2)}
+                    value={JSON.stringify(vc?.type, null, 2)}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -142,7 +144,9 @@ const Presentation: React.FC<{ vp: Partial<VerifiablePresentation>; compact?: bo
                     disabled={true}
                     size="small"
                     label="Issuance Date / Time"
-                    value={format(new Date(vc.issuanceDate), pattern)}
+                    // TODO: Review me
+                    value={vc?.issuanceDate}
+                    // value={format(new Date(vc.issuanceDate), pattern)}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -157,10 +161,9 @@ const Presentation: React.FC<{ vp: Partial<VerifiablePresentation>; compact?: bo
                 <Card className={classes.root} variant="outlined">
                   <CardHeader className={classes.root} subheader="Credential Subjects" />
                   <CardContent>
-                    {Object.entries<string>(vc.credentialSubject).map(([key, value], index) => (
-                      <div className={classes.muiTextField}>
+                    {Object.entries<string>(vc?.credentialSubject).map(([key, value], index) => (
+                      <div key={index} className={classes.muiTextField}>
                         <MuiTextField
-                          key={index}
                           disabled={true}
                           size="small"
                           label={key}
@@ -180,6 +183,7 @@ const Presentation: React.FC<{ vp: Partial<VerifiablePresentation>; compact?: bo
               </CardContent>
             </Card>
           ))}
+          {show && <RawContent title="Raw VP" content={vp} />}
         </CardContent>
       )}
     </>

@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 interface ValidationState {
   [index: string]: {
     required: boolean;
-    vc:  string | null;
+    vc:  any;
   };
 }
 

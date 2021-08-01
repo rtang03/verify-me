@@ -1,12 +1,10 @@
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
-import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import MuiTextField from '@material-ui/core/TextField';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import ExtensionIcon from '@material-ui/icons/Extension';
-import HelpOutlineOutlinedIcon from '@material-ui/icons/HelpOutlineOutlined';
 import type {
   VerifiableCredential,
   ISendDIDCommMessageArgs,
@@ -18,8 +16,8 @@ import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import Credential from 'components/Credential';
 import Error from 'components/Error';
-import GlossaryTerms, { TERMS } from 'components/GlossaryTerms';
-import HelpDialog from 'components/HelpDialog';
+import { TERMS } from 'components/GlossaryTerms';
+import HelpButton from 'components/HelpButton';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import MessageHeader from 'components/MessageHeader';
@@ -73,6 +71,7 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
       from: vc.issuer.id,
       to: vc.credentialSubject.id as string,
       id: messageId,
+      created_time: new Date(Date.now()).toISOString(),
       body: vc,
     };
     return { message, packing: 'authcrypt' };
@@ -128,11 +127,6 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
     return subject && tenantDid ? subject.startsWith(tenantDid) : undefined;
   };
 
-  // form state - helpDialog
-  const [openHelp, setHelpOpen] = React.useState(false);
-  const handleHelpOpen = () => setHelpOpen(true);
-  const handleHelpClose = () => setHelpOpen(false);
-
   return (
     <Layout title="Credential" shouldShow={[show, setShow]} user={activeUser}>
       <Main
@@ -153,16 +147,7 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
               avatar={<AvatarMd5 subject={id || 'idle'} image="identicon" />}
               title={JSON.stringify(vc.type, null, 2)}
               subheader={format(new Date(vc.issuanceDate), pattern)}
-              action={
-                <IconButton onClick={handleHelpOpen}>
-                  <HelpOutlineOutlinedIcon />
-                </IconButton>
-              }
-            />
-            <HelpDialog
-              open={openHelp}
-              handleClose={handleHelpClose}
-              content={<GlossaryTerms terms={[TERMS.did]} />}
+              action={<HelpButton terms={[TERMS.did]} />}
             />
             <CardContent>
               <Card variant="outlined">

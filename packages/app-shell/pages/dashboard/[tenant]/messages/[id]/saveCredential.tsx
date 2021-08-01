@@ -52,7 +52,7 @@ const UnpackMessagePage: NextPage<{ session: Session }> = ({ session }) => {
   const save = (body: IDataStoreSaveVerifiableCredentialArgs) =>
     poster(`/api/tenants/dataStoreSaveVerifiableCredential?slug=${slug}`, body);
 
-  const isVerifiiableCredentialType = (message?.data as any)?.type?.[0] === 'VerifiableCredential';
+  const isVerifiiableCredentialType = message?.data?.type?.[0] === 'VerifiableCredential';
   const vc = message?.data;
   const canSave = isVerifiiableCredentialType && isVerifiableCredential(vc);
 

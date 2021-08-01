@@ -68,7 +68,7 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         {tenantInfo?.activated && (
           <QuickAction
             icon="request"
-            link={`/dashboard/${tenantInfo?.id}/messages/create_sdr`}
+            link={`/dashboard/${tenantInfo?.id}/messages/createsdr`}
             label="SD Request"
             disabled={!tenantInfo?.id}
           />

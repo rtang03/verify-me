@@ -3,17 +3,15 @@ import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
-import IconButton from '@material-ui/core/IconButton';
 import MuiTextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
-import HelpOutlineOutlinedIcon from '@material-ui/icons/HelpOutlineOutlined';
 import PlusOneIcon from '@material-ui/icons/PlusOne';
 import type { VerifiableCredential, ICreateVerifiableCredentialArgs } from '@verify/server';
 import { withAuth } from 'components';
 import Credential from 'components/Credential';
-import GlossaryTerms, { TERMS } from 'components/GlossaryTerms';
-import HelpDialog from 'components/HelpDialog';
+import { TERMS } from 'components/GlossaryTerms';
+import HelpButton from 'components/HelpButton';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import RawContent from 'components/RawContent';
@@ -84,11 +82,6 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
     setClaimValue('');
   };
 
-  // form state - HelpDialog
-  const [openHelp, setHelpOpen] = React.useState(false);
-  const handleHelpOpen = () => setHelpOpen(true);
-  const handleHelpClose = () => setHelpOpen(false);
-
   return (
     <Layout title="Credential" shouldShow={[show, setShow]} user={activeUser}>
       <Main
@@ -120,17 +113,9 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
                   <CardHeader
                     className={classes.root}
                     title="Credential Info"
-                    action={
-                      <IconButton onClick={handleHelpOpen}>
-                        <HelpOutlineOutlinedIcon />
-                      </IconButton>
-                    }
+                    action={<HelpButton terms={[TERMS.did]} />}
                   />
-                  <HelpDialog
-                    open={openHelp}
-                    handleClose={handleHelpClose}
-                    content={<GlossaryTerms terms={[TERMS.did]} />}
-                  />
+
                   <CardContent className={classes.root}>
                     <Field
                       className={classes.textField}

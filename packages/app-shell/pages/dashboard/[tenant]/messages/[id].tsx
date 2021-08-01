@@ -2,8 +2,12 @@ import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
+import IconButton from '@material-ui/core/IconButton';
+import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import HelpOutlineOutlinedIcon from '@material-ui/icons/HelpOutlineOutlined';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
 import type {
   IPresentationValidationResult,
   IValidatePresentationAgainstSdrArgs,
@@ -11,7 +15,10 @@ import type {
   ISelectiveDisclosureRequest,
 } from '@verify/server';
 import { withAuth } from 'components';
+import DropdownMenu from 'components/DropdownMenu';
 import Error from 'components/Error';
+import GlossaryTerms, { TERMS } from 'components/GlossaryTerms';
+import HelpDialog from 'components/HelpDialog';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import MessageCard from 'components/MessageCard';
@@ -81,6 +88,33 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
     poster(`/api/tenants/validatePresentationAgainstSdr?slug=${slug}`, body);
   // END
 
+  // Message Types
+  const messageType = data?.data?.type?.[0];
+  const metaDataType = data?.metaData?.[0]?.type;
+  const isVerifiiableCredential =
+    messageType === 'VerifiableCredential' && metaDataType === 'DIDComm';
+  const isSelectiveDisclosureRequest = messageType === 'SDR' && metaDataType === 'DIDComm';
+  const isVerifiablePresentation =
+    messageType === 'VerifiablePresentation' && metaDataType === 'DIDComm';
+  const title = isVerifiiableCredential
+    ? 'Verificable Credential'
+    : isSelectiveDisclosureRequest
+    ? 'Selective Disclosure Request'
+    : isVerifiablePresentation
+    ? 'Verifiable Presentation'
+    : 'Unidentified Message';
+
+  // form state - helpDialog
+  const [openHelp, setHelpOpen] = React.useState(false);
+  const handleOpen = () => setHelpOpen(true);
+  const handleClose = () => setHelpOpen(false);
+
+  // form state - menu
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) =>
+    setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
   return (
     <Layout title="Message" shouldShow={[show, setShow]} user={activeUser}>
       <Main
@@ -97,13 +131,36 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
           <Card className={classes.root}>
             <CardHeader
               className={classes.root}
-              subheader={isOutGoingMessage ? 'Outgoing message' : 'Incomming message'}
+              title={title}
+              subheader={isOutGoingMessage ? 'Outgoing message' : 'Incoming message'}
+              action={
+                <IconButton onClick={handleMenuClick}>
+                  <MoreVertIcon />
+                </IconButton>
+              }
+            />
+            <DropdownMenu
+              anchorEl={anchorEl}
+              handleClick={handleMenuClick}
+              handleClose={handleMenuClose}
+              iconButtons={[
+                <Tooltip key="1" title="Help">
+                  <IconButton onClick={handleOpen}>
+                    <HelpOutlineOutlinedIcon />
+                  </IconButton>
+                </Tooltip>,
+              ]}
+            />
+            <HelpDialog
+              open={openHelp}
+              handleClose={handleClose}
+              content={<GlossaryTerms terms={[TERMS.did]} />}
             />
             <CardContent>
               <MessageCard isFull={true} tenantInfo={tenantInfo} message={data} />
               {show && <RawContent title="Raw Message" content={data} />}
             </CardContent>
-            {(data?.data as any)?.type?.[0] === 'VerifiableCredential' && (
+            {isVerifiiableCredential && (
               <CardContent>
                 <QuickAction
                   link={`/dashboard/${tenantInfo?.id}/messages/${id}/saveCredential`}
@@ -112,13 +169,11 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
                 />
               </CardContent>
             )}
-            {/* TODO: BELOW CODE ARE NO LONGER VALID FOR RECEIVING CREDENTIAL; IT IS GOOD FOR SDR, NEED REVIEW */}
-            {/*** SHOW RESPONSE BUTTON, if it is Incomming Message ***/}
-            {data.type === 'sdr' && data?.metaData?.[0]?.type === 'DIDComm' && (
+            {isSelectiveDisclosureRequest && (
               <CardContent>
                 <CardContent>
                   <QuickAction
-                    link={`/dashboard/${tenantInfo?.id}/messages/${id}/response`}
+                    link={`/dashboard/${tenantInfo?.id}/messages/${id}/responsesdr`}
                     label="RESPONSE"
                     disabled={!tenantInfo?.id}
                   />

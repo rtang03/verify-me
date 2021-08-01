@@ -32,6 +32,8 @@ import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import { mutate } from 'swr';
 import { useFetcher, useNextAuthUser, useReSWR, useTenant } from 'utils';
+import HelpButton from '../../../../components/HelpButton';
+import { TERMS } from '../../../../components/GlossaryTerms';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -91,6 +93,7 @@ const IdentifiersServicePage: NextPage<{ session: Session }> = ({ session }) => 
               className={classes.root}
               avatar={<AvatarMd5 subject={didDoc.id || 'idle'} />}
               title={didDoc.id}
+              action={<HelpButton terms={[TERMS.did]} />}
             />
             {show && didDoc && <RawContent title="Raw Did Document" content={didDoc} />}
             {/* Verification Method */}

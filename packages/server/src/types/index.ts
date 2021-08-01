@@ -1,5 +1,5 @@
 import type {
-  IMessage,
+  IMessage as _IMessage,
   IDIDManagerAddServiceArgs,
   IDIDManagerRemoveServiceArgs,
   IDIDManagerGetOrCreateArgs,
@@ -32,7 +32,7 @@ import type {
   IPackDIDCommMessageArgs,
   IPackedDIDCommMessage,
   IUnpackDIDCommMessageArgs,
-  IDIDCommMessage,
+  IDIDCommMessage as _IDIDCommMessage,
   DIDCommMessagePacking,
   IUnpackedDIDCommMessage,
 } from '@veramo/did-comm';
@@ -76,6 +76,35 @@ export type DataStoreORMGetVerifiableCredentialsCountArgs = FindArgs<TCredential
 export type DataStoreORMGetVerifiablePresentationsArgs = FindArgs<TPresentationColumns>;
 export type DataStoreORMGetVerifiablePresentationsCountArgs = FindArgs<TPresentationColumns>;
 
+// workaround: the original ISelectiveDisclosureRequest is incorrectly typed.
+export type ISelectiveDisclosureRequest = {
+  iat: number;
+  iss: string;
+  type: string;
+  subject?: string;
+  replyUrl?: string;
+  claims: ICredentialRequestInput[];
+};
+
+// workaround: the original type does not export
+// source: https://github.com/uport-project/veramo/blob/next/packages/did-comm/src/didcomm.ts
+export interface ISendDIDCommMessageArgs {
+  packedMessage: IPackedDIDCommMessage;
+  messageId: string;
+  returnTransportId?: string;
+  recipientDidUrl: string;
+}
+
+// Seems the Agent's SendDIDCommMessage method is using old IMessage, not this one.
+// So, it is not currently used.
+interface IDIDCommMessage<TBody = any> extends _IDIDCommMessage {
+  body: TBody | null;
+}
+
+type IMessage<TBody = any> = _IMessage & {
+  data: TBody;
+};
+
 export {
   DidDocument,
   UniqueVerifiableCredential,
@@ -113,22 +142,3 @@ export {
   IKey,
   IIdentifier,
 };
-
-// workaround: the original ISelectiveDisclosureRequest is incorrectly typed.
-export type ISelectiveDisclosureRequest = {
-  iat: number;
-  iss: string;
-  type: string;
-  subject?: string;
-  replyUrl?: string;
-  claims: ICredentialRequestInput[];
-};
-
-// workaround: the original type does not export
-// source: https://github.com/uport-project/veramo/blob/next/packages/did-comm/src/didcomm.ts
-export interface ISendDIDCommMessageArgs {
-  packedMessage: IPackedDIDCommMessage;
-  messageId: string;
-  returnTransportId?: string;
-  recipientDidUrl: string;
-}
