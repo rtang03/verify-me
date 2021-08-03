@@ -104,10 +104,10 @@ const Presentation: React.FC<{
         )}
       </CardContent>
       {!compact && (
-        <CardContent className={classes.root}>
+        <CardContent>
           {vcs?.map((vc, index) => (
-            <Card variant="outlined" key={index}>
-              <CardHeader className={classes.root} subheader="Credentials" />
+            <Card className={classes.root} variant="outlined" key={index}>
+              <CardHeader className={classes.root} subheader={`Credential #${index + 1}`} />
               <CardContent>
                 <div className={classes.muiTextField}>
                   <MuiTextField

@@ -155,8 +155,10 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
             {isVerifiiableCredential && (
               <CardContent>
                 <QuickAction
+                  icon="save"
+                  label="Save"
                   link={`/dashboard/${tenantInfo?.id}/messages/${id}/savecredential`}
-                  label="Save Credential"
+                  tooltip="Save Credential"
                   disabled={!tenantInfo?.id}
                 />
               </CardContent>
@@ -165,8 +167,10 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
               <CardContent>
                 <CardContent>
                   <QuickAction
+                    label="Reply"
+                    icon="send"
                     link={`/dashboard/${tenantInfo?.id}/messages/${id}/responsesdr`}
-                    label="Reply SDR"
+                    tooltip="Reply selective disclosure reqeust"
                     disabled={!tenantInfo?.id}
                   />
                 </CardContent>
@@ -176,8 +180,10 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
               <CardContent>
                 <CardContent>
                   <QuickAction
+                    icon="save"
+                    label="Save"
                     link={`/dashboard/${tenantInfo?.id}/messages/${id}/savepresentation`}
-                    label="Save Presentation"
+                    tooltip="Save Presentation"
                     disabled={!tenantInfo?.id}
                   />
                 </CardContent>

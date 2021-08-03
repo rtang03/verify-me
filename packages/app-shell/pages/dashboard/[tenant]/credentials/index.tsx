@@ -17,10 +17,9 @@ import omit from 'lodash/omit';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
-import type { PaginatedVerifiableCredential } from 'types';
-import { useNextAuthUser, usePagination, useReSWR, useTenant } from 'utils';
+import { useNextAuthUser, usePagination, useQueryCredential, useTenant } from 'utils';
 
-const PAGESIZE = 5;
+const pageSize = 5;
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
@@ -30,7 +29,7 @@ const useStyles = makeStyles((theme: Theme) =>
 const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
-  const { cursor, pageChange } = usePagination(PAGESIZE);
+  const { cursor, pageChange } = usePagination(pageSize);
 
   // activeUser will pass active_tenant to Layout.ts
   const { activeUser } = useNextAuthUser(session?.user?.id);
@@ -39,20 +38,14 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const [show, setShow] = useState(false);
 
   // Query Credentials
-  // TODO: need to refine the where-clause
-  const args = { where: [{ column: 'subject', op: 'IsNull', not: true }] };
   const shouldFetch = !!slug && !!tenantInfo?.activated;
-  const url = slug
-    ? `/api/credentials?slug=${slug}&cursor=${cursor}&pagesize=${PAGESIZE}&args=${JSON.stringify(
-        args
-      )}`
-    : null;
-  const { data, isLoading, isError, error } = useReSWR<PaginatedVerifiableCredential>(
-    url,
-    shouldFetch
-  );
-  let count;
-  data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
+  const {
+    count,
+    isQueryCredentialError,
+    isQueryCredentialLoading,
+    paginatedCredential,
+    queryCredentialError,
+  } = useQueryCredential({ slug, pageSize, shouldFetch });
 
   return (
     <Layout title="Credentials" shouldShow={[show, setShow]} user={activeUser}>
@@ -62,19 +55,22 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         subtitle="Issue verifiable credentials"
         parentText={`Dashboard | ${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
-        isLoading={tenantLoading || (isLoading && shouldFetch)}
+        isLoading={tenantLoading || (isQueryCredentialLoading && shouldFetch)}
         isError={tenantError && !tenantLoading}
         tenantInfo={tenantInfo}
         shouldActivate={true}>
-        {isError && !isLoading && <Error error={error} />}
+        {isQueryCredentialError && !isQueryCredentialLoading && (
+          <Error error={queryCredentialError} />
+        )}
         {tenantInfo?.activated && (
           <QuickAction
+            tooltip="Create verifiable credential"
             link={`/dashboard/${tenantInfo?.id}/credentials/issue`}
             label="1"
             disabled={!tenantInfo?.id}
           />
         )}
-        {tenantInfo?.activated && !!data?.items?.length && (
+        {tenantInfo?.activated && !!paginatedCredential?.items?.length && (
           <Card className={classes.root}>
             <CardHeader
               className={classes.root}
@@ -84,7 +80,7 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                 </CardHeaderAvatar>
               }
               title="Credentials"
-              subheader={<>Total: {data?.total || 0}</>}
+              subheader={<>Total: {paginatedCredential?.total || 0}</>}
             />
             <Pagination
               variant="outlined"
@@ -95,7 +91,7 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
               onChange={pageChange}
             />
             <CardContent>
-              {data.items.map(({ verifiableCredential, hash }, index) => (
+              {paginatedCredential.items.map(({ verifiableCredential, hash }, index) => (
                 <Card variant="outlined" className={classes.root} key={index}>
                   <CredentialCard hash={hash} tenantInfo={tenantInfo} vc={verifiableCredential} />
                   {show && (
@@ -109,7 +105,9 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             </CardContent>
           </Card>
         )}
-        {tenantInfo && !data?.items?.length && !isLoading && <NoRecord />}
+        {tenantInfo && !paginatedCredential?.items?.length && !isQueryCredentialLoading && (
+          <NoRecord />
+        )}
       </Main>
     </Layout>
   );

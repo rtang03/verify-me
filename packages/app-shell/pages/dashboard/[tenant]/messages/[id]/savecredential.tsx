@@ -2,11 +2,7 @@ import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import Typography from '@material-ui/core/Typography';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import type {
-  IMessage,
-  VerifiableCredential,
-  IDataStoreSaveVerifiableCredentialArgs,
-} from '@verify/server';
+import type { VerifiableCredential, IDataStoreSaveVerifiableCredentialArgs } from '@verify/server';
 import { withAuth } from 'components';
 import Credential from 'components/Credential';
 import Layout from 'components/Layout';
@@ -19,9 +15,14 @@ import SubmitButton from 'components/SubmitButton';
 import { Form, Formik } from 'formik';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import { useRouter } from 'next/router';
 import React, { useState } from 'react';
-import { isVerifiableCredential, useFetcher, useNextAuthUser, useReSWR, useTenant } from 'utils';
+import {
+  isVerifiableCredential,
+  useQueryDidCommMessage,
+  useFetcher,
+  useNextAuthUser,
+  useTenant,
+} from 'utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({ root: { margin: theme.spacing(3, 1, 2) } })
@@ -29,7 +30,6 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const SaveCredential: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
-  const router = useRouter();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
   // activeUser will pass active_tenant to Layout.ts
@@ -39,13 +39,7 @@ const SaveCredential: NextPage<{ session: Session }> = ({ session }) => {
   const [show, setShow] = useState(false);
 
   // Query Message
-  const id = router.query.id as string; // hash
-  const url = slug ? `/api/messages/${id}?slug=${slug}&id=${id}` : null;
-  const {
-    data: message,
-    isLoading: isMessageLoading,
-    isError: isMessageError,
-  } = useReSWR<IMessage>(url, !!slug);
+  const { message, messageId, isMessageError, isMessageLoading } = useQueryDidCommMessage(slug);
 
   // Save
   const { val: savedVC, poster } = useFetcher<string>();
@@ -63,11 +57,12 @@ const SaveCredential: NextPage<{ session: Session }> = ({ session }) => {
         title="DIDComm Message"
         subtitle="Save Incoming Credential"
         parentText="Message"
-        parentUrl={`/dashboard/${tenantInfo?.id}/messages/${id}`}
+        parentUrl={`/dashboard/${tenantInfo?.id}/messages/${messageId}`}
         isLoading={tenantLoading || isMessageLoading}
         isError={(tenantError && !tenantLoading) || (isMessageError && !isMessageLoading)}
         tenantInfo={tenantInfo}
         shouldActivate={true}>
+        {/* Save credential only if correct message type */}
         {tenantInfo?.activated && message?.type !== 'application/didcomm-encrypted+json' && (
           <Typography variant="body2" color="secondary">
             Invalid type

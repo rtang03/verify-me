@@ -66,16 +66,15 @@ const PresentationIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         tenantInfo={tenantInfo}
         shouldActivate={true}>
         {isError && !isLoading && <Error error={error} />}
-        {/*{tenantInfo?.activated && (*/}
-        {/*  <>*/}
-        {/*    <QuickAction*/}
-        {/*      icon="send"*/}
-        {/*      link={`/dashboard/${tenantInfo?.id}/presentations/create`}*/}
-        {/*      label="Presentation"*/}
-        {/*      disabled={!tenantInfo?.id}*/}
-        {/*    />*/}
-        {/*  </>*/}
-        {/*)}*/}
+        {tenantInfo?.activated && (
+          <QuickAction
+            tooltip="Create and send"
+            icon="send"
+            link={`/dashboard/${tenantInfo?.id}/presentations/create`}
+            label="1"
+            disabled={!tenantInfo?.id}
+          />
+        )}
         {tenantInfo?.activated && !!data?.items?.length && (
           <Card className={classes.root}>
             <CardHeader
@@ -98,8 +97,8 @@ const PresentationIndexPage: NextPage<{ session: Session }> = ({ session }) => {
               onChange={pageChange}
             />
             <CardContent>
-              {data.items.map(({ verifiablePresentation, hash }, index) => (
-                <Card  className={classes.root} variant="outlined" key={index}>
+              {data.items.map(({ verifiablePresentation, hash }) => (
+                <Card className={classes.root} variant="outlined" key={hash}>
                   <PresentationCard
                     tenantInfo={tenantInfo}
                     vp={verifiablePresentation}

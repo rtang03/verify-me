@@ -23,8 +23,8 @@ const useStyles = makeStyles((theme: Theme) =>
       width: '55ch',
     },
     media: {
-      height: 220,
-      width: 220,
+      height: 250,
+      width: 250,
     },
   })
 );

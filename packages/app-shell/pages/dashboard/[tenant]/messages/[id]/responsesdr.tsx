@@ -13,7 +13,6 @@ import Typography from '@material-ui/core/Typography';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import BorderColorOutlinedIcon from '@material-ui/icons/BorderColorOutlined';
 import type {
-  IMessage,
   IGetVerifiableCredentialsForSdrArgs,
   ISelectiveDisclosureRequest,
   ICredentialsForSdr,
@@ -40,10 +39,15 @@ import { Form, Field, Formik } from 'formik';
 import jwt_decode from 'jwt-decode';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import { useRouter } from 'next/router';
 import React, { Fragment, useState, useEffect } from 'react';
-import type { PaginatedIIdentifier } from 'types';
-import { useFetcher, useNextAuthUser, useReSWR, useSelectedCredentials, useTenant } from 'utils';
+import {
+  useQueryDidCommMessage,
+  useFetcher,
+  useNextAuthUser,
+  useSelectedCredentials,
+  useTenant,
+  useQueryIdentifier,
+} from 'utils';
 
 const PAGESIZE = 25;
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
@@ -70,7 +74,6 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const ResponseSDR: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
-  const router = useRouter();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
   // activeUser will pass active_tenant to Layout.ts
@@ -80,25 +83,28 @@ const ResponseSDR: NextPage<{ session: Session }> = ({ session }) => {
   const [show, setShow] = useState(false);
 
   // Query Message
-  const id = router.query.id as string; // hash
-  const url = slug ? `/api/messages/${id}?slug=${slug}&id=${id}` : null;
   const {
-    data: message,
-    isLoading: isMessageLoading,
-    isError: isMessageError,
-  } = useReSWR<IMessage>(url, !!slug);
+    message,
+    messageId: mid,
+    isMessageError,
+    isMessageLoading,
+  } = useQueryDidCommMessage(slug);
+
   const sdr = message?.data?.sdr && (jwt_decode(message?.data?.sdr) as ISelectiveDisclosureRequest);
   const isCorrectMessageType = message?.data?.type?.[0] === 'selective-disclosure-request';
 
   // Query Identiifer
-  const idsUrl = slug ? `/api/users?slug=${slug}&cursor=0&pagesize=${PAGESIZE}` : null;
   const {
-    data: ids,
-    isLoading: isIdsLoading,
-    isError: isIdsError,
-  } = useReSWR<PaginatedIIdentifier>(idsUrl, !!slug);
+    isQueryIdentifierError: isIdsError,
+    isQueryIdentifierLoading: isIdsLoading,
+    paginatedIdentifier: ids,
+  } = useQueryIdentifier({
+    slug,
+    pageSize: PAGESIZE,
+    shouldFetch: !!slug && !!tenantInfo?.activated,
+  });
 
-  // used by Select Component to filter Users by current slug
+  // used by Select Component to filter Users by current slug; tenant's DID is filter out
   const filteredIds = ids?.items.filter?.((id) => id?.alias?.includes(`${slug}.${domain}:users`));
 
   // Note: getVerifiableCredentialsForSdr has API change:
@@ -137,7 +143,7 @@ const ResponseSDR: NextPage<{ session: Session }> = ({ session }) => {
         title="Selective Disclosure Response"
         subtitle="Create Selective disclosure response"
         parentText={`Message`}
-        parentUrl={`/dashboard/${tenantInfo?.id}/messages/${id}`}
+        parentUrl={`/dashboard/${tenantInfo?.id}/messages/${mid}`}
         isLoading={tenantLoading || isMessageLoading || isIdsLoading || requestedClaims.loading}
         isError={
           (tenantError && !tenantLoading) ||
@@ -189,7 +195,6 @@ const ResponseSDR: NextPage<{ session: Session }> = ({ session }) => {
                 const verifiableCredential = Object.keys(selected)
                   .map((key) => selected[key].vc)
                   .map((item: any) => item.verifiableCredential);
-                console.log(verifiableCredential);
                 if (message?.from)
                   await signPresentation({
                     presentation: {
@@ -354,10 +359,10 @@ const ResponseSDR: NextPage<{ session: Session }> = ({ session }) => {
                   />
                   <PackDIDCommMessage
                     tenantInfo={tenantInfo}
+                    show={show}
                     from={presenter}
                     to={message.from}
                     body={signedPresentation.data}
-                    show={show}
                     messageId={messageId}
                     setMessageId={setMessageId}
                     setPackedMessage={setPackedPresentation}

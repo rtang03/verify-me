@@ -21,3 +21,6 @@ export * from './useActiveTenant';
 export * from './useNextAuthUser';
 export * from './typeGuard';
 export * from './discoverMessageType';
+export * from './useQueryDidCommMessage';
+export * from './useQueryIdentifier';
+export * from './useQueryCredential';

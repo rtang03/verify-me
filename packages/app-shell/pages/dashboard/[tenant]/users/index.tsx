@@ -17,8 +17,7 @@ import RawContent from 'components/RawContent';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
-import type { PaginatedIIdentifier } from 'types';
-import { useNextAuthUser, usePagination, useReSWR, useTenant } from 'utils';
+import { useNextAuthUser, usePagination, useQueryIdentifier, useTenant } from 'utils';
 
 const PAGESIZE = 4;
 const useStyles = makeStyles((theme: Theme) =>
@@ -47,15 +46,18 @@ const UsersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const [show, setShow] = useState(false);
 
   // Query IIdentifiers
-  // where-clause filter out empty IIdentifier, created by automically cascaded insert of TypeORM
-  const args = { where: [{ column: 'provider', op: 'Equal', value: ['did:web'] }] };
   const shouldFetch = !!slug && !!tenantInfo?.activated;
-  const url = slug
-    ? `/api/users?slug=${slug}&cursor=${cursor}&pagesize=${PAGESIZE}&args=${JSON.stringify(args)}`
-    : null;
-  const { data, isLoading, isError, error } = useReSWR<PaginatedIIdentifier>(url, shouldFetch);
-  let count;
-  data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
+  const {
+    count,
+    isQueryIdentifierError,
+    isQueryIdentifierLoading,
+    queryIdentifierError,
+    paginatedIdentifier,
+  } = useQueryIdentifier({
+    slug,
+    pageSize: PAGESIZE,
+    shouldFetch,
+  });
 
   return (
     <Layout title="Users" shouldShow={[show, setShow]} user={activeUser}>
@@ -65,19 +67,22 @@ const UsersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         subtitle="Setup decentralized identity for users. Learn more"
         parentText={`Dashboard | ${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
-        isLoading={tenantLoading || (isLoading && shouldFetch)}
+        isLoading={tenantLoading || (isQueryIdentifierLoading && shouldFetch)}
         isError={tenantError && !tenantLoading}
         tenantInfo={tenantInfo}
         shouldActivate={true}>
-        {isError && !isLoading && <Error error={error} />}
+        {isQueryIdentifierError && !isQueryIdentifierLoading && (
+          <Error error={queryIdentifierError} />
+        )}
         {tenantInfo?.activated && (
           <QuickAction
+            tooltip="Create user identifier"
             link={`/dashboard/${tenantInfo?.id}/users/create`}
             label="1"
             disabled={!tenantInfo?.id}
           />
         )}
-        {tenantInfo?.activated && !!data?.items?.length && (
+        {tenantInfo?.activated && !!paginatedIdentifier?.items?.length && (
           <Card className={classes.root}>
             <CardHeader
               className={classes.root}
@@ -87,7 +92,7 @@ const UsersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                 </CardHeaderAvatar>
               }
               title="Active identifiers"
-              subheader={<>Total: {data?.total || 0}</>}
+              subheader={<>Total: {paginatedIdentifier?.total || 0}</>}
             />
             <Pagination
               variant="outlined"
@@ -98,14 +103,18 @@ const UsersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
               onChange={pageChange}
             />
             <CardContent className={classes.root}>
-              {data.items.map((item, index) => (
+              {paginatedIdentifier.items.map((item, index) => (
                 <IdentifierCard key={index} identifier={item} tenantInfo={tenantInfo} />
               ))}
             </CardContent>
-            {show && data && <RawContent title="Raw Ids" content={data} />}
+            {show && paginatedIdentifier && (
+              <RawContent title="Raw Ids" content={paginatedIdentifier} />
+            )}
           </Card>
         )}
-        {tenantInfo && !data?.items?.length && !isLoading && <NoRecord />}
+        {tenantInfo && !paginatedIdentifier?.items?.length && !isQueryIdentifierLoading && (
+          <NoRecord />
+        )}
       </Main>
     </Layout>
   );

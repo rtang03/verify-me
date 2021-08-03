@@ -11,6 +11,7 @@ import CategoryIcon from '@material-ui/icons/Category';
 import DeleteOutlineOutlinedIcon from '@material-ui/icons/DeleteOutlineOutlined';
 import ExtensionIcon from '@material-ui/icons/Extension';
 import LocationCityIcon from '@material-ui/icons/LocationCity';
+import PermIdentityOutlinedIcon from '@material-ui/icons/PermIdentityOutlined';
 import TodayIcon from '@material-ui/icons/Today';
 import type {
   VerifiableCredential,
@@ -24,6 +25,7 @@ import { useFetcher } from 'utils';
 import CardHeaderAvatar from './CardHeaderAvatar';
 import ConfirmationDialog from './ConfirmationDialog';
 import Result from './Result';
+import AvatarMd5 from './AvatarMd5';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -44,9 +46,10 @@ const Credential: React.FC<{
   hash?: string;
   tenantInfo: TenantInfo;
   compact?: boolean;
-}> = ({ vc, compact, tenantInfo, hash }) => {
+  enableDelete?: boolean;
+}> = ({ vc, compact, tenantInfo, hash, enableDelete }) => {
   const classes = useStyles();
-  const { issuer, issuanceDate } = vc;
+  const { issuer, issuanceDate, credentialSubject } = vc;
   const { slug } = tenantInfo;
 
   // form state for deleteCredential
@@ -66,50 +69,59 @@ const Credential: React.FC<{
   return (
     <React.Fragment>
       {!compact && (
-        <Formik
-          initialValues={{}}
-          onSubmit={async (_, { setSubmitting }) => {
-            setSubmitting(true);
-            // BUG: TODO: https://github.com/uport-project/veramo/issues/649
-            // Need to await this bug to fix, before uncommenting below line
-            // hash && (await deleteCredential({ hash }));
-            handleConfirmClose();
-            setSubmitting(false);
-          }}>
-          {({ isSubmitting, submitForm }) => (
-            <Form>
-              <CardHeader
-                className={classes.root}
-                avatar={
-                  <CardHeaderAvatar>
-                    <BallotOutlinedIcon />
-                  </CardHeaderAvatar>
-                }
-                title="Verifiable Credential"
-                action={
-                  hash && (
-                    <Tooltip title="Delete credential">
-                      <IconButton onClick={handleConfirmOpen}>
-                        <DeleteOutlineOutlinedIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )
-                }
-              />
-              <ConfirmationDialog
-                open={openConfirm}
-                handleClose={handleConfirmClose}
-                title="Confirm to delete"
-                content="After deletion, verifiable credential will no longer be retrieved."
-                submitForm={submitForm}
-                confirmDisabled={isSubmitting}
-                loading={isSubmitting}
-              />
-              <Result isTenantExist={!!tenantInfo} result={deleteVcResult} />
-              {deleteVcResult?.data && <pre>{JSON.stringify(deleteVcResult, null, 2)}</pre>}
-            </Form>
+        <>
+          <CardHeader
+            className={classes.root}
+            avatar={
+              hash ? (
+                <AvatarMd5 image="identicon" subject={hash} />
+              ) : (
+                <CardHeaderAvatar>
+                  <BallotOutlinedIcon />
+                </CardHeaderAvatar>
+              )
+            }
+            title="Verifiable Credential"
+            action={
+              hash &&
+              enableDelete && (
+                <Tooltip title="Delete credential">
+                  <IconButton onClick={handleConfirmOpen}>
+                    <DeleteOutlineOutlinedIcon />
+                  </IconButton>
+                </Tooltip>
+              )
+            }
+          />
+          {enableDelete && (
+            <Formik
+              initialValues={{}}
+              onSubmit={async (_, { setSubmitting }) => {
+                setSubmitting(true);
+                // BUG: TODO: https://github.com/uport-project/veramo/issues/649
+                // Need to await this bug to fix, before uncommenting below line
+                // hash && (await deleteCredential({ hash }));
+                handleConfirmClose();
+                setSubmitting(false);
+              }}>
+              {({ isSubmitting, submitForm }) => (
+                <Form>
+                  <ConfirmationDialog
+                    open={openConfirm}
+                    handleClose={handleConfirmClose}
+                    title="Confirm to delete"
+                    content="After deletion, verifiable credential will no longer be retrieved."
+                    submitForm={submitForm}
+                    confirmDisabled={isSubmitting}
+                    loading={isSubmitting}
+                  />
+                  <Result isTenantExist={!!tenantInfo} result={deleteVcResult} />
+                  {deleteVcResult?.data && <pre>{JSON.stringify(deleteVcResult, null, 2)}</pre>}
+                </Form>
+              )}
+            </Formik>
           )}
-        </Formik>
+        </>
       )}
       <CardContent className={classes.muiTextField}>
         <MuiTextField
@@ -136,6 +148,20 @@ const Credential: React.FC<{
             startAdornment: (
               <InputAdornment position="start">
                 <TodayIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
+        <br />
+        <MuiTextField
+          disabled={true}
+          size="small"
+          label="Subject"
+          value={credentialSubject?.id}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <PermIdentityOutlinedIcon />
               </InputAdornment>
             ),
           }}

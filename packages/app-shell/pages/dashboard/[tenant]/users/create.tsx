@@ -12,7 +12,9 @@ import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
 import { withAuth } from 'components';
 import CardHeaderAvatar from 'components/CardHeaderAvatar';
 import Error from 'components/Error';
+import { TERMS } from 'components/GlossaryTerms';
 import GotoIdentifier from 'components/GotoIdentifier';
+import HelpButton from 'components/HelpButton';
 import Layout from 'components/Layout';
 import LowerCaseTextField from 'components/LowerCaseTextField';
 import Main from 'components/Main';
@@ -109,6 +111,7 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                         <PersonAddIcon />
                       </CardHeaderAvatar>
                     }
+                    action={<HelpButton terms={[TERMS.did]} />}
                   />
                   <CardContent>
                     <Typography variant="caption" color="inherit">

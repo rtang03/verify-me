@@ -24,6 +24,8 @@ import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { getTenantDid, useNextAuthUser, useReSWR, useTenant } from 'utils';
+import BallotOutlinedIcon from '@material-ui/icons/BallotOutlined';
+import CardHeaderAvatar from '../../../../components/CardHeaderAvatar';
 
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const pattern = "d.M.yyyy HH:mm:ss 'GMT' XXX (z)";
@@ -87,7 +89,11 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
           <Card className={classes.root}>
             <CardHeader
               className={classes.root}
-              avatar={<AvatarMd5 subject={id || 'idle'} image="identicon" />}
+              avatar={
+                <CardHeaderAvatar>
+                  <BallotOutlinedIcon />
+                </CardHeaderAvatar>
+              }
               title={JSON.stringify(vc.type, null, 2)}
               subheader={format(new Date(vc.issuanceDate), pattern)}
               action={<HelpButton terms={[TERMS.did]} />}

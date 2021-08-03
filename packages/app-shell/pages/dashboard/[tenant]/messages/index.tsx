@@ -67,9 +67,10 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         {isError && !isLoading && <Error error={error} />}
         {tenantInfo?.activated && (
           <QuickAction
+            tooltip="Create and send selective-disclosure request"
             icon="request"
             link={`/dashboard/${tenantInfo?.id}/messages/createsdr`}
-            label="SD Request"
+            label="Request"
             disabled={!tenantInfo?.id}
           />
         )}
