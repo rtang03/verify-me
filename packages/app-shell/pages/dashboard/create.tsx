@@ -48,9 +48,9 @@ const TenantCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const { activeUser } = useNextAuthUser(session?.user?.id);
 
   // used for "Set Active" AFTER tenant creation, IF no active_tenant detected
-  const { updateActiveTenantResult, updateActiveTenant } = useActiveTenant(
-    session.user.active_tenant
-  );
+  const { updateActiveTenantResult, updateActiveTenant } = useActiveTenant({
+    activeTenantId: session.user.active_tenant,
+  });
 
   useEffect(() => {
     createTenantResult?.data?.id &&

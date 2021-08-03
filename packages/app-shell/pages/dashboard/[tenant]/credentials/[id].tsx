@@ -73,7 +73,7 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
   };
 
   return (
-    <Layout title="Credential" shouldShow={[show, setShow]} user={activeUser}>
+    <Layout title="Credential" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={2}>
       <Main
         session={session}
         title="Credential"

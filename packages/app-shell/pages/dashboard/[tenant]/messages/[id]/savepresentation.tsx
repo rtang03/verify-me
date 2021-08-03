@@ -33,7 +33,7 @@ const SavePresentation: NextPage<{ session: Session }> = ({ session }) => {
   const { message, messageId, isMessageError, isMessageLoading } = useQueryDidCommMessage(slug);
 
   return (
-    <Layout title="Message" shouldShow={[show, setShow]} user={activeUser}>
+    <Layout title="Message" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={4}>
       <Main
         session={session}
         title="Save Presentation"

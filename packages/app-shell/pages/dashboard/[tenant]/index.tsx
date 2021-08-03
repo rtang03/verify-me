@@ -48,7 +48,9 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
   // Used for "Set Active"
-  const { activeTenant, updateActiveTenant } = useActiveTenant(activeUser?.active_tenant);
+  const { activeTenant, updateActiveTenant } = useActiveTenant({
+    activeTenantId: activeUser?.active_tenant,
+  });
 
   // Update Tenant
   const { val: updateResult, updater } = useFetcher<PsqlUpdated>();
@@ -81,7 +83,7 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         )}
         {/* IF NOT ACTIVATE */}
         {!!tenantInfo && isActiveTenant && !tenantInfo.activated && (
-          <Activation tenantInfo={tenantInfo} show={show}/>
+          <Activation tenantInfo={tenantInfo} show={show} />
         )}
         {/* IF ACTIVATE */}
         {!!tenantInfo && isActiveTenant && tenantInfo.activated && (

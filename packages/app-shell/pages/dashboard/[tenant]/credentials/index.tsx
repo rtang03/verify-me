@@ -48,7 +48,7 @@ const CredentialIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   } = useQueryCredential({ slug, pageSize, shouldFetch });
 
   return (
-    <Layout title="Credentials" shouldShow={[show, setShow]} user={activeUser}>
+    <Layout title="Credentials" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={2}>
       <Main
         session={session}
         title="Credentials"

@@ -125,7 +125,7 @@ const CreateSdr: NextPage<{ session: Session }> = ({ session }) => {
   const [packedSdr, setPackedSdr] = useState<IPackedDIDCommMessage>();
 
   return (
-    <Layout title="Request" shouldShow={[show, setShow]} user={activeUser}>
+    <Layout title="Request" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={4}>
       <Main
         session={session}
         title="Selective Disclosure Request"

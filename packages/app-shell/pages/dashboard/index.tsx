@@ -65,7 +65,9 @@ const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   if (data && !isLoading) count = Math.ceil(data.total / PAGESIZE);
 
   // GET ACTIVE TENANT
-  const { activeTenant, updateActiveTenant } = useActiveTenant(activeUser?.active_tenant);
+  const { activeTenant, updateActiveTenant } = useActiveTenant({
+    activeTenantId: activeUser?.active_tenant,
+  });
 
   return (
     <Layout title="Tenant" user={activeUser}>

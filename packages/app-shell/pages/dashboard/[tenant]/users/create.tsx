@@ -66,7 +66,7 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const { val: userDid, poster } = useFetcher<IIdentifier>();
 
   return (
-    <Layout title="User" shouldShow={[show, setShow]} user={activeUser}>
+    <Layout title="User" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={1}>
       <Main
         session={session}
         title="Create User"

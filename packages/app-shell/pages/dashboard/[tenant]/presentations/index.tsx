@@ -54,7 +54,7 @@ const PresentationIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
 
   return (
-    <Layout title="Presentation" shouldShow={[show, setShow]} user={activeUser}>
+    <Layout title="Presentation" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={3}>
       <Main
         session={session}
         title="Presentation"

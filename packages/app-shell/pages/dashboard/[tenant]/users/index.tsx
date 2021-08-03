@@ -60,7 +60,7 @@ const UsersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   });
 
   return (
-    <Layout title="Users" shouldShow={[show, setShow]} user={activeUser}>
+    <Layout title="Users" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={1}>
       <Main
         session={session}
         title="User Identifers"

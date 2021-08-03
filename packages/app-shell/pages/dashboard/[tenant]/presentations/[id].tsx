@@ -50,7 +50,7 @@ const PresentationDetailsPage: NextPage<{ session: Session }> = ({ session }) =>
   const { data: vp, isLoading, isError, error } = useReSWR<VerifiablePresentation>(url, !!slug);
 
   return (
-    <Layout title="Presentation" shouldShow={[show, setShow]} user={activeUser}>
+    <Layout title="Presentation" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={3}>
       <Main
         session={session}
         title="Presentation"

@@ -53,7 +53,7 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   };
 
   return (
-    <Layout title="Messages" shouldShow={[show, setShow]} user={activeUser}>
+    <Layout title="Messages" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={4}>
       <Main
         session={session}
         title="Inbox"

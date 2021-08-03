@@ -51,7 +51,7 @@ const SaveCredential: NextPage<{ session: Session }> = ({ session }) => {
   const canSave = isVerifiiableCredentialType && isVerifiableCredential(vc);
 
   return (
-    <Layout title="Message" shouldShow={[show, setShow]} user={activeUser}>
+    <Layout title="Message" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={4}>
       <Main
         session={session}
         title="DIDComm Message"

@@ -137,7 +137,7 @@ const ResponseSDR: NextPage<{ session: Session }> = ({ session }) => {
   const [packedPresentation, setPackedPresentation] = useState<IPackedDIDCommMessage>();
 
   return (
-    <Layout title="Response" shouldShow={[show, setShow]} user={activeUser}>
+    <Layout title="Response" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={4}>
       <Main
         session={session}
         title="Selective Disclosure Response"

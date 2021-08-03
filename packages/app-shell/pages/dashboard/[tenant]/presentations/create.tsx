@@ -120,7 +120,7 @@ const Create: NextPage<{ session: Session }> = ({ session }) => {
   const [to, setTo] = useState<string>('');
 
   return (
-    <Layout title="Presentation" shouldShow={[show, setShow]} user={activeUser}>
+    <Layout title="Presentation" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={3}>
       <Main
         session={session}
         title="Create Presentation"

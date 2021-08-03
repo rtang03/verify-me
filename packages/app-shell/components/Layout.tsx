@@ -54,13 +54,13 @@ interface State {
   openSwitchTenant: boolean;
 }
 
-const Layout: FC<{ title?: string; shouldShow?: any; refresh?: any; user?: NextAuthUser }> = ({
-  children,
-  title = 'No Title',
-  shouldShow,
-  refresh,
-  user,
-}) => {
+const Layout: FC<{
+  title?: string;
+  shouldShow?: any;
+  refresh?: any;
+  user?: NextAuthUser;
+  sideBarIndex?: number;
+}> = ({ children, title = 'No Title', shouldShow, refresh, user, sideBarIndex }) => {
   const { toggleStorage, dark, setDark } = useLocalStorage();
   const [session] = useSession();
   const classes = useStyles();
@@ -108,11 +108,14 @@ const Layout: FC<{ title?: string; shouldShow?: any; refresh?: any; user?: NextA
   // END OF ACCOUNT
 
   // SET ACTIVE TENANT
-  const { activeTenant, updateActiveTenant } = useActiveTenant(user?.active_tenant);
+  const { activeTenant, updateActiveTenant } = useActiveTenant({
+    activeTenantId: user?.active_tenant,
+    user,
+  });
 
   useEffect(() => {
     setDark(localStorage.getItem('dark') === 'dark');
-  }, [session, toggleStorage, refresh]);
+  }, [session, toggleStorage]);
   // END OF CHECK ACTIVE TENANT
 
   // SWITCH TENANT POP-UP BUTTON
@@ -168,7 +171,7 @@ const Layout: FC<{ title?: string; shouldShow?: any; refresh?: any; user?: NextA
                       aria-controls={state.openTenant ? 'menu-list-grow' : undefined}
                       aria-haspopup="true"
                       onClick={handleToggle('openTenant')}>
-                      <a>{activeTenant?.slug || 'No tenant'}</a>
+                      <a>{activeTenant?.slug || 'idle'}</a>
                     </Button>
                   </Tooltip>
                   <Popper
@@ -256,11 +259,10 @@ const Layout: FC<{ title?: string; shouldShow?: any; refresh?: any; user?: NextA
                                           </ListItemIcon>
                                           <ListItemText
                                             secondary={item.slug}
-                                            onClick={() =>
-                                              updateActiveTenant(
-                                                user.id as string,
-                                                item.id as string
-                                              )
+                                            onClick={async () =>
+                                              user?.id &&
+                                              item?.id &&
+                                              updateActiveTenant(user.id, item.id)
                                             }
                                           />
                                         </ListItem>
@@ -441,7 +443,7 @@ const Layout: FC<{ title?: string; shouldShow?: any; refresh?: any; user?: NextA
             <List>
               {sideBar(activeTenant?.id || '0').map(({ text, icon, link }, index) => (
                 <Link href={link} key={index}>
-                  <ListItem button>
+                  <ListItem button selected={sideBarIndex === index}>
                     <ListItemIcon>{icon}</ListItemIcon>
                     <ListItemText secondary={text} />
                   </ListItem>

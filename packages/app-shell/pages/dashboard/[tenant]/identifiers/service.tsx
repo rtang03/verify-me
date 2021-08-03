@@ -76,7 +76,7 @@ const IdentifiersServicePage: NextPage<{ session: Session }> = ({ session }) => 
   };
 
   return (
-    <Layout title="DID Document" shouldShow={[show, setShow]} user={activeUser}>
+    <Layout title="DID Document" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={0}>
       <Main
         session={session}
         title="DID Document"

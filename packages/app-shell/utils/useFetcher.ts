@@ -55,10 +55,10 @@ const createPoster: <TValue>(
 
 const createUpdater: <TValue>(
   setVal: React.Dispatch<any>
-) => (url: string, body?: any) => Promise<any> = (setVal) => (url, body) => {
+) => (url: string, body?: any) => Promise<any> = (setVal) => async (url, body) => {
   setVal((value: any) => ({ ...value, loading: true }));
 
-  return fetch(url, {
+  return await fetch(url, {
     method: 'PUT',
     headers: { 'Content-type': 'application/json' },
     body: JSON.stringify(body),

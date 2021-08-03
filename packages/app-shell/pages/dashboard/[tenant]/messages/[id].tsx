@@ -108,7 +108,7 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
   const handleMenuClose = () => setAnchorEl(null);
 
   return (
-    <Layout title="Message" shouldShow={[show, setShow]} user={activeUser}>
+    <Layout title="Message" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={4}>
       <Main
         session={session}
         title="Message"
