@@ -22,7 +22,7 @@ export const useReSWR: <TData>(
   shouldFetch: boolean | undefined
 ) => {
   // @see https://swr.vercel.app/docs/conditional-fetching
-  let args: any = shouldFetch === undefined ? baseUrl : shouldFetch ? baseUrl : null;
+  let args: any = !shouldFetch ? baseUrl : shouldFetch ? baseUrl : null;
 
   // if no baseUrl because of no awaiting tenantInfo, args is set to null; as a dependent fetching
   if (!baseUrl) args = null;

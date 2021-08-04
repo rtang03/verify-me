@@ -46,7 +46,6 @@ import type {
   ICredentialsForSdr,
   IPresentationValidationResult,
   ISelectiveDisclosure,
-  IValidatePresentationAgainstSdrArgs,
   ICreateProfileCredentialsArgs,
 } from '@veramo/selective-disclosure';
 import type { ServiceEndpoint } from 'did-resolver';
@@ -79,6 +78,8 @@ export type DataStoreORMGetVerifiablePresentationsArgs = FindArgs<TPresentationC
 export type DataStoreORMGetVerifiablePresentationsCountArgs = FindArgs<TPresentationColumns>;
 
 // workaround: the original ISelectiveDisclosureRequest is incorrectly typed.
+// original type: "issuer: string"
+// return data change to "iss: string"
 export type ISelectiveDisclosureRequest = {
   iat: number;
   iss: string;
@@ -86,6 +87,11 @@ export type ISelectiveDisclosureRequest = {
   subject?: string;
   replyUrl?: string;
   claims: ICredentialRequestInput[];
+};
+// workaround: similarly, IValidatePresentationAgainstSdrArgs needs to be changed.
+export type IValidatePresentationAgainstSdrArgs = {
+  presentation: VerifiablePresentation;
+  sdr: ISelectiveDisclosureRequest;
 };
 
 // workaround: the original type does not export
@@ -128,7 +134,6 @@ export {
   ServiceEndpoint,
   IPresentationValidationResult,
   ISelectiveDisclosure,
-  IValidatePresentationAgainstSdrArgs,
   ICreateProfileCredentialsArgs,
   ICreateVerifiableCredentialArgs,
   IPackDIDCommMessageArgs,

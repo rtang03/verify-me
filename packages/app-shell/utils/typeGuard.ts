@@ -1,5 +1,8 @@
-import type { VerifiableCredential } from '@verify/server';
-import { VerifiablePresentation } from '@verify/server/dist/types';
+import type {
+  VerifiableCredential,
+  VerifiablePresentation,
+  ISelectiveDisclosureRequest,
+} from '@verify/server';
 
 export const isVerifiableCredential = (input: any): input is VerifiableCredential =>
   input?.credentialSubject !== undefined &&
@@ -15,3 +18,9 @@ export const isVerifiablePresentation = (input: any): input is VerifiablePresent
   input?.type !== undefined &&
   input?.verifier !== undefined &&
   input?.proof !== undefined;
+
+export const isSelectiveDisclosureRequest = (input: any): input is ISelectiveDisclosureRequest =>
+  input?.iat !== undefined &&
+  input?.iss !== undefined &&
+  input?.type === 'sdr' &&
+  input?.claims !== undefined;

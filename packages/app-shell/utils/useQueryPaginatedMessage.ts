@@ -6,14 +6,22 @@ export const useQueryPaginatedMessage: (option: {
   cursor?: number;
   pageSize?: number;
   shouldFetch: boolean;
+  args?: any;
 }) => {
   count?: number;
   paginatedMessage: PaginatedMessage | null | undefined;
   isQueryMessageLoading: boolean;
   isQueryMessageError: boolean;
   queryMessageError: any;
-} = ({ slug, shouldFetch, cursor = 0, pageSize = 5 }) => {
-  const url = slug ? `/api/messages?slug=${slug}&cursor=${cursor}&pagesize=${pageSize}` : null;
+} = ({ slug, shouldFetch, cursor = 0, pageSize = 5, args }) => {
+  const url = shouldFetch
+    ? args
+      ? `/api/messages?slug=${slug}&cursor=${cursor}&pagesize=${pageSize}&args=${JSON.stringify(
+          args
+        )}`
+      : `/api/messages?slug=${slug}&cursor=${cursor}&pagesize=${pageSize}`
+    : null;
+
   const { data, isLoading, isError, error } = useReSWR<PaginatedMessage>(url, shouldFetch);
 
   let count;

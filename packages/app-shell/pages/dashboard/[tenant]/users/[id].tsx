@@ -237,7 +237,7 @@ const UsersEditPage: NextPage<{ session: Session }> = ({ session }) => {
             <CardContent>
               <Card variant="outlined" className={classes.root}>
                 <CardHeader className={classes.root} title="About" />
-                <CardContent>
+                <CardContent className={classes.root}>
                   <Identifier identifier={data} />
                 </CardContent>
                 {show && <RawContent title="Raw User Identifier" content={data} />}

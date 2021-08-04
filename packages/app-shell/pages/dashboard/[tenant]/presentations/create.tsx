@@ -19,7 +19,6 @@ import { withAuth } from 'components';
 import CardHeaderAvatar from 'components/CardHeaderAvatar';
 import Credential from 'components/Credential';
 import Switch from 'components/CustomSwitch';
-import CustomSwitch from 'components/CustomSwitch';
 import Error from 'components/Error';
 import { TERMS } from 'components/GlossaryTerms';
 import HelpButton from 'components/HelpButton';
@@ -146,7 +145,7 @@ const Create: NextPage<{ session: Session }> = ({ session }) => {
                 </CardHeaderAvatar>
               }
               action={
-                <CustomSwitch
+                <Switch
                   disabled={!!signedPresentation?.data}
                   name="SaveOnlySwitch"
                   label={saveOnly ? 'Save only' : 'Save / send'}
