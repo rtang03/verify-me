@@ -24,3 +24,4 @@ export * from './discoverMessageType';
 export * from './useQueryDidCommMessage';
 export * from './useQueryIdentifier';
 export * from './useQueryCredential';
+export * from './useQueryPaginatedMessage';

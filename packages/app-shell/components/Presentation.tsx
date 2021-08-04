@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import React from 'react';
 import CardHeaderAvatar from './CardHeaderAvatar';
 import RawContent from './RawContent';
+import AvatarMd5 from './AvatarMd5';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -33,7 +34,8 @@ const Presentation: React.FC<{
   vp: Partial<VerifiablePresentation>;
   compact?: boolean;
   show?: boolean;
-}> = ({ vp, compact, show }) => {
+  id?: string;
+}> = ({ vp, compact, show, id }) => {
   const classes = useStyles();
   const { holder, verifier, issuanceDate, verifiableCredential: vcs } = vp;
 
@@ -44,7 +46,7 @@ const Presentation: React.FC<{
           className={classes.root}
           avatar={
             <CardHeaderAvatar>
-              <ScreenShareOutlinedIcon />
+              {id ? <AvatarMd5 subject={id} image="identicon" /> : <ScreenShareOutlinedIcon />}
             </CardHeaderAvatar>
           }
           title="Verifiable Presentation"

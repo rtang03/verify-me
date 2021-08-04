@@ -4,25 +4,29 @@ export const discoverMessageType: (data: any) => {
   isSelectiveDisclosureRequest: boolean;
   isVerifiablePresentation: boolean;
 } = (data) => {
-  const messageType = data?.data?.type?.[0];
+  const dataType = data?.data?.type;
+  const messageType = Array.isArray(dataType) ? dataType?.[0] : dataType;
   const metaDataType = data?.metaData?.[0]?.type;
   const isVerifiiableCredential =
     messageType === 'VerifiableCredential' && metaDataType === 'DIDComm';
-  const isSelectiveDisclosureRequest =
+  const isIncomingSelectiveDisclosureRequest =
     messageType === 'selective-disclosure-request' && metaDataType === 'DIDComm';
   const isVerifiablePresentation =
     messageType === 'VerifiablePresentation' && metaDataType === 'DIDComm';
+  const isOutgoingSelectiveDisclosureRequest = messageType === 'sdr' && metaDataType === 'JWT';
 
   return {
     isVerifiiableCredential,
-    isSelectiveDisclosureRequest,
+    isSelectiveDisclosureRequest: isIncomingSelectiveDisclosureRequest,
     isVerifiablePresentation,
     messageType: isVerifiiableCredential
       ? 'Verificable Credential'
-      : isSelectiveDisclosureRequest
-      ? 'Selective Disclosure Request'
+      : isIncomingSelectiveDisclosureRequest
+      ? 'Incoming SD-Request'
       : isVerifiablePresentation
       ? 'Verifiable Presentation'
+      : isOutgoingSelectiveDisclosureRequest
+      ? 'Outgoing SD-Request'
       : 'unknown',
   };
 };

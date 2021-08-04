@@ -2,6 +2,7 @@ import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import Typography from '@material-ui/core/Typography';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import SaveAltOutlinedIcon from '@material-ui/icons/SaveAltOutlined';
 import type { VerifiableCredential, IDataStoreSaveVerifiableCredentialArgs } from '@verify/server';
 import { withAuth } from 'components';
 import Credential from 'components/Credential';
@@ -94,11 +95,11 @@ const SaveCredential: NextPage<{ session: Session }> = ({ session }) => {
                   {({ isSubmitting, submitForm }) => (
                     <Form>
                       <SubmitButton
-                        text="Save"
-                        disabled={isSubmitting}
+                        text={<SaveAltOutlinedIcon />}
+                        disabled={isSubmitting || !!savedVC?.data || !!savedVC?.error}
                         submitForm={submitForm}
                         loading={isSubmitting}
-                        tooltip="Save"
+                        tooltip="Save verifiable credential"
                         success={!!savedVC?.data}
                         error={!!savedVC?.error}
                       />

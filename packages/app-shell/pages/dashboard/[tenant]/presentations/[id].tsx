@@ -18,6 +18,7 @@ import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { useNextAuthUser, useReSWR, useTenant } from 'utils';
+import ScreenShareOutlinedIcon from '@material-ui/icons/ScreenShareOutlined';
 
 const pattern = "d.M.yyyy HH:mm:ss 'GMT' XXX (z)";
 const useStyles = makeStyles((theme: Theme) =>
@@ -54,7 +55,7 @@ const PresentationDetailsPage: NextPage<{ session: Session }> = ({ session }) =>
       <Main
         session={session}
         title="Presentation"
-        subtitle="Verifiable presentation"
+        subtitle="Validate verifiable presentation against selective disclosure request"
         parentText="Presentations"
         parentUrl={`/dashboard/${tenantInfo?.id}/presentations`}
         isLoading={tenantLoading}
@@ -68,11 +69,11 @@ const PresentationDetailsPage: NextPage<{ session: Session }> = ({ session }) =>
               className={classes.root}
               title={JSON.stringify(vp.type, null, 2)}
               subheader={format(new Date(vp.issuanceDate as any), pattern)}
-              avatar={<AvatarMd5 subject={id || 'idle'} image="identicon" />}
+              avatar={<ScreenShareOutlinedIcon />}
               action={<HelpButton terms={[TERMS.did]} />}
             />
             <CardContent>
-              <Presentation vp={vp} />
+              <Presentation vp={vp} id={id} />
               {show && <RawContent content={vp} title="Raw Presentation Details" />}
             </CardContent>
           </Card>

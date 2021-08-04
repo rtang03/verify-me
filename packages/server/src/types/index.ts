@@ -12,6 +12,8 @@ import type {
   IKeyManagerCreateArgs,
   IKey,
   IIdentifier,
+  IHandleMessageArgs,
+  IDataStoreSaveVerifiablePresentationArgs,
 } from '@veramo/core';
 import {
   ICreateVerifiablePresentationArgs,
@@ -141,4 +143,6 @@ export {
   IKeyManagerCreateArgs,
   IKey,
   IIdentifier,
+  IHandleMessageArgs,
+  IDataStoreSaveVerifiablePresentationArgs,
 };

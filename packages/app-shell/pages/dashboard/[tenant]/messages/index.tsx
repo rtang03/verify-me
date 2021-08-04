@@ -17,8 +17,7 @@ import omit from 'lodash/omit';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { Fragment, useState } from 'react';
-import type { PaginatedMessage } from 'types';
-import { useNextAuthUser, usePagination, useReSWR, useTenant } from 'utils';
+import { useNextAuthUser, usePagination, useQueryPaginatedMessage, useTenant } from 'utils';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
@@ -42,10 +41,8 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
 
   // Query Messages
   const shouldFetch = !!slug && !!tenantInfo?.activated;
-  const url = slug ? `/api/messages?slug=${slug}&cursor=${cursor}&pagesize=${PAGESIZE}` : null;
-  const { data, isLoading, isError, error } = useReSWR<PaginatedMessage>(url, shouldFetch);
-  let count;
-  data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
+  const { count, queryMessageError, isQueryMessageError, isQueryMessageLoading, paginatedMessage } =
+    useQueryPaginatedMessage({ pageSize: PAGESIZE, shouldFetch, slug });
 
   // Delete Message
   const deleteMessage = () => {
@@ -60,11 +57,11 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         subtitle="Incoming messages. Learn more"
         parentText={`Dashboard | ${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
-        isLoading={tenantLoading || (isLoading && shouldFetch)}
+        isLoading={tenantLoading || (isQueryMessageLoading && shouldFetch)}
         isError={tenantError && !tenantLoading}
         tenantInfo={tenantInfo}
         shouldActivate={true}>
-        {isError && !isLoading && <Error error={error} />}
+        {isQueryMessageError && !isQueryMessageLoading && <Error error={queryMessageError} />}
         {tenantInfo?.activated && (
           <QuickAction
             tooltip="Create and send selective-disclosure request"
@@ -74,12 +71,12 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             disabled={!tenantInfo?.id}
           />
         )}
-        {tenantInfo?.activated && !!data?.items?.length && (
+        {tenantInfo?.activated && !!paginatedMessage?.items?.length && (
           <Card className={classes.root}>
             <CardHeader
               className={classes.root}
               title="Messages"
-              subheader={<>Total: {data?.total || 0}</>}
+              subheader={<>Total: {paginatedMessage?.total || 0}</>}
               avatar={
                 <CardHeaderAvatar>
                   <EmailOutlinedIcon />
@@ -95,8 +92,8 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
               onChange={pageChange}
             />
             <CardContent>
-              {data &&
-                data.items.map((item, index) => (
+              {paginatedMessage &&
+                paginatedMessage.items.map((item, index) => (
                   <Fragment key={index}>
                     <MessageCard message={item} tenantInfo={tenantInfo} />
                     {show && item.type === 'w3c.vc' && (
@@ -117,7 +114,7 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             </CardContent>
           </Card>
         )}
-        {tenantInfo && !data?.items?.length && !isLoading && <NoRecord />}
+        {tenantInfo && !paginatedMessage?.items?.length && !isQueryMessageLoading && <NoRecord />}
       </Main>
     </Layout>
   );

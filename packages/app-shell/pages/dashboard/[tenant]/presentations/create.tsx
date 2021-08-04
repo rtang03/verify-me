@@ -95,7 +95,7 @@ const Create: NextPage<{ session: Session }> = ({ session }) => {
   const { val: signedPresentation, poster: createVerifiablePresentation } =
     useFetcher<VerifiablePresentation>();
   const signPresentation = (body: ICreateVerifiablePresentationArgs) =>
-    createVerifiablePresentation(`/api/requests/createVerifiablePresentation?slug=${slug}`, body);
+    createVerifiablePresentation(`/api/tenants/createVerifiablePresentation?slug=${slug}`, body);
 
   // selectedCredential
   const [checked, setChecked] = useState<Checked>({});

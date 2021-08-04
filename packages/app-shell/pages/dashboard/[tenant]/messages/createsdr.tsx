@@ -17,6 +17,7 @@ import type {
   ICredentialRequestInput,
   ICreateSelectiveDisclosureRequestArgs,
   IPackedDIDCommMessage,
+  IHandleMessageArgs,
 } from '@verify/server';
 import { withAuth } from 'components';
 import Error from 'components/Error';
@@ -26,6 +27,7 @@ import Layout from 'components/Layout';
 import Main from 'components/Main';
 import PackDIDCommMessage from 'components/PackDIDCommMessage';
 import RawContent from 'components/RawContent';
+import Result from 'components/Result';
 import SendDIDCommMessage from 'components/SendDIDCommMessage';
 import SubmitButton from 'components/SubmitButton';
 import { Form, Field, Formik } from 'formik';
@@ -78,7 +80,12 @@ const CreateSdr: NextPage<{ session: Session }> = ({ session }) => {
   // Create SDR request
   const { val: sdrResult, poster: _newRequest } = useFetcher<string>();
   const newRequest = (body: ICreateSelectiveDisclosureRequestArgs) =>
-    _newRequest(`/api/requests/create?slug=${slug}`, body);
+    _newRequest(`/api/tenants/createSelectiveDisclosureRequest?slug=${slug}`, body);
+
+  // Handle message
+  const { val: saveMessageResult, poster: _save } = useFetcher();
+  const saveMessage = (body: IHandleMessageArgs) =>
+    _save(`/api/tenants/handleMessage?slug=${slug}`, body);
 
   // form state
   const [claimType, setClaimType] = useState<string>('');
@@ -149,7 +156,7 @@ const CreateSdr: NextPage<{ session: Session }> = ({ session }) => {
               validationSchema={validation}
               onSubmit={async ({ issuer, subject, replyUrl }, { setSubmitting }) => {
                 setSubmitting(true);
-                await newRequest({
+                const request = await newRequest({
                   data: {
                     issuer,
                     subject,
@@ -157,6 +164,8 @@ const CreateSdr: NextPage<{ session: Session }> = ({ session }) => {
                     replyUrl,
                   },
                 });
+                console.log(request);
+                if (request) await saveMessage({ raw: request, save: true });
                 setSubmitting(false);
               }}>
               {({ values, isSubmitting, submitForm }) => (
@@ -348,8 +357,8 @@ const CreateSdr: NextPage<{ session: Session }> = ({ session }) => {
                       text={<PlusOneIcon />}
                       submitForm={submitForm}
                       loading={isSubmitting}
-                      success={!!sdrResult?.data}
-                      error={!!sdrResult?.error}
+                      success={!!sdrResult?.data && !!saveMessageResult?.data}
+                      error={!!sdrResult?.error && !!saveMessageResult?.error}
                       disabled={
                         isSubmitting ||
                         !!sdrResult?.data ||
@@ -361,8 +370,15 @@ const CreateSdr: NextPage<{ session: Session }> = ({ session }) => {
                       }
                     />
                   </CardActions>
+                  <Result isTenantExist={!!tenantInfo} result={saveMessageResult} />
                   {show && sdrResult?.data && (
-                    <RawContent title="Raw SDR" content={{ data: sdrResult.data }} />
+                    <RawContent title="Raw create-sdr" content={{ data: sdrResult.data }} />
+                  )}
+                  {show && saveMessageResult?.data && (
+                    <RawContent
+                      title="Raw save-message result"
+                      content={{ data: saveMessageResult.data }}
+                    />
                   )}
                 </Form>
               )}

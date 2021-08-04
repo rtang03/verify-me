@@ -42,6 +42,8 @@ const createPoster: <TValue>(
           status: json.status,
           loading: false,
         }));
+
+        return json.data;
       } else
         setVal((value: any) => ({
           ...value,

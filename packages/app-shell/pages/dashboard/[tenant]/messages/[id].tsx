@@ -56,7 +56,7 @@ const MessagesDetailsPage: NextPage<{ session: Session }> = ({ session }) => {
   const id = router.query.id as string; // hash
   const url = slug ? `/api/messages/${id}?slug=${slug}&id=${id}` : null;
   const { data, isLoading, isError, error } = useReSWR<IMessage>(url, !!slug);
-  const isOutGoingMessage = data?.metaData?.[0]?.type === 'DIDComm-sent';
+  const isOutGoingMessage = data?.metaData?.[0]?.type !== 'DIDComm';
   const canValidate = !isOutGoingMessage && data?.type === 'w3c.vp';
 
   // Query Outgoing SDR, max 100 SDR
