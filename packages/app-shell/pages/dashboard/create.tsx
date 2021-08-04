@@ -19,7 +19,7 @@ import type { Session } from 'next-auth';
 import Link from 'next/link';
 import React, { useEffect } from 'react';
 import type { PartialTenant } from 'types';
-import { useFetcher, useLocalStorage } from 'utils';
+import { useFetcher, useActiveTenant, useNextAuthUser } from 'utils';
 import * as yup from 'yup';
 
 const validation = yup.object({
@@ -40,25 +40,35 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const TenantCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
-  const { val, poster } = useFetcher<PartialTenant>();
+  const { val: createTenantResult, poster } = useFetcher<PartialTenant>();
   const user_id = (session as any)?.user?.id;
   const newTenant = (body: { slug: string; user_id: string }) => poster('/api/tenants', body);
 
-  // used for "Set Active"
-  const { toggleStorage, setToggleStorage } = useLocalStorage();
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session?.user?.id);
+
+  // used for "Set Active" AFTER tenant creation, IF no active_tenant detected
+  const { updateActiveTenantResult, updateActiveTenant } = useActiveTenant({
+    activeTenantId: session.user.active_tenant,
+  });
+
   useEffect(() => {
-    setToggleStorage((value) => ++value);
-  }, [session, val]);
+    createTenantResult?.data?.id &&
+      !session.user.active_tenant &&
+      updateActiveTenant(session.user.id as string, createTenantResult.data.id).finally(() => true);
+  }, [createTenantResult]);
+
+  updateActiveTenantResult && console.log('active tenant is updated.');
 
   return (
-    <Layout title="Tenant" refresh={val}>
+    <Layout title="Tenant" user={activeUser}>
       <Main
         session={session}
         parentText="Dashboard"
         parentUrl="/dashboard"
         title="Create Tenant"
         subtitle="Each tenant does .... Learn more."
-        isLoading={val.loading}>
+        isLoading={createTenantResult.loading}>
         <Formik
           initialValues={{ slug: '' }}
           validateOnChange={true}
@@ -75,7 +85,7 @@ const TenantCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                   <ProTip text="Tenant's name must be globally unique, and cannot be changed." />
                   <br />
                   <Field
-                    disabled={!!val.data}
+                    disabled={!!createTenantResult.data}
                     className={classes.textField}
                     label="Short memorable name"
                     size="small"
@@ -94,24 +104,24 @@ const TenantCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                     text={<PlusOneIcon />}
                     submitForm={submitForm}
                     loading={isSubmitting}
-                    success={!!val?.data}
-                    error={!!val?.error}
-                    disabled={isSubmitting || !!val.data || !values.slug}
+                    success={!!createTenantResult?.data}
+                    error={!!createTenantResult?.error}
+                    disabled={isSubmitting || !!createTenantResult.data || !values.slug}
                   />
                 </CardActions>
-                {val && <Result isTenantExist={true} result={val} />}
-                {val?.data && (
+                {createTenantResult && <Result isTenantExist={true} result={createTenantResult} />}
+                {createTenantResult?.data && (
                   <CardContent>
                     <Typography variant="body2">
                       <>
-                        <Link href={`/dashboard/${val.data.id}`}>
+                        <Link href={`/dashboard/${createTenantResult.data.id}`}>
                           <a>
                             <IconButton>
                               <LinkIcon />
                             </IconButton>
                           </a>
                         </Link>
-                        {val.data.slug}
+                        {createTenantResult.data.slug}
                       </>
                     </Typography>
                   </CardContent>

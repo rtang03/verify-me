@@ -20,17 +20,13 @@ import ProTip from 'components/ProTip';
 import QuickAction from 'components/QuickAction';
 import md5 from 'md5';
 import type { NextPage } from 'next';
-import type { Session } from 'next-auth';
 import Link from 'next/link';
-import React, { useEffect } from 'react';
-import type { PaginatedTenant } from 'types';
-import { useLocalStorage, usePagination, useReSWR } from 'utils';
+import React from 'react';
+import type { PaginatedTenant, Session } from 'types';
+import { useActiveTenant, useNextAuthUser, usePagination, useReSWR } from 'utils';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) => {
-  const dark = theme.palette.type === 'dark';
-  const grey = theme.palette.grey;
-
   return createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
     card: { display: 'flex', margin: theme.spacing(3, 1, 2) },
@@ -55,6 +51,11 @@ const uri = (subject: string, size: number) => `${GRAVATAR_URI}${md5(subject)}?s
 
 const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
+
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session?.user?.id);
+
+  // Pagination
   const { cursor, pageChange } = usePagination(PAGESIZE);
   const { data, isError, isLoading } = useReSWR<PaginatedTenant>(
     `/api/tenants?cursor=${cursor}&pagesize=${PAGESIZE}`
@@ -63,22 +64,13 @@ const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   let count;
   if (data && !isLoading) count = Math.ceil(data.total / PAGESIZE);
 
-  // used for "Set Active"
-  const {
-    toggleStorage,
-    tenantIdLocal,
-    setSlugLocal,
-    setTenantIdLocal,
-    setActiveTenant
-  } = useLocalStorage();
-  useEffect(() => {
-    setSlugLocal(localStorage.getItem('slug'));
-    setTenantIdLocal(localStorage.getItem('tenantId'));
-  }, [session, toggleStorage]);
+  // GET ACTIVE TENANT
+  const { activeTenant, updateActiveTenant } = useActiveTenant({
+    activeTenantId: activeUser?.active_tenant,
+  });
 
   return (
-    // once the localStorage changes by "toggleStorage", will trigger page refresh in Layout
-    <Layout title="Tenant" refresh={data}>
+    <Layout title="Tenant" user={activeUser}>
       <Main
         session={session}
         title="Tenants"
@@ -111,7 +103,7 @@ const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                       avatar={
                         item.activated ? (
                           <CardHeaderAvatar>
-                            {tenantIdLocal === item.id ? (
+                            {activeTenant?.id === item.id ? (
                               <Tooltip title="Activated / Default">
                                 <FlashAutoOutlinedIcon />
                               </Tooltip>
@@ -132,14 +124,16 @@ const DashboardIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                       title={item.slug?.toUpperCase()}
                       subheader={item.name || 'No content'}
                     />
-                    {item?.id && item?.slug && tenantIdLocal !== item.id && (
+                    {item?.id && item?.slug && activeTenant?.id !== item.id && (
                       <CardActions>
                         <Button
                           variant="outlined"
                           className={classes.button}
                           size="small"
                           color="inherit"
-                          onClick={() => setActiveTenant(item?.id || '', item?.slug || '')}>
+                          onClick={async () =>
+                            updateActiveTenant(session.user.id as string, item.id as string)
+                          }>
                           Make Default
                         </Button>
                       </CardActions>

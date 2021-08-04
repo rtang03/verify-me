@@ -6,6 +6,8 @@ import { getSession } from 'next-auth/client';
 import type { UserInfo } from '../../types';
 import { OOPS } from '../../utils';
 
+// This is Accounts Entity of Next-Auth
+// TODO: revisit if this is correct implementation, when multiple OAuth provider are added next-auth login
 const handler: NextApiHandler = async (req, res) => {
   if (req.method === 'GET') {
     const session: any = await getSession({ req });

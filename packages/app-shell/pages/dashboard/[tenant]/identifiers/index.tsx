@@ -10,13 +10,13 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PlusOneIcon from '@material-ui/icons/PlusOne';
 import ReceiptOutlinedIcon from '@material-ui/icons/ReceiptOutlined';
 import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
-import type { DidDocument } from '@verify/server';
+import { DidDocument } from '@verify/server';
 import { withAuth } from 'components';
 import CardHeaderAvatar from 'components/CardHeaderAvatar';
 import DropdownMenu from 'components/DropdownMenu';
+import Error from 'components/Error';
 import GlossaryTerms, { TERMS } from 'components/GlossaryTerms';
 import HelpDialog from 'components/HelpDialog';
-import Error from 'components/Error';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import ProTip from 'components/ProTip';
@@ -29,7 +29,7 @@ import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import { mutate } from 'swr';
-import { getTenantUrl, useFetcher, useReSWR, useTenant } from 'utils';
+import { getTenantUrl, useFetcher, useNextAuthUser, useReSWR, useTenant } from 'utils';
 
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const useStyles = makeStyles((theme: Theme) =>
@@ -41,6 +41,10 @@ const useStyles = makeStyles((theme: Theme) =>
 const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session?.user?.id);
+
   const fqUrl = tenantInfo?.slug && domain && getTenantUrl(tenantInfo?.slug, domain);
   const nonFqUrl = fqUrl?.replace('https://', '').replace('http://', '');
 
@@ -53,8 +57,10 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
 
   // Create Web Did
   const { val: webDid, poster } = useFetcher<IIdentifier>();
-  const newDid = async (body: IDIDManagerGetOrCreateArgs) =>
-    mutate(url, poster(`/api/tenants/didManagerCreate?slug=${slug}`, body));
+  const newDid = async (body: IDIDManagerGetOrCreateArgs) => {
+    await poster(`/api/tenants/didManagerCreate?slug=${slug}`, body);
+    await mutate(url);
+  };
 
   // form state - helpDialog
   const [openHelp, setHelpOpen] = React.useState(false);
@@ -68,7 +74,7 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const handleMenuClose = () => setAnchorEl(null);
 
   return (
-    <Layout title="Identifiers" shouldShow={[show, setShow]}>
+    <Layout title="Identifiers" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={0}>
       <Main
         session={session}
         title="Did Document"
@@ -84,7 +90,9 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             initialValues={{}}
             onSubmit={async (_, { setSubmitting }) => {
               setSubmitting(true);
-              await newDid({ alias: nonFqUrl as string }).then(() => setSubmitting(false));
+              await newDid({ alias: nonFqUrl as string, options: { keyType: 'Ed25519' } }).then(
+                () => setSubmitting(false)
+              );
             }}>
             {({ isSubmitting, submitForm }) => (
               <Form>
@@ -119,7 +127,7 @@ const IdentifiersIndexPage: NextPage<{ session: Session }> = ({ session }) => {
             )}
           </Formik>
         )}
-        {tenantInfo?.activated && data && (
+        {tenantInfo?.activated && data?.id && (
           <>
             <QuickAction
               link={`/dashboard/${tenantInfo?.id}/identifiers/service`}

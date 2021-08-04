@@ -121,12 +121,12 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
 
   // 5. messaging router
   router.use(text({ type: '*/*' }));
-  router.post('/', async (req: RequestWithAgent, res) => {
+  router.post('/messaging', async (req: RequestWithAgent, res) => {
     if (!req.agent) return res.status(Status.BAD_GATEWAY).send({ error: 'agent not found' });
 
     try {
       const message = await req.agent?.handleMessage({
-        raw: (req.body as any) as string,
+        raw: req.body as any as string,
         metaData: [{ type: 'DIDComm' }],
         save: true,
       });

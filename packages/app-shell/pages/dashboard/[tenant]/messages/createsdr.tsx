@@ -7,28 +7,28 @@ import Checkbox from '@material-ui/core/Checkbox';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import IconButton from '@material-ui/core/IconButton';
 import MuiTextField from '@material-ui/core/TextField';
+import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
-import DoneIcon from '@material-ui/icons/Done';
-import HelpOutlineOutlinedIcon from '@material-ui/icons/HelpOutlineOutlined';
+import CloseOutlinedIcon from '@material-ui/icons/CloseOutlined';
 import PlusOneIcon from '@material-ui/icons/PlusOne';
 import type {
-  ISendMessageDIDCommAlpha1Args,
-  IMessage,
   Issuer,
   ICredentialRequestInput,
   ICreateSelectiveDisclosureRequestArgs,
+  IPackedDIDCommMessage,
+  IHandleMessageArgs,
 } from '@verify/server';
 import { withAuth } from 'components';
 import Error from 'components/Error';
-import GlossaryTerms, { TERMS } from 'components/GlossaryTerms';
-import HelpDialog from 'components/HelpDialog';
+import { TERMS } from 'components/GlossaryTerms';
+import HelpButton from 'components/HelpButton';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
-import MessageHeader from 'components/MessageHeader';
+import PackDIDCommMessage from 'components/PackDIDCommMessage';
 import RawContent from 'components/RawContent';
 import Result from 'components/Result';
-import SendFab from 'components/SendFab';
+import SendDIDCommMessage from 'components/SendDIDCommMessage';
 import SubmitButton from 'components/SubmitButton';
 import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
@@ -36,7 +36,7 @@ import jwt_decode from 'jwt-decode';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
-import { useFetcher, useTenant } from 'utils';
+import { useFetcher, useNextAuthUser, useTenant } from 'utils';
 import * as yup from 'yup';
 
 interface AddClaimArgs {
@@ -67,22 +67,25 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
+const CreateSdr: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session?.user?.id);
 
   // Show Raw Content
   const [show, setShow] = useState(false);
 
   // Create SDR request
-  const { val: sdrResult, poster } = useFetcher<string>();
+  const { val: sdrResult, poster: _newRequest } = useFetcher<string>();
   const newRequest = (body: ICreateSelectiveDisclosureRequestArgs) =>
-    poster(`/api/requests/create?slug=${slug}`, body);
+    _newRequest(`/api/tenants/createSelectiveDisclosureRequest?slug=${slug}`, body);
 
-  // Send Message
-  const { val: result, poster: send } = useFetcher<IMessage>();
-  const sendMessage = (body: ISendMessageDIDCommAlpha1Args) =>
-    send(`/api/tenants/sendMessageDIDCommAlpha1?slug=${slug}`, body);
+  // Handle message
+  const { val: saveMessageResult, poster: _save } = useFetcher();
+  const saveMessage = (body: IHandleMessageArgs) =>
+    _save(`/api/tenants/handleMessage?slug=${slug}`, body);
 
   // form state
   const [claimType, setClaimType] = useState<string>('');
@@ -113,11 +116,6 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
     setRequiredIssuers([]);
   };
 
-  // form state - HelpDialog
-  const [openHelp, setHelpOpen] = React.useState(false);
-  const handleHelpOpen = () => setHelpOpen(true);
-  const handleHelpClose = () => setHelpOpen(false);
-
   // parse SDR
   let iss = '';
   let sub = '';
@@ -129,14 +127,18 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
     iat = new Date(sdr.iat * 1000).toISOString();
   }
 
+  // DidComm V2 messageId
+  const [messageId, setMessageId] = useState<string>('');
+  const [packedSdr, setPackedSdr] = useState<IPackedDIDCommMessage>();
+
   return (
-    <Layout title="Request" shouldShow={[show, setShow]}>
+    <Layout title="Request" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={4}>
       <Main
         session={session}
         title="Selective Disclosure Request"
         subtitle="Create Selective-Disclosure-Request"
-        parentText={`Request`}
-        parentUrl={`/dashboard/${tenantInfo?.id}/requests`}
+        parentText={`Message`}
+        parentUrl={`/dashboard/${tenantInfo?.id}/messages`}
         isLoading={tenantLoading}
         isError={tenantError && !tenantLoading}
         tenantInfo={tenantInfo}
@@ -154,7 +156,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
               validationSchema={validation}
               onSubmit={async ({ issuer, subject, replyUrl }, { setSubmitting }) => {
                 setSubmitting(true);
-                await newRequest({
+                const request = await newRequest({
                   data: {
                     issuer,
                     subject,
@@ -162,6 +164,8 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                     replyUrl,
                   },
                 });
+                console.log(request);
+                if (request) await saveMessage({ raw: request, save: true });
                 setSubmitting(false);
               }}>
               {({ values, isSubmitting, submitForm }) => (
@@ -170,22 +174,13 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                   <CardHeader
                     className={classes.root}
                     title="Requester Info"
-                    action={
-                      <IconButton onClick={handleHelpOpen}>
-                        <HelpOutlineOutlinedIcon />
-                      </IconButton>
-                    }
-                  />
-                  <HelpDialog
-                    open={openHelp}
-                    handleClose={handleHelpClose}
-                    content={<GlossaryTerms terms={[TERMS.did]} />}
+                    action={<HelpButton terms={[TERMS.did]} />}
                   />
                   <CardContent>
                     <Field
                       disabled={!!sdrResult?.data}
                       className={classes.longTextField}
-                      label="Issuer"
+                      label="Requester DID"
                       size="small"
                       component={TextField}
                       name={'issuer'}
@@ -199,7 +194,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                     <Field
                       disabled={!!sdrResult?.data}
                       className={classes.longTextField}
-                      label="Subject"
+                      label="Subject DID"
                       size="small"
                       component={TextField}
                       name={'subject'}
@@ -212,7 +207,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                     <Field
                       disabled={!!sdrResult?.data}
                       className={classes.longTextField}
-                      label="Reply url"
+                      label="Reply url of requester"
                       size="small"
                       component={TextField}
                       name={'replyUrl'}
@@ -227,7 +222,21 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                     <Card variant="outlined">
                       <CardHeader className={classes.root} title="Claim Details" />
                       {claims.length > 0 && (
-                        <RawContent content={claims} title="Preview claim details" />
+                        <Card variant="outlined" className={classes.root}>
+                          <CardHeader
+                            subheader="Preview Claim Details"
+                            action={
+                              <Tooltip title="Clear all input claims">
+                                <IconButton
+                                  disabled={!!sdrResult?.data}
+                                  onClick={() => setClaims([])}>
+                                  <CloseOutlinedIcon />
+                                </IconButton>
+                              </Tooltip>
+                            }
+                          />
+                          <RawContent content={claims} title="Input Claim" />
+                        </Card>
                       )}
                       <CardContent>
                         <Typography variant="caption">Add one claim type</Typography>
@@ -267,12 +276,14 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                           )}
                           <CardContent>
                             <div>
-                              <Typography variant="caption">Add one issuer</Typography>
+                              <Typography variant="caption">
+                                Add one issuer offering above claim
+                              </Typography>
                             </div>
                             <MuiTextField
                               disabled={!!sdrResult?.data}
                               className={classes.longTextField}
-                              label="Required Issuer"
+                              label="Required Issuer DID"
                               size="small"
                               name={'requiredIssuer'}
                               placeholder={'Required Issuer'}
@@ -285,7 +296,7 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                             <MuiTextField
                               disabled={!!sdrResult?.data}
                               className={classes.longTextField}
-                              label="Required Issuer Url"
+                              label="Required Issuer Messaging Url"
                               size="small"
                               name={'requiredIssuerUrl'}
                               placeholder={'Required Issuer Url'}
@@ -342,12 +353,12 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                   </CardContent>
                   <CardActions>
                     <SubmitButton
-                      tooltip="Create Request (no send)"
+                      tooltip="Create Request"
                       text={<PlusOneIcon />}
                       submitForm={submitForm}
                       loading={isSubmitting}
-                      success={!!sdrResult?.data}
-                      error={!!sdrResult?.error}
+                      success={!!sdrResult?.data && !!saveMessageResult?.data}
+                      error={!!sdrResult?.error && !!saveMessageResult?.error}
                       disabled={
                         isSubmitting ||
                         !!sdrResult?.data ||
@@ -359,59 +370,66 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                       }
                     />
                   </CardActions>
+                  <Result isTenantExist={!!tenantInfo} result={saveMessageResult} />
                   {show && sdrResult?.data && (
-                    <RawContent title="Raw SDR" content={sdrResult.data} />
+                    <RawContent title="Raw create-sdr" content={{ data: sdrResult.data }} />
+                  )}
+                  {show && saveMessageResult?.data && (
+                    <RawContent
+                      title="Raw save-message result"
+                      content={{ data: saveMessageResult.data }}
+                    />
                   )}
                 </Form>
               )}
             </Formik>
-            {/* Step 2 Send SDR */}
+            {/* Step 2 Pack SDR */}
             <CardContent>
               {sdrResult?.error && !sdrResult?.loading && <Error error={sdrResult.error} />}
               {sdrResult?.data && !sdrResult?.loading && (
-                <Formik
-                  initialValues={{}}
-                  onSubmit={async (_, { setSubmitting }) => {
-                    setSubmitting(true);
-                    await sendMessage({
-                      data: {
-                        to: sub,
-                        from: iss,
-                        type: 'jwt',
-                        body: sdrResult.data as string,
-                      },
-                      save: true,
-                    });
-                    setSubmitting(false);
-                  }}>
-                  {({ isSubmitting, submitForm }) => (
-                    <Form>
-                      <Card variant="outlined">
-                        <CardHeader
-                          avatar={<DoneIcon color="inherit" />}
-                          title="Selective Disclosure Request successfully created."
-                        />
-                        <CardContent className={classes.mail}>
-                          <SendFab
-                            tooltip="Send the SDR to the subject"
-                            loading={isSubmitting}
-                            disabled={isSubmitting || !!result.data}
-                            submitForm={submitForm}
-                            success={!!result?.data}
-                            error={!!result?.error}
-                          />
-                        </CardContent>
-                        {iss && sub && <MessageHeader from={iss} to={sub} createdAt={iat} />}
-                        <Result isTenantExist={!!tenantInfo} result={result} />
-                        {show && result?.data && !result.loading && (
-                          <RawContent title="Raw Send result" content={result.data} />
-                        )}
-                      </Card>
-                    </Form>
-                  )}
-                </Formik>
+                <Card className={classes.root} variant="outlined">
+                  <CardHeader
+                    className={classes.root}
+                    title="Step 1: Pack Request"
+                    subheader="Click icon to pack it into DIDComm message"
+                    action={<HelpButton terms={[TERMS.did]} />}
+                  />
+                  <PackDIDCommMessage
+                    tenantInfo={tenantInfo}
+                    from={iss}
+                    to={sub}
+                    body={{ type: ['selective-disclosure-request'], sdr: sdrResult.data }}
+                    show={show}
+                    messageId={messageId}
+                    setMessageId={setMessageId}
+                    setPackedMessage={setPackedSdr}
+                  />
+                </Card>
               )}
             </CardContent>
+            {/* Step 3 Send DidComm SDR */}
+            {packedSdr && (
+              <CardContent className={classes.root}>
+                <Card variant="outlined">
+                  <CardHeader
+                    className={classes.root}
+                    title="Step 2: Selective Disclosure Request"
+                    subheader="Click icon to send below message"
+                    action={<HelpButton terms={[TERMS.did]} />}
+                  />
+                  <SendDIDCommMessage
+                    tenantInfo={tenantInfo}
+                    messageId={messageId}
+                    from={iss}
+                    to={sub}
+                    url={''}
+                    recipientDidUrl={sub}
+                    packedMessage={packedSdr}
+                    show={show}
+                  />
+                </Card>
+              </CardContent>
+            )}
           </Card>
         )}
       </Main>
@@ -421,4 +439,4 @@ const RequestCreatePage: NextPage<{ session: Session }> = ({ session }) => {
 
 export const getServerSideProps = withAuth;
 
-export default RequestCreatePage;
+export default CreateSdr;

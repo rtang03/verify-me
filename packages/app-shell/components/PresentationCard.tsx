@@ -9,7 +9,7 @@ import Presentation from './Presentation';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: { display: 'flex', margin: theme.spacing(3, 1, 2) },
+    root: { display: 'flex' },
     muiTextField: {
       '& .MuiTextField-root': {
         margin: theme.spacing(0.5),

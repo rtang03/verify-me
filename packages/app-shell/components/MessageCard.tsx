@@ -1,17 +1,16 @@
 import Card from '@material-ui/core/Card';
 import CardHeader from '@material-ui/core/CardHeader';
 import CardMedia from '@material-ui/core/CardMedia';
-import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import MuiTextField from '@material-ui/core/TextField';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import DeleteOutlineOutlinedIcon from '@material-ui/icons/DeleteOutlineOutlined';
 import type { IMessage } from '@veramo/core';
 import { format } from 'date-fns';
 import md5 from 'md5';
 import Link from 'next/link';
 import React from 'react';
 import type { TenantInfo } from '../types';
+import { discoverMessageType } from '../utils';
 import RawContent from './RawContent';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -38,7 +37,7 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 const GRAVATAR_URI = 'https://www.gravatar.com/avatar/';
 const uri = (subject: string, size: number) =>
-  `${GRAVATAR_URI}${md5(subject)}?s=${size}&d=robohash`;
+  `${GRAVATAR_URI}${md5(subject)}?s=${size}&d=identicon`; // robohash
 const pattern = "d.M.yyyy HH:mm:ss 'GMT' XXX (z)";
 
 const TextField: React.FC<{
@@ -70,47 +69,43 @@ const MessageCard: React.FC<{ isFull?: boolean; message: IMessage; tenantInfo: T
   tenantInfo,
 }) => {
   const classes = useStyles();
-  const { id, createdAt, from, to, metaData, type } = message;
-  const getMessageType = (messageType: string) =>
-    ({ 'w3c.vp': 'Presentation', sdr: 'SD Request', 'w3c.vc': 'Credential' }[messageType] ||
-    'unknown type');
+  const { id, from, to, type, createdAt } = message;
+  const getMetaMessageType = (messageType: string) =>
+    ({
+      'w3c.vp': 'Presentation',
+      sdr: 'SD Request',
+      'w3c.vc': 'Credential',
+      'application/didcomm-encrypted+json': 'DidCommV2',
+    }[messageType] || 'unknown type');
+  const { messageType } = discoverMessageType(message);
 
   return (
     <>
       <Card variant="outlined" className={classes.root}>
-        <CardHeader
-          action={
-            <IconButton>
-              <DeleteOutlineOutlinedIcon />
-            </IconButton>
-          }
-        />
         {isFull && (
           <div>
-            <TextField value={getMessageType(type)} label="Type" />
             <CardMedia className={classes.media} image={uri(id, 200)} />
           </div>
         )}
         {!isFull && (
           <Link href={`/dashboard/${tenantInfo.id}/messages/${id}`}>
             <a>
-              <TextField value={getMessageType(type)} label="Type" />
               <CardMedia className={classes.media} image={uri(id, 200)} />
             </a>
           </Link>
         )}
         <div className={classes.details}>
+          <TextField value={`${getMetaMessageType(type)}/${messageType}`} label="Type" />
           <TextField value={from} label="From" />
           <TextField value={to} label="To" />
-          <TextField value={format(new Date(createdAt as any), pattern)} label="Created At" />
-          {metaData?.map((item, index) => (
-            <TextField key={index} value={JSON.stringify(item)} label="MetaData" />
-          ))}
+          {createdAt && (
+            <TextField value={format(new Date(createdAt), pattern)} label="Created At" />
+          )}
         </div>
       </Card>
       {isFull && (
         <Card variant="outlined" className={classes.full}>
-          {message?.data && <RawContent title="Data" content={message.data} />}
+          {message?.data && <RawContent title="Data" content={{ data: message.data }} />}
         </Card>
       )}
     </>

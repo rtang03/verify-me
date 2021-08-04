@@ -18,9 +18,9 @@ import { Form, Field, Formik } from 'formik';
 import { TextField } from 'formik-material-ui';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 import { mutate } from 'swr';
-import { useFetcher, useLocalStorage, useTenant } from 'utils';
+import { useFetcher, useActiveTenant, useTenant, useNextAuthUser } from 'utils';
 import * as yup from 'yup';
 
 const baseUrl = '/api/tenants';
@@ -41,35 +41,35 @@ type PsqlUpdated = { affected: number };
 
 const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
+
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session?.user?.id);
+
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
-  // used for "Set Active"
-  const {
-    toggleStorage,
-    tenantIdLocal,
-    setSlugLocal,
-    setTenantIdLocal,
-    setActiveTenant,
-  } = useLocalStorage();
-  useEffect(() => {
-    setSlugLocal(localStorage.getItem('slug'));
-    setTenantIdLocal(localStorage.getItem('tenantId'));
-  }, [tenantInfo]);
+  // Used for "Set Active"
+  const { activeTenant, updateActiveTenant } = useActiveTenant({
+    activeTenantId: activeUser?.active_tenant,
+  });
 
   // Update Tenant
   const { val: updateResult, updater } = useFetcher<PsqlUpdated>();
-  const updateTenant = async (body: any) =>
-    mutate(`${baseUrl}?id=${tenantInfo?.id}`, updater(`${baseUrl}?id=${tenantInfo?.id}`, body));
+  const updateTenant = async (body: any) => {
+    await updater(`${baseUrl}?id=${tenantInfo?.id}`, body);
+    await mutate(`${baseUrl}?id=${tenantInfo?.id}`);
+  };
 
   // Edit Mode
   const [editMode, setEdit] = useState(false);
   const handleEdit = ({ target: { checked } }: ChangeEvent<HTMLInputElement>) => setEdit(checked);
 
-  // this tenant page may be different from tenant in localStorage
-  const isActiveTenant = tenantInfo?.id === tenantIdLocal;
+  const isActiveTenant = tenantInfo?.id === activeTenant?.id;
+
+  // Show Raw Content
+  const [show, setShow] = useState(false);
 
   return (
-    <Layout title="Tenant" refresh={tenantInfo}>
+    <Layout title="Tenant" shouldShow={[show, setShow]} user={activeUser}>
       <Main
         title={slug?.toUpperCase() || 'Tenant details'}
         subtitle={tenantInfo?.name || 'Tenant profile'}
@@ -83,7 +83,7 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         )}
         {/* IF NOT ACTIVATE */}
         {!!tenantInfo && isActiveTenant && !tenantInfo.activated && (
-          <Activation tenantInfo={tenantInfo} />
+          <Activation tenantInfo={tenantInfo} show={show} />
         )}
         {/* IF ACTIVATE */}
         {!!tenantInfo && isActiveTenant && tenantInfo.activated && (
@@ -110,11 +110,11 @@ const TenantIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                           className={classes.button}
                           size="small"
                           color="inherit"
-                          disabled={tenantIdLocal === tenantInfo.id}
-                          onClick={() =>
-                            setActiveTenant(tenantInfo.id || '', tenantInfo.slug || '')
+                          disabled={activeTenant?.id === tenantInfo.id}
+                          onClick={async () =>
+                            updateActiveTenant(session.user.id as string, tenantInfo.id as string)
                           }>
-                          {tenantIdLocal === tenantInfo.id ? 'Default' : 'Set Default'}
+                          {activeTenant?.id === tenantInfo.id ? 'Default' : 'Set Default'}
                         </Button>
                       )
                     }

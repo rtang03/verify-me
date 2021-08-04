@@ -6,29 +6,13 @@ export const isClient = () => typeof window !== 'undefined';
 export const useLocalStorage = () => {
   // toogleStorage is triggered, to re-load localStorage
   const [toggleStorage, setToggleStorage] = useState(1);
-  // slug in localStorage
-  const [slugLocal, setSlugLocal] = useState<string | null>('');
-  // tenantId in localStorage
-  const [tenantIdLocal, setTenantIdLocal] = useState<string | null>('');
   // dark mode in localStorage
   const [dark, setDark] = useState(false);
-  const setActiveTenant = (id: string, slug: string) => {
-    if (isClient()) {
-      setToggleStorage((val) => ++val);
-      localStorage.setItem('tenantId', id);
-      localStorage.setItem('slug', slug);
-    }
-  };
 
   return {
     toggleStorage,
-    slugLocal,
-    setSlugLocal,
-    tenantIdLocal,
-    setTenantIdLocal,
     dark,
     setDark,
-    setActiveTenant,
     setToggleStorage,
   };
 };

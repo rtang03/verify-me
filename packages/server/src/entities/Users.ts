@@ -5,25 +5,25 @@ export class Users {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   name: string;
 
   @Index('email', { unique: true })
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   email: string;
 
-  @Column({ type: 'timestamp with time zone', nullable: true })
-  email_verified: string;
+  @Column({ type: 'timestamp', nullable: true })
+  email_verified: Date;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   image: string;
 
-  @Column({ type: 'timestamp with time zone', nullable: false, default: 'Now()' })
+  @Column({ type: 'timestamp', nullable: false, default: 'Now()' })
   created_at: string;
 
-  @Column({ type: 'timestamp with time zone', nullable: false, default: 'Now()' })
+  @Column({ type: 'timestamp', nullable: false, default: 'Now()' })
   updated_at: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  active_tenant: number;
+  @Column({ type: 'varchar', nullable: true })
+  active_tenant: string;
 }

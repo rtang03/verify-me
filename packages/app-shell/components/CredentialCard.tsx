@@ -9,7 +9,7 @@ import Credential from './Credential';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: { display: 'flex', margin: theme.spacing(3, 1, 2) },
+    root: { display: 'flex' },
     muiTextField: {
       '& .MuiTextField-root': {
         margin: theme.spacing(0.5),
@@ -23,8 +23,8 @@ const useStyles = makeStyles((theme: Theme) =>
       width: '55ch',
     },
     media: {
-      height: 220,
-      width: 220,
+      height: 250,
+      width: 250,
     },
   })
 );
@@ -47,7 +47,7 @@ const CredentialCard: React.FC<{
         </a>
       </Link>
       <div className={classes.details}>
-        <Credential vc={vc} compact={true} />
+        <Credential vc={vc} compact={true} tenantInfo={tenantInfo} />
       </div>
     </div>
   );

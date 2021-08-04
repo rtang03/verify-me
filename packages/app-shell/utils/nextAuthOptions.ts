@@ -1,10 +1,12 @@
-import { Users } from '@verify/server';
-import type { Session } from 'next-auth';
+import type { Session, NextAuthOptions } from 'next-auth';
 import Adapters from 'next-auth/adapters';
 import Providers from 'next-auth/providers';
 import type { ConnectionOptions } from 'typeorm';
+import TypeORMCustomUserModel, { User } from '../types/User';
 
-export const nextauthOptions: any = (connectionOptions: ConnectionOptions) => ({
+export const nextauthOptions: (connectionOptions: ConnectionOptions) => NextAuthOptions = (
+  connectionOptions
+) => ({
   theme: 'auto' as any,
   // https://next-auth.js.org/configuration/providers
   providers: [
@@ -12,7 +14,7 @@ export const nextauthOptions: any = (connectionOptions: ConnectionOptions) => ({
       clientId: process.env.AUTH0_ID,
       clientSecret: process.env.AUTH0_SECRET,
       domain: process.env.AUTH0_DOMAIN,
-    } as any),
+    }),
   ],
   // Database optional. MySQL, Maria DB, Postgres and MongoDB are supported.
   // https://next-auth.js.org/configuration/databases
@@ -93,7 +95,7 @@ export const nextauthOptions: any = (connectionOptions: ConnectionOptions) => ({
   callbacks: {
     // async signIn(user, account, profile) { return true },
     // async redirect(url, baseUrl) { return baseUrl },
-    async session(session: Session, user: Users) {
+    async session(session: Session, user: User) {
       session.user = user;
       return session;
     },
@@ -107,5 +109,7 @@ export const nextauthOptions: any = (connectionOptions: ConnectionOptions) => ({
   // Enable debug messages in the console if you are having problems
   debug: false,
 
-  adapter: Adapters.TypeORM.Adapter(connectionOptions),
+  adapter: Adapters.TypeORM.Adapter(connectionOptions, {
+    models: { User: TypeORMCustomUserModel } as any,
+  }),
 });

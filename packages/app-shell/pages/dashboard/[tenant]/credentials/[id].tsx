@@ -5,40 +5,30 @@ import InputAdornment from '@material-ui/core/InputAdornment';
 import MuiTextField from '@material-ui/core/TextField';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import ExtensionIcon from '@material-ui/icons/Extension';
-import type { VerifiableCredential, IMessage } from '@veramo/core';
-import type { ISendMessageDIDCommAlpha1Args } from '@veramo/did-comm';
+import type { VerifiableCredential, IPackedDIDCommMessage } from '@verify/server';
 import { withAuth } from 'components';
 import AvatarMd5 from 'components/AvatarMd5';
 import Credential from 'components/Credential';
 import Error from 'components/Error';
+import { TERMS } from 'components/GlossaryTerms';
+import HelpButton from 'components/HelpButton';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
-import MessageHeader from 'components/MessageHeader';
-import ProTip from 'components/ProTip';
+import PackDIDCommMessage from 'components/PackDIDCommMessage';
 import RawContent from 'components/RawContent';
-import Result from 'components/Result';
-import SendFab from 'components/SendFab';
+import SendDIDCommMessage from 'components/SendDIDCommMessage';
 import { format } from 'date-fns';
-import { Form, Formik } from 'formik';
 import omit from 'lodash/omit';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
-import { useFetcher, useReSWR, useTenant } from 'utils';
+import { getTenantDid, useNextAuthUser, useReSWR, useTenant } from 'utils';
+import BallotOutlinedIcon from '@material-ui/icons/BallotOutlined';
+import CardHeaderAvatar from '../../../../components/CardHeaderAvatar';
 
+const domain = process.env.NEXT_PUBLIC_DOMAIN;
 const pattern = "d.M.yyyy HH:mm:ss 'GMT' XXX (z)";
-const getSendMessageDIDCommAlpha1Args: (
-  vc: VerifiableCredential
-) => ISendMessageDIDCommAlpha1Args = (vc) => ({
-  data: {
-    from: vc.issuer.id,
-    to: vc.credentialSubject.id as string,
-    type: 'jwt',
-    body: vc.proof.jwt,
-  },
-  save: true,
-});
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
@@ -57,8 +47,15 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
   const router = useRouter();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session?.user?.id);
+
   // Show Raw Content
   const [show, setShow] = useState(false);
+
+  // DidComm V2 messageId
+  const [messageId, setMessageId] = useState<string>('');
+  const [packedVc, setPackedVc] = useState<IPackedDIDCommMessage>();
 
   // Query Credential
   const id = router.query.id as string; // hash
@@ -66,13 +63,17 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
   const { data: vc, isLoading, isError, error } = useReSWR<VerifiableCredential>(url, !!slug);
   const claims = vc?.credentialSubject && omit(vc?.credentialSubject, 'id');
 
-  // Send Message
-  const { val: result, poster } = useFetcher<IMessage>();
-  const sendMessage = (body: ISendMessageDIDCommAlpha1Args) =>
-    poster(`/api/tenants/sendMessageDIDCommAlpha1?slug=${slug}`, body);
+  // check if you are recipient, or originating issuer
+  // Only if the originating issuer (not recipient) can pack and send it
+  const isRecipient: () => boolean | undefined = () => {
+    // active tenant's Web DID
+    const tenantDid = slug && getTenantDid(slug, domain as string);
+    const subject = vc?.credentialSubject?.id;
+    return subject && tenantDid ? subject.startsWith(tenantDid) : undefined;
+  };
 
   return (
-    <Layout title="Credential" shouldShow={[show, setShow]}>
+    <Layout title="Credential" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={2}>
       <Main
         session={session}
         title="Credential"
@@ -88,85 +89,88 @@ const CredentialsDetailsPage: NextPage<{ session: Session }> = ({ session }) => 
           <Card className={classes.root}>
             <CardHeader
               className={classes.root}
-              avatar={<AvatarMd5 subject={id || 'idle'} image="identicon" />}
+              avatar={
+                <CardHeaderAvatar>
+                  <BallotOutlinedIcon />
+                </CardHeaderAvatar>
+              }
               title={JSON.stringify(vc.type, null, 2)}
               subheader={format(new Date(vc.issuanceDate), pattern)}
+              action={<HelpButton terms={[TERMS.did]} />}
             />
             <CardContent>
               <Card variant="outlined">
-                <Credential vc={vc} />
+                <Credential vc={vc} tenantInfo={tenantInfo} hash={id} />
                 {show && vc && <RawContent content={vc} title="Raw Credential Details" />}
               </Card>
             </CardContent>
-            <CardContent>
-              <Card className={classes.root} variant="outlined">
-                <Formik
-                  initialValues={{}}
-                  onSubmit={async (_, { setSubmitting }) => {
-                    setSubmitting(true);
-                    await sendMessage(getSendMessageDIDCommAlpha1Args(vc));
-                    setSubmitting(false);
-                  }}>
-                  {({ isSubmitting, submitForm }) => (
-                    <Form>
+            {!isRecipient() && (
+              <CardContent>
+                {/* Pack Message */}
+                <Card className={classes.root} variant="outlined">
+                  <CardHeader
+                    className={classes.root}
+                    title="Step 1: Pack Credential"
+                    subheader="Click icon to pack it into DIDComm message"
+                    action={<HelpButton terms={[TERMS.did]} />}
+                  />
+                  <PackDIDCommMessage
+                    tenantInfo={tenantInfo}
+                    show={show}
+                    from={vc.issuer.id}
+                    to={vc.credentialSubject.id as string}
+                    body={vc}
+                    messageId={messageId}
+                    setMessageId={setMessageId}
+                    setPackedMessage={setPackedVc}
+                  />
+                  <CardContent>
+                    <Card variant="outlined">
+                      <CardHeader subheader="Claims" />
                       <CardContent>
-                        <ProTip text="Warning: Need to revisit this feature; temporarily disabled." />
+                        {claims &&
+                          Object.entries(claims).map(([key, value], index) => (
+                            <MuiTextField
+                              key={index}
+                              disabled={true}
+                              size="small"
+                              label={key}
+                              value={value}
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <ExtensionIcon />
+                                  </InputAdornment>
+                                ),
+                              }}
+                            />
+                          ))}
                       </CardContent>
-                      <CardHeader
-                        className={classes.root}
-                        title="Send Credential"
-                        subheader="Click icon to send to Subject's service endpoint"
-                      />
-                      <CardContent className={classes.mail}>
-                        {/*** TODO. This may be issue, which send credential directly. Disable it; review later. ***/}
-                        <SendFab
-                          loading={isSubmitting}
-                          disabled={true || isSubmitting || !vc || !!result?.data}
-                          submitForm={submitForm}
-                          success={!!result?.data}
-                          error={!!result?.error}
-                        />
-                      </CardContent>
-                      <CardContent>
-                        <MessageHeader
-                          from={vc?.issuer.id}
-                          to={vc?.credentialSubject?.id}
-                          createdAt={vc?.issuanceDate}
-                        />
-                      </CardContent>
-                      <CardContent>
-                        <Card variant="outlined">
-                          <CardHeader subheader="Claims" />
-                          <CardContent>
-                            {claims &&
-                              Object.entries(claims).map(([key, value], index) => (
-                                <MuiTextField
-                                  key={index}
-                                  disabled={true}
-                                  size="small"
-                                  label={key}
-                                  value={value}
-                                  InputProps={{
-                                    startAdornment: (
-                                      <InputAdornment position="start">
-                                        <ExtensionIcon />
-                                      </InputAdornment>
-                                    ),
-                                  }}
-                                />
-                              ))}
-                          </CardContent>
-                        </Card>
-                      </CardContent>
-                      <Result isTenantExist={!!tenantInfo} result={result} />
-                      {show && result?.data && (
-                        <RawContent content={result.data} title="Raw Send-message result" />
-                      )}
-                    </Form>
-                  )}
-                </Formik>
-              </Card>
-            </CardContent>
+                    </Card>
+                  </CardContent>
+                </Card>
+                {/* Send Message */}
+                {packedVc && (
+                  <Card className={classes.root} variant="outlined">
+                    <CardHeader
+                      className={classes.root}
+                      title="Step 2: Send Credential"
+                      subheader="Click icon to send below message"
+                      action={<HelpButton terms={[TERMS.did]} />}
+                    />
+                    <SendDIDCommMessage
+                      tenantInfo={tenantInfo}
+                      messageId={messageId}
+                      from={vc.issuer.id}
+                      to={vc.credentialSubject.id as string}
+                      url={''}
+                      recipientDidUrl={vc.credentialSubject.id as string}
+                      packedMessage={packedVc}
+                    />
+                  </Card>
+                )}
+              </CardContent>
+            )}
           </Card>
         )}
       </Main>

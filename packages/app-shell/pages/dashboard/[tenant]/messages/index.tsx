@@ -17,8 +17,7 @@ import omit from 'lodash/omit';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { Fragment, useState } from 'react';
-import type { PaginatedMessage } from 'types';
-import { usePagination, useReSWR, useTenant } from 'utils';
+import { useNextAuthUser, usePagination, useQueryPaginatedMessage, useTenant } from 'utils';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
@@ -30,6 +29,11 @@ const useStyles = makeStyles((theme: Theme) =>
 const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session?.user?.id);
+
+  // Pagination
   const { cursor, pageChange } = usePagination(PAGESIZE);
 
   // Show Raw Content
@@ -37,40 +41,42 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
 
   // Query Messages
   const shouldFetch = !!slug && !!tenantInfo?.activated;
-  const url = slug ? `/api/messages?slug=${slug}&cursor=${cursor}&pagesize=${PAGESIZE}` : null;
-  const { data, isLoading, isError, error } = useReSWR<PaginatedMessage>(url, shouldFetch);
-  let count;
-  data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
+  const { count, queryMessageError, isQueryMessageError, isQueryMessageLoading, paginatedMessage } =
+    useQueryPaginatedMessage({ pageSize: PAGESIZE, shouldFetch, slug });
 
   // Delete Message
+  const deleteMessage = () => {
+    return null;
+  };
 
   return (
-    <Layout title="Messages" shouldShow={[show, setShow]}>
+    <Layout title="Messages" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={4}>
       <Main
         session={session}
         title="Inbox"
         subtitle="Incoming messages. Learn more"
         parentText={`Dashboard | ${slug}`}
         parentUrl={`/dashboard/${tenantInfo?.id}`}
-        isLoading={tenantLoading || (isLoading && shouldFetch)}
+        isLoading={tenantLoading || (isQueryMessageLoading && shouldFetch)}
         isError={tenantError && !tenantLoading}
         tenantInfo={tenantInfo}
         shouldActivate={true}>
-        {isError && !isLoading && <Error error={error} />}
+        {isQueryMessageError && !isQueryMessageLoading && <Error error={queryMessageError} />}
         {tenantInfo?.activated && (
           <QuickAction
-            link={`/dashboard/${tenantInfo?.id}`}
-            label="TBC"
-            icon="send"
+            tooltip="Create and send selective-disclosure request"
+            icon="request"
+            link={`/dashboard/${tenantInfo?.id}/messages/createsdr`}
+            label="Request"
             disabled={!tenantInfo?.id}
           />
         )}
-        {tenantInfo?.activated && !!data?.items?.length && (
+        {tenantInfo?.activated && !!paginatedMessage?.items?.length && (
           <Card className={classes.root}>
             <CardHeader
               className={classes.root}
               title="Messages"
-              subheader={<>Total: {data?.total || 0}</>}
+              subheader={<>Total: {paginatedMessage?.total || 0}</>}
               avatar={
                 <CardHeaderAvatar>
                   <EmailOutlinedIcon />
@@ -86,15 +92,13 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
               onChange={pageChange}
             />
             <CardContent>
-              {data &&
-                data.items.map((item, index) => (
+              {paginatedMessage &&
+                paginatedMessage.items.map((item, index) => (
                   <Fragment key={index}>
                     <MessageCard message={item} tenantInfo={tenantInfo} />
                     {show && item.type === 'w3c.vc' && (
                       <RawContent
-                        content={item?.credentials?.map((cred) =>
-                          omit(cred, '@context', 'type')
-                        )}
+                        content={item?.credentials?.map((cred) => omit(cred, '@context', 'type'))}
                       />
                     )}
                     {show && item.type === 'w3c.vp' && (
@@ -104,15 +108,13 @@ const MessagesIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                         )}
                       />
                     )}
-                    {show && item.type === 'sdr' && (
-                      <RawContent content={omit(item, 'type')} />
-                    )}
+                    {show && item.type === 'sdr' && <RawContent content={omit(item, 'type')} />}
                   </Fragment>
                 ))}
             </CardContent>
           </Card>
         )}
-        {tenantInfo && !data?.items?.length && !isLoading && <NoRecord />}
+        {tenantInfo && !paginatedMessage?.items?.length && !isQueryMessageLoading && <NoRecord />}
       </Main>
     </Layout>
   );

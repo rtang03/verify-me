@@ -15,4 +15,7 @@ module.exports = {
     config.ignoreWarnings = [/critical dependency:/i];
     return config;
   },
+  images: {
+    domains: ['api.qrserver.com'],
+  },
 };

@@ -12,7 +12,9 @@ import type { IIdentifier, IDIDManagerGetOrCreateArgs } from '@veramo/core';
 import { withAuth } from 'components';
 import CardHeaderAvatar from 'components/CardHeaderAvatar';
 import Error from 'components/Error';
+import { TERMS } from 'components/GlossaryTerms';
 import GotoIdentifier from 'components/GotoIdentifier';
+import HelpButton from 'components/HelpButton';
 import Layout from 'components/Layout';
 import LowerCaseTextField from 'components/LowerCaseTextField';
 import Main from 'components/Main';
@@ -24,7 +26,7 @@ import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import { mutate } from 'swr';
-import { getTenantUrl, useFetcher, useTenant } from 'utils';
+import { getTenantUrl, useFetcher, useNextAuthUser, useTenant } from 'utils';
 import * as yup from 'yup';
 
 const domain = process.env.NEXT_PUBLIC_DOMAIN;
@@ -54,6 +56,9 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const fqUrl = slug && domain && getTenantUrl(slug, domain);
   const nonFqUrl = fqUrl?.replace('https://', '').replace('http://', '');
 
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session.user.id);
+
   // Show Raw Content
   const [show, setShow] = useState(false);
 
@@ -61,7 +66,7 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
   const { val: userDid, poster } = useFetcher<IIdentifier>();
 
   return (
-    <Layout title="User" shouldShow={[show, setShow]}>
+    <Layout title="User" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={1}>
       <Main
         session={session}
         title="Create User"
@@ -80,11 +85,14 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
             onSubmit={async ({ username }, { setSubmitting }) => {
               setSubmitting(true);
               const key = slug ? `/api/users/${username}?slug=${slug}` : null;
-              const newUser = (body: IDIDManagerGetOrCreateArgs) =>
-                mutate(key, poster(`/api/tenants/didManagerCreate?slug=${slug}`, body));
-              await newUser({ alias: `${nonFqUrl}:users:${username}` }).then(() =>
-                setSubmitting(false)
-              );
+              const newUser = async (body: IDIDManagerGetOrCreateArgs) => {
+                await poster(`/api/tenants/didManagerCreate?slug=${slug}`, body);
+                await mutate(key);
+              };
+              await newUser({
+                alias: `${nonFqUrl}:users:${username}`,
+                options: { keyType: 'Ed25519' },
+              }).then(() => setSubmitting(false));
             }}>
             {({ values: { username }, isSubmitting, errors, submitForm }) => (
               <Form>
@@ -103,6 +111,7 @@ const UsersCreatePage: NextPage<{ session: Session }> = ({ session }) => {
                         <PersonAddIcon />
                       </CardHeaderAvatar>
                     }
+                    action={<HelpButton terms={[TERMS.did]} />}
                   />
                   <CardContent>
                     <Typography variant="caption" color="inherit">

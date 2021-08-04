@@ -75,6 +75,6 @@ export const useStyles = makeStyles((theme: Theme) => {
       position: 'relative',
       bottom: 0,
       width: '100%',
-    }
+    },
   });
 });

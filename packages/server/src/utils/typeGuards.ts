@@ -1,5 +1,5 @@
 import type { IIdentifier } from '@veramo/core';
-import { Credential } from '@veramo/data-store';
+import { VerifiableCredential } from '@veramo/core';
 import { Tenant } from '../entities';
 import type { CreateOidcIssuerArgs, CreateOidcIssuerClientArgs } from '../types';
 
@@ -9,7 +9,7 @@ export const isIdentitifer = (input: any): input is IIdentifier =>
   input.keys !== undefined &&
   input.services !== undefined;
 
-export const isCredential = (input: any): input is Credential =>
+export const isVerifiableCredential = (input: any): input is VerifiableCredential =>
   input?.credentialSubject !== undefined &&
   input?.issuer !== undefined &&
   input?.type !== undefined &&

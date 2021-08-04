@@ -7,6 +7,8 @@ import Pagination from '@material-ui/lab/Pagination';
 import { withAuth } from 'components';
 import CardHeaderAvatar from 'components/CardHeaderAvatar';
 import Error from 'components/Error';
+import { TERMS } from 'components/GlossaryTerms';
+import HelpButton from 'components/HelpButton';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import NoRecord from 'components/NoRecord';
@@ -18,7 +20,7 @@ import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import type { PaginatedVerifiablePresentation } from 'types';
-import { usePagination, useReSWR, useTenant } from 'utils';
+import { useNextAuthUser, usePagination, useReSWR, useTenant } from 'utils';
 
 const PAGESIZE = 5;
 const useStyles = makeStyles((theme: Theme) =>
@@ -30,6 +32,11 @@ const useStyles = makeStyles((theme: Theme) =>
 const PresentationIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session?.user?.id);
+
+  // Pagination
   const { cursor, pageChange } = usePagination(PAGESIZE);
 
   // Show Raw Content
@@ -47,7 +54,7 @@ const PresentationIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   data && !isLoading && (count = Math.ceil(data.total / PAGESIZE));
 
   return (
-    <Layout title="Presentation" shouldShow={[show, setShow]}>
+    <Layout title="Presentation" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={3}>
       <Main
         session={session}
         title="Presentation"
@@ -60,14 +67,13 @@ const PresentationIndexPage: NextPage<{ session: Session }> = ({ session }) => {
         shouldActivate={true}>
         {isError && !isLoading && <Error error={error} />}
         {tenantInfo?.activated && (
-          <>
-            <QuickAction
-              icon="send"
-              link={`/dashboard/${tenantInfo?.id}/presentations/create`}
-              label="Presentation"
-              disabled={!tenantInfo?.id}
-            />
-          </>
+          <QuickAction
+            tooltip="Create and send"
+            icon="send"
+            link={`/dashboard/${tenantInfo?.id}/presentations/create`}
+            label="1"
+            disabled={!tenantInfo?.id}
+          />
         )}
         {tenantInfo?.activated && !!data?.items?.length && (
           <Card className={classes.root}>
@@ -78,8 +84,9 @@ const PresentationIndexPage: NextPage<{ session: Session }> = ({ session }) => {
                   <ScreenShareOutlinedIcon />
                 </CardHeaderAvatar>
               }
-              title="Active presentations"
+              title="Presentations"
               subheader={<>Total: {data?.total || 0}</>}
+              action={<HelpButton terms={[TERMS.did]} />}
             />
             <Pagination
               variant="outlined"
@@ -90,8 +97,8 @@ const PresentationIndexPage: NextPage<{ session: Session }> = ({ session }) => {
               onChange={pageChange}
             />
             <CardContent>
-              {data.items.map(({ verifiablePresentation, hash }, index) => (
-                <Card variant="outlined" key={index}>
+              {data.items.map(({ verifiablePresentation, hash }) => (
+                <Card className={classes.root} variant="outlined" key={hash}>
                   <PresentationCard
                     tenantInfo={tenantInfo}
                     vp={verifiablePresentation}

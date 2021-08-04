@@ -22,7 +22,7 @@ const useStyles = makeStyles((theme: Theme) => {
       margin: theme.spacing(3, 1, 2),
       'border-color': dark ? grey[700] : grey[400],
       'border-left': `8px solid ${theme.palette.divider}`,
-      'border-radius': '15px 15px'
+      'border-radius': '15px 15px',
     },
     details: {
       display: 'flex',
@@ -42,11 +42,11 @@ const Index: NextPage<null> = () => {
   // default user
 
   return (
-    <Layout title="Home">
+    <Layout title="Home" user={session?.user}>
       {/*** Before Login ***/}
       {!session?.user && (
         <Grid container>
-          <Grid container direction="row" justify="flex-start">
+          <Grid container direction="row" justifyContent="flex-start">
             <div className={classes.root}>
               <div className={classes.details}>
                 <CardHeader subheader="Web of Trust" />
@@ -59,7 +59,7 @@ const Index: NextPage<null> = () => {
               />
             </div>
           </Grid>
-          <Grid container direction="row" justify="flex-end">
+          <Grid container direction="row" justifyContent="flex-end">
             <div className={classes.root}>
               <div className={classes.details}>
                 <CardHeader subheader="Getting Started" />
@@ -72,7 +72,7 @@ const Index: NextPage<null> = () => {
               />
             </div>
           </Grid>
-          <Grid container direction="row" justify="flex-start" >
+          <Grid container direction="row" justifyContent="flex-start">
             <div className={classes.root}>
               <div className={classes.details}>
                 <CardHeader subheader="Features" />

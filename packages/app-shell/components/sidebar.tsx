@@ -21,11 +21,11 @@ export const sideBar: (tenantId: string) => { text: string; icon: any; link: str
     icon: <BallotOutlinedIcon />,
     link: id === '0' ? `/dashboard` : `/dashboard/${id}/credentials`,
   },
-  {
-    text: 'Request',
-    icon: <SendOutlinedIcon />,
-    link: id === '0' ? `/dashboard` : `/dashboard/${id}/requests`,
-  },
+  // {
+  //   text: 'Request',
+  //   icon: <SendOutlinedIcon />,
+  //   link: id === '0' ? `/dashboard` : `/dashboard/${id}/requests`,
+  // },
   {
     text: 'Presentation',
     icon: <ScreenShareOutlinedIcon />,

@@ -1,10 +1,9 @@
-import type { ICredentialsForSdr, VerifiableCredential } from '@verify/server';
 import { useState, useEffect, useCallback } from 'react';
 
 interface ValidationState {
   [index: string]: {
     required: boolean;
-    vc:  string | null;
+    vc:  any;
   };
 }
 

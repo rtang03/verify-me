@@ -6,7 +6,7 @@ import AlternateEmailIcon from '@material-ui/icons/AlternateEmail';
 import LanguageIcon from '@material-ui/icons/Language';
 import SendIcon from '@material-ui/icons/Send';
 import VpnKeyIcon from '@material-ui/icons/VpnKey';
-import type { IIdentifier } from '@veramo/core';
+import type { IIdentifier } from '@verify/server';
 import React from 'react';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -73,7 +73,7 @@ const Identifier: React.FC<{ identifier: IIdentifier }> = ({ identifier }) => {
           className={classes.root}
           disabled={true}
           size="small"
-          label="Public Key"
+          label={`Public Key / ${key.type}`}
           value={key.publicKeyHex}
           InputProps={{
             startAdornment: (

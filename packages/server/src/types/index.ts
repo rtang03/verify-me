@@ -1,13 +1,24 @@
 import type {
-  IMessage,
+  IMessage as _IMessage,
   IDIDManagerAddServiceArgs,
   IDIDManagerRemoveServiceArgs,
   IDIDManagerGetOrCreateArgs,
   IDIDManagerDeleteArgs,
   VerifiablePresentation,
   VerifiableCredential,
+  IDataStoreSaveVerifiableCredentialArgs,
+  IDataStoreDeleteVerifiableCredentialArgs,
+  IDIDManagerAddKeyArgs,
+  IKeyManagerCreateArgs,
+  IKey,
+  IIdentifier,
+  IHandleMessageArgs,
+  IDataStoreSaveVerifiablePresentationArgs,
 } from '@veramo/core';
-import { ICreateVerifiablePresentationArgs } from '@veramo/credential-w3c';
+import {
+  ICreateVerifiablePresentationArgs,
+  ICreateVerifiableCredentialArgs,
+} from '@veramo/credential-w3c';
 import type {
   FindArgs,
   TClaimsColumns,
@@ -18,7 +29,15 @@ import type {
   UniqueVerifiableCredential,
   UniqueVerifiablePresentation,
 } from '@veramo/data-store';
-import type { ISendMessageDIDCommAlpha1Args } from '@veramo/did-comm';
+import type {
+  ISendMessageDIDCommAlpha1Args,
+  IPackDIDCommMessageArgs,
+  IPackedDIDCommMessage,
+  IUnpackDIDCommMessageArgs,
+  IDIDCommMessage as _IDIDCommMessage,
+  DIDCommMessagePacking,
+  IUnpackedDIDCommMessage,
+} from '@veramo/did-comm';
 import type {
   ICredentialRequestInput,
   ICreateSelectiveDisclosureRequestArgs,
@@ -27,7 +46,6 @@ import type {
   ICredentialsForSdr,
   IPresentationValidationResult,
   ISelectiveDisclosure,
-  IValidatePresentationAgainstSdrArgs,
   ICreateProfileCredentialsArgs,
 } from '@veramo/selective-disclosure';
 import type { ServiceEndpoint } from 'did-resolver';
@@ -59,6 +77,42 @@ export type DataStoreORMGetVerifiableCredentialsCountArgs = FindArgs<TCredential
 export type DataStoreORMGetVerifiablePresentationsArgs = FindArgs<TPresentationColumns>;
 export type DataStoreORMGetVerifiablePresentationsCountArgs = FindArgs<TPresentationColumns>;
 
+// workaround: the original ISelectiveDisclosureRequest is incorrectly typed.
+// original type: "issuer: string"
+// return data change to "iss: string"
+export type ISelectiveDisclosureRequest = {
+  iat: number;
+  iss: string;
+  type: string;
+  subject?: string;
+  replyUrl?: string;
+  claims: ICredentialRequestInput[];
+};
+// workaround: similarly, IValidatePresentationAgainstSdrArgs needs to be changed.
+export type IValidatePresentationAgainstSdrArgs = {
+  presentation: VerifiablePresentation;
+  sdr: ISelectiveDisclosureRequest;
+};
+
+// workaround: the original type does not export
+// source: https://github.com/uport-project/veramo/blob/next/packages/did-comm/src/didcomm.ts
+export interface ISendDIDCommMessageArgs {
+  packedMessage: IPackedDIDCommMessage;
+  messageId: string;
+  returnTransportId?: string;
+  recipientDidUrl: string;
+}
+
+// Seems the Agent's SendDIDCommMessage method is using old IMessage, not this one.
+// So, it is not currently used.
+interface IDIDCommMessage<TBody = any> extends _IDIDCommMessage {
+  body: TBody | null;
+}
+
+type IMessage<TBody = any> = _IMessage & {
+  data: TBody;
+};
+
 export {
   DidDocument,
   UniqueVerifiableCredential,
@@ -80,16 +134,20 @@ export {
   ServiceEndpoint,
   IPresentationValidationResult,
   ISelectiveDisclosure,
-  IValidatePresentationAgainstSdrArgs,
   ICreateProfileCredentialsArgs,
-};
-
-// workaround: the original ISelectiveDisclosureRequest is incorrectly typed.
-export type ISelectiveDisclosureRequest = {
-  iat: number;
-  iss: string;
-  type: string;
-  subject?: string;
-  replyUrl?: string;
-  claims: ICredentialRequestInput[];
+  ICreateVerifiableCredentialArgs,
+  IPackDIDCommMessageArgs,
+  IPackedDIDCommMessage,
+  IUnpackDIDCommMessageArgs,
+  IDIDCommMessage,
+  DIDCommMessagePacking,
+  IUnpackedDIDCommMessage,
+  IDataStoreSaveVerifiableCredentialArgs,
+  IDataStoreDeleteVerifiableCredentialArgs,
+  IDIDManagerAddKeyArgs,
+  IKeyManagerCreateArgs,
+  IKey,
+  IIdentifier,
+  IHandleMessageArgs,
+  IDataStoreSaveVerifiablePresentationArgs,
 };

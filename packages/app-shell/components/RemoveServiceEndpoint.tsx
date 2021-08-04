@@ -1,5 +1,6 @@
 import CardHeader from '@material-ui/core/CardHeader';
 import IconButton from '@material-ui/core/IconButton';
+import Tooltip from '@material-ui/core/Tooltip';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import DeleteOutlineOutlinedIcon from '@material-ui/icons/DeleteOutlineOutlined';
 import LanguageIcon from '@material-ui/icons/Language';
@@ -36,8 +37,10 @@ const RemoveServiceEndpoint: React.FC<{
 
   // delete service endpoint
   const { val: removeServiceEP, poster: remove } = useFetcher<{ success: boolean }>();
-  const removeService = (body: IDIDManagerRemoveServiceArgs) =>
-    mutate(url, remove(`/api/tenants/didManagerRemoveService?slug=${slug}`, body));
+  const removeService = async (body: IDIDManagerRemoveServiceArgs) => {
+    await remove(`/api/tenants/didManagerRemoveService?slug=${slug}`, body);
+    await mutate(url);
+  };
 
   // form state
   const [openConfirm, setConfirmOpen] = React.useState(false);
@@ -65,9 +68,11 @@ const RemoveServiceEndpoint: React.FC<{
             title="Service endpoint"
             subheader="Used for Did-Comm Messaging"
             action={
-              <IconButton onClick={handleOpen}>
-                <DeleteOutlineOutlinedIcon />
-              </IconButton>
+              <Tooltip title="Delete service endpoint">
+                <IconButton onClick={handleOpen}>
+                  <DeleteOutlineOutlinedIcon />
+                </IconButton>
+              </Tooltip>
             }
           />
           <ConfirmationDialog

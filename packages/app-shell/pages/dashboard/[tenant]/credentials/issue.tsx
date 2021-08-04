@@ -3,18 +3,15 @@ import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
-import IconButton from '@material-ui/core/IconButton';
 import MuiTextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
-import HelpOutlineOutlinedIcon from '@material-ui/icons/HelpOutlineOutlined';
 import PlusOneIcon from '@material-ui/icons/PlusOne';
-import type { VerifiableCredential } from '@veramo/core';
-import type { ICreateVerifiableCredentialArgs } from '@veramo/credential-w3c';
+import type { VerifiableCredential, ICreateVerifiableCredentialArgs } from '@verify/server';
 import { withAuth } from 'components';
 import Credential from 'components/Credential';
-import GlossaryTerms, { TERMS } from 'components/GlossaryTerms';
-import HelpDialog from 'components/HelpDialog';
+import { TERMS } from 'components/GlossaryTerms';
+import HelpButton from 'components/HelpButton';
 import Layout from 'components/Layout';
 import Main from 'components/Main';
 import RawContent from 'components/RawContent';
@@ -27,7 +24,13 @@ import type { Session } from 'next-auth';
 import React, { useState } from 'react';
 import JSONTree from 'react-json-tree';
 import type { Claim } from 'types';
-import { claimToObject, useFetcher, getCreateVerifiableCredentialArgs, useTenant } from 'utils';
+import {
+  claimToObject,
+  useFetcher,
+  getCreateVerifiableCredentialArgs,
+  useTenant,
+  useNextAuthUser,
+} from 'utils';
 import * as yup from 'yup';
 
 // @see https://github.com/veramolabs/agent-explorer/blob/next/src/components/widgets/IssueCredential.tsx
@@ -49,6 +52,9 @@ const validation = yup.object({
 const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
+
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session?.user?.id);
 
   // Show Raw Content
   const [show, setShow] = useState(false);
@@ -76,13 +82,8 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
     setClaimValue('');
   };
 
-  // form state - HelpDialog
-  const [openHelp, setHelpOpen] = React.useState(false);
-  const handleHelpOpen = () => setHelpOpen(true);
-  const handleHelpClose = () => setHelpOpen(false);
-
   return (
-    <Layout title="Credential" shouldShow={[show, setShow]}>
+    <Layout title="Credential" shouldShow={[show, setShow]} user={activeUser} sideBarIndex={2}>
       <Main
         session={session}
         title="Issue Credential"
@@ -112,17 +113,9 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
                   <CardHeader
                     className={classes.root}
                     title="Credential Info"
-                    action={
-                      <IconButton onClick={handleHelpOpen}>
-                        <HelpOutlineOutlinedIcon />
-                      </IconButton>
-                    }
+                    action={<HelpButton terms={[TERMS.did]} />}
                   />
-                  <HelpDialog
-                    open={openHelp}
-                    handleClose={handleHelpClose}
-                    content={<GlossaryTerms terms={[TERMS.did]} />}
-                  />
+
                   <CardContent className={classes.root}>
                     <Field
                       className={classes.textField}
@@ -257,7 +250,7 @@ const CredentialsIssuePage: NextPage<{ session: Session }> = ({ session }) => {
                   {result?.data && !result.loading && (
                     <>
                       <CardContent>
-                        <Credential vc={result.data} />
+                        <Credential vc={result.data} tenantInfo={tenantInfo} />
                       </CardContent>
                       {show && <RawContent title="Raw Credential" content={result.data} />}
                     </>

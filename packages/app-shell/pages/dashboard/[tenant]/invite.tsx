@@ -5,7 +5,7 @@ import Main from 'components/Main';
 import type { NextPage } from 'next';
 import { Session } from 'next-auth';
 import React from 'react';
-import { useTenant } from 'utils';
+import { useNextAuthUser, useTenant } from 'utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -18,8 +18,11 @@ const InviteMemberPage: NextPage<{ session: Session }> = ({ session }) => {
   const classes = useStyles();
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session?.user?.id);
+
   return (
-    <Layout title="Tenant">
+    <Layout title="Tenant" user={activeUser}>
       <Main
         title={slug || 'Tenant details'}
         subtitle={tenantInfo?.name || ''}

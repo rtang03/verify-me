@@ -1,13 +1,17 @@
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
+import IconButton from '@material-ui/core/IconButton';
+import Typography from '@material-ui/core/Typography';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import LinkIcon from '@material-ui/icons/ExitToApp';
 import { Form, Formik } from 'formik';
-import React from 'react';
-import { mutate } from 'swr';
+import Link from 'next/link';
+import React, { useState } from 'react';
 import type { TenantInfo } from '../types';
 import { useFetcher } from '../utils';
 import ProTip from './ProTip';
+import RawContent from './RawContent';
 import Result from './Result';
 import SubmitButton from './SubmitButton';
 import TermsCondition from './TermsCondition';
@@ -21,7 +25,7 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 // First time activation
-const Activation: React.FC<{ tenantInfo: TenantInfo }> = ({ tenantInfo }) => {
+const Activation: React.FC<{ tenantInfo: TenantInfo; show: boolean }> = ({ tenantInfo, show }) => {
   const classes = useStyles();
   const { val, poster } = useFetcher();
 
@@ -30,12 +34,8 @@ const Activation: React.FC<{ tenantInfo: TenantInfo }> = ({ tenantInfo }) => {
       initialValues={{}}
       onSubmit={async (_, { setSubmitting }) => {
         setSubmitting(true);
-        await mutate(
-          `/api/tenants?id=${tenantInfo.id}`,
-          poster(
-            `${baseUrl}?id=${tenantInfo.id}&action=activate&slug=${tenantInfo.slug}`
-          ).then(() => setSubmitting(false))
-        );
+        await poster(`${baseUrl}?id=${tenantInfo.id}&action=activate&slug=${tenantInfo.slug}`);
+        setSubmitting(false);
       }}>
       {({ isSubmitting, submitForm }) => (
         <Form>
@@ -58,12 +58,29 @@ const Activation: React.FC<{ tenantInfo: TenantInfo }> = ({ tenantInfo }) => {
                 text={'Activate'}
                 submitForm={submitForm}
                 loading={isSubmitting}
-                disabled={isSubmitting || !!val?.data || !!val?.error || !tenantInfo?.id}
+                disabled={isSubmitting || val?.status === 'OK' || !!val?.error || !tenantInfo?.id}
                 success={!!val?.data}
                 error={!!val?.error}
               />
             </CardActions>
             <Result isTenantExist={true} result={val} />
+            {show && <RawContent title="Result" content={val} />}
+            {val?.status && !val?.loading && (
+              <CardContent>
+                <Typography variant="body2">
+                  <>
+                    <Link href={`/dashboard`}>
+                      <a>
+                        <IconButton>
+                          <LinkIcon />
+                        </IconButton>
+                      </a>
+                    </Link>
+                    Go Back
+                  </>
+                </Typography>
+              </CardContent>
+            )}
           </Card>
         </Form>
       )}

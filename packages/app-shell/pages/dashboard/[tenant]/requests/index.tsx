@@ -5,13 +5,16 @@ import QuickAction from 'components/QuickAction';
 import type { NextPage } from 'next';
 import type { Session } from 'next-auth';
 import React from 'react';
-import { useTenant } from 'utils';
+import { useNextAuthUser, useTenant } from 'utils';
 
 const RequestIndexPage: NextPage<{ session: Session }> = ({ session }) => {
   const { tenantInfo, slug, tenantError, tenantLoading } = useTenant();
 
+  // activeUser will pass active_tenant to Layout.ts
+  const { activeUser } = useNextAuthUser(session?.user?.id);
+
   return (
-    <Layout title="Request">
+    <Layout title="Request" user={activeUser}>
       <Main
         session={session}
         title="Selective Disclosure Request"

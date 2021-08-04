@@ -21,13 +21,14 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 import { grey } from '@material-ui/core/colors';
-import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
+import { createTheme, ThemeProvider } from '@material-ui/core/styles';
 import Brightness4Icon from '@material-ui/icons/Brightness4';
 import Brightness5Icon from '@material-ui/icons/Brightness5';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import HelpOutlineOutlinedIcon from '@material-ui/icons/HelpOutlineOutlined';
+import MoreOutlinedIcon from '@material-ui/icons/MoreOutlined';
 import NotificationsIcon from '@material-ui/icons/Notifications';
 import PermContactCalendarOutlinedIcon from '@material-ui/icons/PermContactCalendarOutlined';
 import PersonAddOutlinedIcon from '@material-ui/icons/PersonAddOutlined';
@@ -42,8 +43,8 @@ import { signIn, useSession } from 'next-auth/client';
 import Head from 'next/head';
 import Link from 'next/link';
 import React, { FC, useEffect, MouseEvent, useState, useRef, KeyboardEvent } from 'react';
-import type { PaginatedTenant } from '../types';
-import { isClient, useReSWR, useStyles, useLocalStorage } from '../utils';
+import type { PaginatedTenant, User as NextAuthUser } from 'types';
+import { isClient, useReSWR, useStyles, useLocalStorage, useActiveTenant } from '../utils';
 import AvatarMd5 from './AvatarMd5';
 import { sideBar } from './sidebar';
 
@@ -53,22 +54,14 @@ interface State {
   openSwitchTenant: boolean;
 }
 
-const Layout: FC<{ title?: string; shouldShow?: any; refresh?: any }> = ({
-  children,
-  title = 'No Title',
-  shouldShow,
-  refresh,
-}) => {
-  const {
-    toggleStorage,
-    slugLocal,
-    setSlugLocal,
-    tenantIdLocal,
-    setTenantIdLocal,
-    dark,
-    setDark,
-    setActiveTenant,
-  } = useLocalStorage();
+const Layout: FC<{
+  title?: string;
+  shouldShow?: any;
+  refresh?: any;
+  user?: NextAuthUser;
+  sideBarIndex?: number;
+}> = ({ children, title = 'No Title', shouldShow, refresh, user, sideBarIndex }) => {
+  const { toggleStorage, dark, setDark } = useLocalStorage();
   const [session] = useSession();
   const classes = useStyles();
   const [state, setState] = useState<State>({
@@ -76,7 +69,11 @@ const Layout: FC<{ title?: string; shouldShow?: any; refresh?: any }> = ({
     openTenant: false,
     openSwitchTenant: false,
   });
-  const { data: tenant, isLoading } = useReSWR<PaginatedTenant>('/api/tenants');
+
+  // ALL AVAILABLE TENANTS USED FOR SWITCHING TENANT
+  const tenantsUrl = '/api/tenants';
+  const { data: allTenants } = useReSWR<PaginatedTenant>(tenantsUrl);
+
   const handleToggle = (key: keyof State) => () => setState({ ...state, [key]: !state[key] });
   const handleListKeyDown = (key: keyof State) => (event: KeyboardEvent) =>
     event.key === 'Tab' && event.preventDefault() && setState({ ...state, [key]: false });
@@ -110,32 +107,25 @@ const Layout: FC<{ title?: string; shouldShow?: any; refresh?: any }> = ({
   }, [state.openAccount]);
   // END OF ACCOUNT
 
-  // ACTIVE TENANT
-  useEffect(() => {
-    setSlugLocal(localStorage.getItem('slug'));
-    setTenantIdLocal(localStorage.getItem('tenantId'));
-    setDark(localStorage.getItem('dark') === 'dark');
+  // SET ACTIVE TENANT
+  const { activeTenant, updateActiveTenant } = useActiveTenant({
+    activeTenantId: user?.active_tenant,
+    user,
+  });
 
-    if (tenant && !isLoading) {
-      const tid = tenant.items?.[0]?.id;
-      const slug = tenant.items?.[0]?.slug;
-      isClient() &&
-        tid &&
-        !localStorage.getItem('tenantId') &&
-        localStorage.setItem('tenantId', tid);
-      isClient() && slug && !localStorage.getItem('slug') && localStorage.setItem('slug', slug);
-    }
-  }, [session, toggleStorage, refresh]);
+  useEffect(() => {
+    setDark(localStorage.getItem('dark') === 'dark');
+  }, [session, toggleStorage]);
   // END OF CHECK ACTIVE TENANT
 
-  // SWITCH TENANT
+  // SWITCH TENANT POP-UP BUTTON
   const handleSwitchTenant = () =>
     setState({ ...state, openSwitchTenant: !state.openSwitchTenant });
   // END OF SWITCH TENANT
 
   // DARK THEME
   const theme = React.useMemo(
-    () => createMuiTheme({ palette: { type: dark ? 'dark' : 'light' } }),
+    () => createTheme({ palette: { type: dark ? 'dark' : 'light' } }),
     [dark]
   );
   // END of DARK THEME
@@ -181,7 +171,7 @@ const Layout: FC<{ title?: string; shouldShow?: any; refresh?: any }> = ({
                       aria-controls={state.openTenant ? 'menu-list-grow' : undefined}
                       aria-haspopup="true"
                       onClick={handleToggle('openTenant')}>
-                      <a>{slugLocal || 'No tenant'}</a>
+                      <a>{activeTenant?.slug || 'idle'}</a>
                     </Button>
                   </Tooltip>
                   <Popper
@@ -204,16 +194,16 @@ const Layout: FC<{ title?: string; shouldShow?: any; refresh?: any }> = ({
                               onKeyDown={handleListKeyDown('openTenant')}>
                               <ListItem onClick={handleCloseTenant}>
                                 <ListItemAvatar>
-                                  <AvatarMd5 subject={tenantIdLocal || 'idle'} />
+                                  <AvatarMd5 subject={activeTenant?.id || 'idle'} />
                                 </ListItemAvatar>
                                 <Typography variant="inherit" color="secondary">
-                                  {slugLocal?.toUpperCase() || 'No tenant'}
+                                  {activeTenant?.slug?.toUpperCase() || 'No tenant'}
                                 </Typography>
                               </ListItem>
                               <Divider />
                               {/* hide when no active tenant */}
-                              {tenantIdLocal && (
-                                <Link href={`/dashboard/${tenantIdLocal}`}>
+                              {activeTenant?.id && (
+                                <Link href={`/dashboard/${activeTenant.id}`}>
                                   <a>
                                     <MenuItem onClick={handleCloseTenant}>
                                       <ListItemIcon>
@@ -224,8 +214,8 @@ const Layout: FC<{ title?: string; shouldShow?: any; refresh?: any }> = ({
                                   </a>
                                 </Link>
                               )}
-                              {tenantIdLocal && (
-                                <Link href={`/dashboard/${tenantIdLocal}/invite`}>
+                              {activeTenant?.id && (
+                                <Link href={`/dashboard/${activeTenant.id}/invite`}>
                                   <a>
                                     <MenuItem onClick={handleCloseTenant}>
                                       <ListItemIcon>
@@ -236,7 +226,7 @@ const Layout: FC<{ title?: string; shouldShow?: any; refresh?: any }> = ({
                                   </a>
                                 </Link>
                               )}
-                              {tenantIdLocal && (
+                              {!!allTenants?.total && (
                                 <ListItem button onClick={handleSwitchTenant}>
                                   <ListItemIcon>
                                     {state.openSwitchTenant ? (
@@ -248,30 +238,46 @@ const Layout: FC<{ title?: string; shouldShow?: any; refresh?: any }> = ({
                                   <ListItemText secondary="Switch tenant" />
                                 </ListItem>
                               )}
-                              {tenant && tenant?.items?.length !== 0 && (
+                              {allTenants && allTenants?.items?.length !== 0 && user?.id && (
                                 <Collapse in={state.openSwitchTenant} timeout="auto" unmountOnExit>
                                   <List component="div" disablePadding>
-                                    {sortBy(tenant.items, 'slug')?.map((item, index) => (
+                                    <Divider />
+                                    {sortBy(allTenants.items, 'slug')?.map((item, index) => (
                                       <Link key={index} href={`/dashboard/${item.id}`}>
                                         <ListItem
                                           button
                                           className={classes.nested}
                                           onClick={handleCloseTenant}>
                                           <ListItemIcon
-                                            onClick={() =>
-                                              setActiveTenant(item.id || '', item.slug || '')
+                                            onClick={async () =>
+                                              updateActiveTenant(
+                                                user.id as string,
+                                                item.id as string
+                                              )
                                             }>
                                             <AvatarMd5 subject={item.id || 'idle'} size="small" />
                                           </ListItemIcon>
                                           <ListItemText
                                             secondary={item.slug}
-                                            onClick={() =>
-                                              setActiveTenant(item.id || '', item.slug || '')
+                                            onClick={async () =>
+                                              user?.id &&
+                                              item?.id &&
+                                              updateActiveTenant(user.id, item.id)
                                             }
                                           />
                                         </ListItem>
                                       </Link>
                                     ))}
+                                    {allTenants?.items?.length > 5 && (
+                                      <Link href="/dashboard">
+                                        <ListItem button onClick={handleCloseTenant}>
+                                          <ListItemIcon>
+                                            <MoreOutlinedIcon fontSize="small" />
+                                          </ListItemIcon>
+                                          <ListItemText secondary="More" />
+                                        </ListItem>
+                                      </Link>
+                                    )}
                                   </List>
                                 </Collapse>
                               )}
@@ -435,9 +441,9 @@ const Layout: FC<{ title?: string; shouldShow?: any; refresh?: any }> = ({
             <div className={classes.toolbar} />
             <Divider />
             <List>
-              {sideBar(tenantIdLocal || '0').map(({ text, icon, link }, index) => (
+              {sideBar(activeTenant?.id || '0').map(({ text, icon, link }, index) => (
                 <Link href={link} key={index}>
-                  <ListItem button>
+                  <ListItem button selected={sideBarIndex === index}>
                     <ListItemIcon>{icon}</ListItemIcon>
                     <ListItemText secondary={text} />
                   </ListItem>

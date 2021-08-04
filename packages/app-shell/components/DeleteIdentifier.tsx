@@ -66,7 +66,7 @@ const DeleteIdentifier: React.FC<{ tenantInfo: TenantInfo; did: string }> = ({
                   title={<Typography variant="body1">Danger Zone</Typography>}
                   subheader={
                     <Typography variant="body2">
-                      Deleted Identitifer is irrecoverable. All issued claims will no longer be
+                      Deleted Identifier is irrecoverable. All issued claims will no longer be
                       validated.
                     </Typography>
                   }

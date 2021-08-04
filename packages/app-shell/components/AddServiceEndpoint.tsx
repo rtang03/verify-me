@@ -26,7 +26,7 @@ const validation = yup.object({
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: { margin: theme.spacing(3, 1, 2) },
-    typeTextField: { width: '15ch' },
+    typeTextField: { width: '50ch' },
     serviceTextField: { width: '50ch' },
     cardHeaderAvatar: {
       color: grey[900],
@@ -44,22 +44,25 @@ const AddServiceEndpoint: React.FC<{
   const classes = useStyles();
   const { slug } = tenantInfo;
   const { val: addServiceEP, poster: add } = useFetcher<{ success: boolean }>();
-  const newService = (body: IDIDManagerAddServiceArgs) =>
-    mutate(url, add(`/api/tenants/didManagerAddService?slug=${slug}`, body));
-  const defaultService = (slug && domain && `${getTenantUrl(slug, domain, secure)}`) || '';
+  const newService = async (body: IDIDManagerAddServiceArgs) => {
+    await add(`/api/tenants/didManagerAddService?slug=${slug}`, body);
+    await mutate(url);
+  };
+  const defaultService = (slug && domain && `${getTenantUrl(slug, domain, secure)}/messaging`) || '';
 
   return (
     <Formik
       initialValues={{
-        type: 'Messaging',
-        description: '',
+        type: 'DIDCommMessaging',
+        description: 'Handles incoming DIDComm messages',
         serviceEndpoint: defaultService,
       }}
       validateOnChange={true}
       validationSchema={validation}
       onSubmit={async ({ type, serviceEndpoint, description }, { setSubmitting }) => {
         setSubmitting(true);
-        const id = `service#${did}`;
+        // see https://github.com/uport-project/veramo/blob/next/packages/remote-server/src/default-did.ts
+        const id = `${did}#msg-didcomm`;
         await newService({ did, service: { id, type, serviceEndpoint, description } }).then(() =>
           setSubmitting(false)
         );
@@ -82,7 +85,8 @@ const AddServiceEndpoint: React.FC<{
               size="small"
               component={TextField}
               name={'type'}
-              placeholder={'Messaging'}
+              placeholder={'DIDCommMessaging'}
+              value={'DIDCommMessaging'}
               variant="outlined"
               margin="normal"
             />
@@ -101,16 +105,15 @@ const AddServiceEndpoint: React.FC<{
             />
             <br />
             <Field
-              disabled={!!addServiceEP.data}
+              disabled={true}
               className={classes.serviceTextField}
               label="Description"
+              value={'Handles incoming DIDComm messages'}
               size="small"
               component={TextField}
               name={'description'}
-              placeholder={'Messaging Endpoint'}
               variant="outlined"
               margin="normal"
-              autoFocus={true}
             />
           </CardContent>
           <CardActions>
