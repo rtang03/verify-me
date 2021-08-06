@@ -76,7 +76,9 @@ Create issuer.exampel.com
 
 ### Authenticate a DID using bridge
 
-```plantuml
+<div hidden>
+```
+@startuml firstDiagram
 Title: Authenticate a did using oidc bridge
 user->browser: go to RP website
 browser->oidc_client: Fetch RP website
@@ -114,4 +116,8 @@ note left: localhost/callback
 oidc_client->oidc_verifier: oauth code
 oidc_verifier-->oidc_client: return id_token\naccess_token
 oidc_client-->browser: success web page
+@enduml
 ```
+</div>
+
+![](firstDiagram.svg)
