@@ -1,8 +1,8 @@
 require('dotenv').config({ path: './.env.test' });
 import { Express } from 'express';
 import request from 'supertest';
-import { ConnectionOptions, getRepository } from 'typeorm';
-import { Tenant, Users } from '../entities';
+import { Connection, ConnectionOptions, getRepository } from 'typeorm';
+import { Accounts, Sessions, Tenant, Users } from '../entities';
 import { createHttpServer } from '../utils';
 
 const slug = `tenant_${Math.floor(Math.random() * 1000)}`;
@@ -25,16 +25,22 @@ const commonConnectionOptions: ConnectionOptions = {
   database: ENV_VAR.DB_NAME,
   synchronize: false,
   logging: true,
-  entities: [Tenant, Users],
+  entities: [Tenant, Accounts, Users, Sessions],
 };
 
-let app: Express;
+let express: Express;
+let conn: Connection;
 let user: Users;
 let tenant: Tenant;
 
 beforeAll(async () => {
   try {
-    app = await createHttpServer({ commonConnectionOptions, envVariables: ENV_VAR });
+    const { app, commonConnections } = await createHttpServer({
+      commonConnectionOptions,
+      envVariables: ENV_VAR,
+    });
+    express = app;
+    conn = commonConnections;
 
     const _user = new Users();
     _user.name = `tenant-tester_${Math.floor(Math.random() * 1000)}`;
@@ -53,10 +59,19 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await getRepository(Users).delete(user.id);
+  await conn.close();
   return new Promise<void>((ok) => setTimeout(() => ok(), 2000));
 });
 
 describe('Oidc Issuer Tests', () => {
+  it('should fail to GET openid-configuration, invalid issuer', async () =>
+    request(express)
+      .get(`/oidc/issuers/123123/.well-known/openid-configuration`)
+      .set('host', 'issuer.example.com')
+      .expect(({ body }) => {
+        console.log(body);
+      }));
+
   it('should GET /oidc/.well-known/openid-configuration', async () => {
     return true;
   });

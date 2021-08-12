@@ -75,6 +75,48 @@ export const createOidcProviderConfig = (connectionName: string, issuerId: strin
       },
       revocation: { enabled: true }, // defaults to false
       userinfo: { enabled: true },
+      ciba: {
+        ack: undefined,
+        deliveryModes: ['poll'],
+        enabled: false,
+        processLoginHint: async (ctx, loginHint) => {
+          // @param ctx - koa request context
+          // @param loginHint - string value of the login_hint parameter
+          throw new Error('features.ciba.processLoginHint not implemented');
+        },
+        processLoginHintToken: async (ctx, loginHintToken) => {
+          // @param ctx - koa request context
+          // @param loginHintToken - string value of the login_hint_token parameter
+          throw new Error('features.ciba.processLoginHintToken not implemented');
+        },
+        triggerAuthenticationDevice: async (ctx, request, account, client) => {
+          // @param ctx - koa request context
+          // @param request - the BackchannelAuthenticationRequest instance
+          // @param account - the account object retrieved by findAccount
+          // @param client - the Client instance
+          throw new Error('features.ciba.triggerAuthenticationDevice not implemented');
+        },
+        validateBindingMessage: async (ctx, bindingMessage) => {
+          // @param ctx - koa request context
+          // @param bindingMessage - string value of the binding_message parameter, when not provided it is undefined
+          // if (bindingMessage && !/^[a-zA-Z0-9-._+/!?#]{1,20}$/.exec(bindingMessage)) {
+          //   throw new errors.InvalidBindingMessage(
+          //     'the binding_message value, when provided, needs to be 1 - 20 characters in length and use only a basic set of characters (matching the regex: ^[a-zA-Z0-9-._+/!?#]{1,20}$ )'
+          //   );
+          // }
+        },
+        validateRequestContext: async (ctx, requestContext) => {
+          // @param ctx - koa request context
+          // @param requestContext - string value of the request_context parameter, when not provided it is undefined
+          throw new Error('features.ciba.validateRequestContext not implemented');
+        },
+        // verifyUserCode: async (ctx, account, userCode) => {
+        //   // @param ctx - koa request context
+        //   // @param account -
+        //   // @param userCode - string value of the user_code parameter, when not provided it is undefined
+        //   throw new Error('features.ciba.verifyUserCode not implemented');
+        // },
+      },
     },
     interactions: {
       url: (ctx, interaction) => `/oidc/issuers/${issuerId}/interaction/${interaction.uid}`,
@@ -101,5 +143,20 @@ export const createOidcProviderConfig = (connectionName: string, issuerId: strin
       'none',
     ],
     scopes: ['openid', 'offline_access', 'oidc_credential'],
+    discovery: {
+      // issuer expressing support for did
+      dids_supported: true,
+      did_methods_supported: ['did:"web'],
+      // issuer advertising support for issuing credentials
+      credential_supported: true,
+      credential_formats_supports: ['jwt'],
+      // information about credential the issuer offer
+      credential_claims_supported: [
+        'given_name',
+        'last_name',
+        'https://www.w3.org/2018/credentials/examples/v1/degree',
+      ],
+      credential_name: 'University Credential',
+    },
   };
 };

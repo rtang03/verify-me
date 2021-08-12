@@ -346,6 +346,9 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
   router.use('/issuers/:id', (req: RequestWithVhost, res) => {
     const issuerId = req.params.id;
+
+    // Todo: need to check if oidc-issuer exists, before Oidc provider is usable.
+
     const oidc = tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
 
     debug('USE /oidc/issuers/:issuer_id');

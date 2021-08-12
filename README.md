@@ -68,6 +68,7 @@ openssl req -new -x509 -nodes -sha1 -days 3650 -key host.key > host.crt
 - https://github.com/bcgov/vc-authn-oidc/tree/master/docs
 - https://datatracker.ietf.org/doc/html/draft-madden-jose-ecdh-1pu-03
 - https://github.com/hyperledger/aries-rfcs/blob/master/features/0334-jwe-envelope/README.md
+- https://medium.com/@CreatorNader/introducing-oidc-credential-provider-7845391a9881
 
 Step:
 Start RP (not ready)

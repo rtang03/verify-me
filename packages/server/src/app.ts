@@ -3,6 +3,7 @@ import fs from 'fs';
 import http from 'http';
 import https from 'https';
 import util from 'util';
+import { Express } from 'express';
 import type { ConnectionOptions } from 'typeorm';
 import { Accounts, Sessions, Tenant, Users } from './entities';
 import { createHttpServer } from './utils';
@@ -33,7 +34,7 @@ const commonConnectionOptions: ConnectionOptions = {
 };
 
 (async () => {
-  let server;
+  let server: Express;
   console.log('====Starting REST Server====');
   // All env var are required
   Object.entries<string | number>(ENV_VAR).forEach(([key, value]) => {
@@ -51,10 +52,11 @@ const commonConnectionOptions: ConnectionOptions = {
   });
 
   try {
-    server = await createHttpServer({
+    const { app } = await createHttpServer({
       commonConnectionOptions,
       envVariables: ENV_VAR,
     });
+    server = app;
   } catch (error) {
     console.error(util.format('❌  An error occurred while createHttpserver: %j', error));
     process.exit(1);

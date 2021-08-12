@@ -13,8 +13,11 @@ module.exports = {
   ],
   // testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.tsx?$',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  moduleDirectories: ['node_modules'],
+  moduleDirectories: ['node_modules', '../../node_modules'],
   testURL: 'http://localhost/',
   testEnvironment: 'node',
   setupFilesAfterEnv: ['./jest.setup.js'],
+  moduleNameMapper: {
+    '^jose/(.*)$': '<rootDir>/../../node_modules/jose/dist/node/cjs/$1',
+  },
 };

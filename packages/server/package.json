@@ -6,14 +6,14 @@
   "private": true,
   "scripts": {
     "dev": "npm run build && node dist/app",
-    "dev:sudo": "npm run build && sudo DEBUG=utils:createAgentRouter NODE_TLS_REJECT_UNAUTHORIZED=\"0\" node dist/app",
+    "dev:sudo": "npm run build && sudo DEBUG=utils:createOidcRoute NODE_TLS_REJECT_UNAUTHORIZED=\"0\" node dist/app",
     "clean": "rimraf dist",
     "build": "yarn clean && tsc",
     "prebuild": "rimraf dist",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start:prod": "node dist/app",
     "test:veramo": "jest --forceExit --detectOpenHandles veramo.unit-test",
-    "test:issuer": "jest --forceExit --detectOpenHandles issuer.unit-test",
+    "test:issuer": "jest --forceExit --detectOpenHandles oidcIssuer.unit-test",
     "test:tenant": "jest --forceExit --detectOpenHandles tenant.unit-test"
   },
   "dependencies": {
@@ -42,9 +42,10 @@
     "express": "^4.17.1",
     "helmet": "^4.5.0",
     "lodash": "^4.17.21",
+    "jose": "^3.14.3",
     "jose2": "npm:jose@^2.0.4",
     "jwt-decode": "^3.1.2",
-    "oidc-provider": "^7.5.1",
+    "oidc-provider": "^7.6.0",
     "pg": "^8.6.0",
     "rimraf": "^3.0.2",
     "typeorm": "^0.2.32",
@@ -66,10 +67,10 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^3.4.0",
     "eslint-plugin-import": "^2.22.1",
-    "jest": "^26.6.3",
+    "jest": "^27.0.6",
     "prettier": "^2.2.1",
     "supertest": "^6.1.3",
-    "ts-jest": "^26.5.4",
+    "ts-jest": "^27.0.4",
     "typescript": "^4.2.3"
   }
 }

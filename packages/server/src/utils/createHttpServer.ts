@@ -20,7 +20,11 @@ export const createHttpServer: (option: {
   commonConnectionOptions?: ConnectionOptions;
   envVariables?: any;
   baseUrl?: string;
-}) => Promise<Express> = async ({ commonConnectionOptions, envVariables, baseUrl }) => {
+}) => Promise<{ app: Express; commonConnections: Connection }> = async ({
+  commonConnectionOptions,
+  envVariables,
+  baseUrl,
+}) => {
   let commonConnections: Connection;
 
   try {
@@ -76,5 +80,5 @@ export const createHttpServer: (option: {
   // /identifiers/did:web:example.com/users
   // app.use('/identifiers', createIdentifierRoute(identifierRepo));
 
-  return app;
+  return { app, commonConnections };
 };
