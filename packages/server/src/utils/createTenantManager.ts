@@ -2,7 +2,7 @@ import util from 'util';
 import { Entities } from '@veramo/data-store';
 import Debug from 'debug';
 import includes from 'lodash/includes';
-import { Provider } from 'oidc-provider';
+import { JWK, Provider } from 'oidc-provider';
 import { Connection, ConnectionOptions, createConnection, getConnection } from 'typeorm';
 import {
   Tenant,
@@ -43,9 +43,10 @@ const createConnOption: (tenant: Tenant) => ConnectionOptions = (tenant) => ({
 
 const debug = Debug('createTenantManager');
 
-export const createTenantManager: (commonConnection: Connection) => TenantManager = (
-  commonConnection
-) => {
+export const createTenantManager: (
+  commonConnection: Connection,
+  jwks: { keys: JWK[] }
+) => TenantManager = (commonConnection, jwks) => {
   // connectionPromises' key is "tenantId"
   let connectionPromises: Record<string, Promise<Connection>>;
   // agents' key is "slug"
@@ -57,7 +58,13 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
   return {
     createOrGetOidcProvider: (hostname, tenantId, issuerId) => {
       const uri = `https://${hostname}/oidc/issuers/${issuerId}`;
-      oidcProivders[tenantId] ??= new Provider(uri, createOidcProviderConfig(tenantId, issuerId));
+      oidcProivders[tenantId] ??= new Provider(
+        uri,
+        createOidcProviderConfig(tenantId, issuerId, jwks)
+      );
+
+      // see https://github.com/panva/node-oidc-provider/tree/main/docs#trusting-tls-offloading-proxies
+      oidcProivders[tenantId].proxy = true;
       return oidcProivders[tenantId];
     },
     activiate: async (tenantId) => {

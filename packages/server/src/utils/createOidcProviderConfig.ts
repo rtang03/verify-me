@@ -1,8 +1,13 @@
-import type { Configuration } from 'oidc-provider';
+import type { Configuration, JWK } from 'oidc-provider';
 import { createOidcAdapter } from './createOidcAdapter';
 
-export const createOidcProviderConfig = (connectionName: string, issuerId: string) => {
+export const createOidcProviderConfig = (
+  connectionName: string,
+  issuerId: string,
+  jwks: { keys: JWK[] }
+) => {
   return <Configuration>{
+    jwks,
     acrValues: ['0'],
     adapter: createOidcAdapter(connectionName),
     claims: {

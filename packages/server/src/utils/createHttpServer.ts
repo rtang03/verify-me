@@ -4,6 +4,7 @@ import cors from 'cors';
 import express, { Express, json, urlencoded } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import type { JWK } from 'oidc-provider';
 import { Connection, ConnectionOptions, createConnection, getConnection } from 'typeorm';
 import vhost from 'vhost';
 import {
@@ -15,6 +16,7 @@ import {
 } from '../controllers';
 import { Accounts, Tenant, Users } from '../entities';
 import { createTenantManager } from './createTenantManager';
+import { genJwks } from './genJwks';
 
 export const createHttpServer: (option: {
   commonConnectionOptions?: ConnectionOptions;
@@ -26,6 +28,7 @@ export const createHttpServer: (option: {
   baseUrl,
 }) => {
   let commonConnections: Connection;
+  let jwks: { keys: JWK[] };
 
   try {
     // Connect common connection
@@ -36,7 +39,15 @@ export const createHttpServer: (option: {
     process.exit(1);
   }
 
-  const tenantManager = createTenantManager(commonConnections);
+  try {
+    jwks = await genJwks(envVariables.OIDC_JWKS_PRIVATE_KEY_FILE);
+  } catch (e) {
+    console.error('Fail to read private key');
+    console.error(e);
+    process.exit(1);
+  }
+
+  const tenantManager = createTenantManager(commonConnections, jwks);
 
   try {
     // Connect all pre-existing tenants

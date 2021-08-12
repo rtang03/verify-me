@@ -9,3 +9,4 @@ export * from './createDidDocument';
 export * from './fetchOpenIdConfiguration';
 export * from './createOidcAdapter';
 export * from './createOidcProviderConfig';
+export * from './genJwks';

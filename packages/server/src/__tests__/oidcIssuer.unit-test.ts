@@ -14,6 +14,7 @@ const ENV_VAR = {
   DB_USERNAME: process.env.TYPEORM_USERNAME,
   DB_PASSWORD: process.env.TYPEORM_PASSWORD,
   DB_NAME: process.env.TYPEORM_DATABASE,
+  OIDC_JWKS_PRIVATE_KEY_FILE: process.env.OIDC_JWKS_PRIVATE_KEY_FILE,
 };
 const commonConnectionOptions: ConnectionOptions = {
   name: 'default',
@@ -60,7 +61,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await getRepository(Users).delete(user.id);
   await conn.close();
-  return new Promise<void>((ok) => setTimeout(() => ok(), 2000));
+  return new Promise<void>((ok) => setTimeout(() => ok(), 500));
 });
 
 describe('Oidc Issuer Tests', () => {
@@ -72,9 +73,12 @@ describe('Oidc Issuer Tests', () => {
         console.log(body);
       }));
 
-  it('should GET /oidc/.well-known/openid-configuration', async () => {
-    return true;
-  });
+  it('should GET /oidc/.well-known/openid-configuration', async () =>
+    request(express)
+      .get(`/oidc/issuers/123123/.well-known/openid-configuration`)
+      .set('host', 'issuer.example.com')
+      .set('X-Forwarded-Proto', 'https')
+      .expect(({ body }) => expect(body.subject_types_supported).toEqual(['public'])));
 
   it('should POST /oidc/issuers', async () => {
     return true;
