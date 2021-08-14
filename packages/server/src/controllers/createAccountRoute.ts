@@ -1,6 +1,6 @@
 import Status from 'http-status';
 import { Repository } from 'typeorm';
-import { Accounts } from '../entities/Accounts';
+import { Accounts } from '../entities';
 import { CommonResponse, Paginated } from '../types';
 import { createRestRoute } from '../utils';
 

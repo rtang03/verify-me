@@ -14,8 +14,8 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
       refresh_token        TEXT,
       access_token         TEXT,
       access_token_expires TIMESTAMPTZ,
-      created_at           TIMESTAMPTZ NOT NULL DEFAULT Now(),
-      updated_at           TIMESTAMPTZ NOT NULL DEFAULT Now(),
+      created_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (id)
     );
 
@@ -26,20 +26,20 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
       expires       TIMESTAMPTZ NOT NULL,
       session_token VARCHAR(255) NOT NULL,
       access_token  VARCHAR(255) NOT NULL,
-      created_at    TIMESTAMPTZ NOT NULL DEFAULT Now(),
-      updated_at    TIMESTAMPTZ NOT NULL DEFAULT Now(),
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (id)
     );
 
   CREATE TABLE IF NOT EXISTS users
     (
-      id             SERIAL,
+      id uuid DEFAULT uuid_generate_v4 (),
       name           VARCHAR(255),
       email          VARCHAR(255),
       email_verified TIMESTAMPTZ,
       image          TEXT,
-      created_at     TIMESTAMPTZ NOT NULL DEFAULT Now(),
-      updated_at     TIMESTAMPTZ NOT NULL DEFAULT Now(),
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
       active_tenant  VARCHAR(255),
       PRIMARY KEY (id)
     );
@@ -50,8 +50,8 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
       identifier  VARCHAR(255) NOT NULL,
       token      VARCHAR(255) NOT NULL,
       expires    TIMESTAMPTZ NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT Now(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT Now(),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (id)
     );
 
@@ -62,15 +62,16 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "auth_db" <<-EOSQL
       name VARCHAR(100),
       activated BOOLEAN NOT NULL DEFAULT FALSE,
       members TEXT,
-      user_id INTEGER NOT NULL,
+      "usersId" uuid NOT NULL,
       db_name VARCHAR(100) NOT NULL,
       db_host VARCHAR(255),
       db_username VARCHAR(100),
       db_password TEXT,
       db_port INTEGER NOT NULL DEFAULT 5432,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT Now(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT Now(),
-      PRIMARY KEY (id)
+      created_at timestamp NOT NULL DEFAULT Now(),
+      updated_at timestamp NOT NULL DEFAULT Now(),
+      PRIMARY KEY (id),
+      FOREIGN KEY ("usersId") REFERENCES users(id)
     );
 
   CREATE UNIQUE INDEX compound_id

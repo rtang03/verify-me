@@ -10,7 +10,7 @@ export type TenantStatus = {
 
 export type TenantManager = {
   createOrGetOidcProvider: (hostname: string, tenantId: string, issuerId: string) => Provider;
-  activiate: (tenantId: string) => Promise<boolean>;
+  activate: (tenantId: string) => Promise<boolean>;
   connectAllDatabases: () => Promise<void>;
   deactivate: (tenantId: string) => Promise<boolean>;
   getAgents: () => Record<string, TTAgent>;

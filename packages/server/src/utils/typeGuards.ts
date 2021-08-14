@@ -20,14 +20,9 @@ export const isVerifiableCredential = (input: any): input is VerifiableCredentia
 export const isTenant = (input: any): input is Tenant =>
   input?.slug !== undefined &&
   input?.id !== undefined &&
-  input?.user_id !== undefined &&
   input?.created_at !== undefined &&
   input?.updated_at !== undefined &&
-  input?.db_name !== undefined &&
-  input?.db_host !== undefined &&
-  input?.db_username !== undefined &&
-  input?.db_password !== undefined &&
-  input?.db_port !== undefined;
+  input?.users !== undefined;
 
 // Todo: full other condition later
 export const isCreateOidcIssuerArgs = (input: any): input is CreateOidcIssuerArgs =>

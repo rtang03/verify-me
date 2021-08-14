@@ -344,10 +344,18 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     }
   );
 
-  router.use('/issuers/:id', (req: RequestWithVhost, res) => {
+  router.use('/issuers/:id', async (req: RequestWithVhost, res) => {
     const issuerId = req.params.id;
+    const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
 
-    // Todo: need to check if oidc-issuer exists, before Oidc provider is usable.
+    try {
+      const issuer = await issuerRepo.findOne(issuerId);
+
+      if (!issuer) return res.status(Status.BAD_REQUEST).send({ error: 'Invalid issuer id' });
+    } catch (error) {
+      console.error(error);
+      return res.status(Status.BAD_REQUEST).send({ error });
+    }
 
     const oidc = tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
 

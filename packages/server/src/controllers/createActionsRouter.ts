@@ -7,7 +7,7 @@ export const createActionsRouter = (commonConnection: Connection, tenantManager:
   const router = Router();
 
   router.post('/:tenant_id/activate', async (req, res) => {
-    // todo: Later, use Vhost to double check against tenant_id, as a form of authentication.
+    // todo: Later, use Vhost to double check against tenant_id dervied from access token, as a form of authentication.
     // const slug = req.vhost[0];
     const tenantId = req.params.tenant_id;
 
@@ -15,7 +15,7 @@ export const createActionsRouter = (commonConnection: Connection, tenantManager:
       return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'missing tenantId' });
 
     try {
-      const data = await tenantManager.activiate(tenantId);
+      const data = await tenantManager.activate(tenantId);
       res.status(Status.OK).send({ status: 'OK', data });
     } catch (error) {
       console.error(error);

@@ -35,7 +35,8 @@ let tenant: Tenant;
 
 beforeAll(async () => {
   try {
-    app = await createHttpServer({ commonConnectionOptions, envVariables: ENV_VAR });
+    const server = await createHttpServer({ commonConnectionOptions, envVariables: ENV_VAR });
+    app = server.app;
 
     const _user = new Users();
     _user.name = `tenant-tester_${Math.floor(Math.random() * 1000)}`;
