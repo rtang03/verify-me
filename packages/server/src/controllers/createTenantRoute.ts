@@ -29,6 +29,8 @@ export const createTenantRoute = (
       if (data) res.status(Status.OK).send({ status: 'OK', data });
       else res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND' });
     },
+    // TODO: Bug here. Parameter tampering with query parameter "user_id".
+    // The query parameter "user_id" should be replaced user revealed by bearer token
     GET_ALL: async (req, res, skip, take) => {
       // query with user_id
       const user_id = req?.query?.user_id;

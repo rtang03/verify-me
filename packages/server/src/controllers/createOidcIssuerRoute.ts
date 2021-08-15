@@ -14,6 +14,9 @@ interface RequestWithVhost extends Request {
 
 const debug = Debug('utils:createOidcRoute');
 
+/**
+ * Restful api for /oidc/issuers, being invoked via createOidcRoute.ts
+ */
 export const createOidcIssuerRoute = () =>
   createRestRoute({
     GET: async (req: RequestWithVhost, res) => {
@@ -49,6 +52,7 @@ export const createOidcIssuerRoute = () =>
       };
       res.status(Status.OK).send(response);
     },
+    // TODO: currently, there is no check in CREATE. Need the check, before adding negative test cases.
     POST: async (req: RequestWithVhost, res) => {
       const body: unknown = req.body;
 
@@ -79,6 +83,7 @@ export const createOidcIssuerRoute = () =>
         issuer.federatedProvider = provider;
         issuer.claimMappings = body.claimMappings;
 
+        // cascade insert
         const data = await issuerRepo.save(issuer);
 
         // update the callbackUrl

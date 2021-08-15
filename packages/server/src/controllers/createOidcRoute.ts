@@ -344,6 +344,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     }
   );
 
+  // IMPORTANT: Oidc-provider is added to each Oidc-issuer
   router.use('/issuers/:id', async (req: RequestWithVhost, res) => {
     const issuerId = req.params.id;
     const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
@@ -359,7 +360,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
     const oidc = tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
 
-    debug('USE /oidc/issuers/:issuer_id');
+    debug('at /oidc/issuers/:issuer_id, %s', issuerId);
 
     return oidc
       ? oidc.callback()(req, res)

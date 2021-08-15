@@ -30,7 +30,7 @@ const createConnOption: (tenant: Tenant) => ConnectionOptions = (tenant) => ({
   database: tenant.db_name,
   synchronize: true,
   // TODO: logging changes to configurable
-  logging: true,
+  logging: process.env.NODE_ENV !== 'production',
   entities: [
     ...Entities,
     OidcCredential,
@@ -90,7 +90,7 @@ export const createTenantManager: (
       }
       if (!tenant) throw new Error('tenant not found');
 
-      debug('tenant found');
+      debug('tenant found, %s', tenantId);
 
       // step 1: check schema
       console.log('Create schema if not exist,... ');
@@ -126,6 +126,7 @@ export const createTenantManager: (
         const result = await tenantRepo.update(tenant.id, { activated: true });
 
         debug('update "activated": %O', result);
+
         result?.affected === 1 && (isTenantUpdated = true);
       } catch (e) {
         console.warn(util.format('fail to update Tenant %s, %j', tenant.id, e));
@@ -195,13 +196,15 @@ export const createTenantManager: (
         console.log('no schema returned');
       }
 
+      let tenant: Tenant;
       try {
-        const tenant = await tenantRepo.findOne(tenantId);
+        tenant = await tenantRepo.findOne(tenantId);
         isActivated = tenant?.activated;
         isAgentReady = !!agents[tenant.slug];
       } catch (e) {
         console.warn(util.format('fail to find tenant %s, %j', tenantId, e));
       }
+      if (!tenant) throw new Error('tenant not found');
 
       return <TenantStatus>{
         isActivated,

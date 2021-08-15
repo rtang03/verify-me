@@ -2,12 +2,12 @@ require('dotenv').config({ path: './.env' });
 import { Express } from 'express';
 import Status from 'http-status';
 import request from 'supertest';
-import { Connection, ConnectionOptions, getConnection, getRepository } from 'typeorm';
+import { Connection, ConnectionOptions, getRepository } from 'typeorm';
 import { Accounts, Sessions, Tenant, Users } from '../entities';
 import type { CommonResponse, CreateOidcIssuerArgs, Paginated, TenantManager } from '../types';
-import { createHttpServer, getSchemaName, isTenant } from '../utils';
+import { createHttpServer, isTenant } from '../utils';
 
-const slug = `tenant_${Math.floor(Math.random() * 1000)}`;
+const slug = `tenant_${~~(Math.random() * 1000)}`;
 const ENV_VAR = {
   HOST: process.env.HOST || '0.0.0.0',
   PORT: parseInt(process.env.PORT, 10) || 3002,
@@ -28,6 +28,7 @@ const commonConnectionOptions: ConnectionOptions = {
   username: ENV_VAR.DB_USERNAME,
   password: ENV_VAR.DB_PASSWORD,
   database: ENV_VAR.DB_NAME,
+  // must be non-synchronous; the dev-net is bootstraped with init-script
   synchronize: false,
   logging: true,
   entities: [Tenant, Accounts, Users, Sessions],
@@ -89,6 +90,9 @@ afterAll(async () => {
 });
 
 describe('Oidc Issuer Tests', () => {
+  /**
+   * Part 1: Tenants tests
+   */
   it('should fail to GET /is_agent_exist', async () =>
     request(express)
       .get('/is_agent_exist')
@@ -139,7 +143,7 @@ describe('Oidc Issuer Tests', () => {
   //       expect(status).toEqual(Status.BAD_REQUEST);
   //     }));
 
-  it('should create tenant', async () =>
+  it('should POST /tenants', async () =>
     request(express)
       .post(`/tenants`)
       .set('host', 'example.com')
@@ -151,7 +155,9 @@ describe('Oidc Issuer Tests', () => {
         expect(status).toEqual(Status.CREATED);
       }));
 
-  it('should query tenants', async () =>
+  // TODO: Bug here. Parameter tampering with query parameter "user_id".
+  // The query parameter "user_id" should be replaced user revealed by bearer token
+  it('should GET /tenants', async () =>
     request(express)
       .get(`/tenants?user_id=${user.id}`)
       .set('host', 'example.com')
@@ -163,14 +169,56 @@ describe('Oidc Issuer Tests', () => {
         expect(status).toEqual(Status.OK);
       }));
 
-  it('should activate', async () =>
+  // it('should fail to POST /actions/:tenantId/activate, invalid tenantId', async () =>
+  //   request(express)
+  //     .post(`/actions/0ac6d292-1868-44d3-a161-923052e11fb8/activate`)
+  //     .set('host', 'example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(async ({ body, status }) => {
+  //       expect(body).toEqual({ status: 'ERROR', error: 'tenant not found' });
+  //       expect(status).toEqual(Status.BAD_REQUEST);
+  //     }));
+
+  it('should POST /actions/:tenantId/activate', async () =>
     request(express)
       .post(`/actions/${tenant.id}/activate`)
-      .set('host', 'issuer.example.com')
+      .set('host', 'example.com')
       .set('authorization', `Bearer`)
-      .expect(({ body, status }) => {
+      .expect(async ({ body, status }) => {
         expect(body).toEqual({ status: 'OK', data: true });
         expect(status).toEqual(Status.OK);
+      }));
+
+  // Add new test, for repeated "activate"
+
+  it('should GET /actions/tenant_summary, after activation', async () =>
+    request(express)
+      .get('/actions/tenant_summary')
+      .set('host', 'example.com')
+      .set('authorization', `Bearer`)
+      .expect(({ body, status }) => {
+        expect(status).toEqual(Status.OK);
+        expect(body?.data?.agentCount).toEqual(1);
+      }));
+
+  // it('should fail to GET /actions/:tenantId/tenant_status, invalid tenantId', async () =>
+  //   request(express)
+  //     .get(`/actions/0ac6d292-1868-44d3-a161-923052e11fb8/tenant_status`)
+  //     .set('host', 'issuer.example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(({ body, status }) => {
+  //       expect(body).toEqual({ status: 'ERROR', error: 'tenant not found' });
+  //       expect(status).toEqual(Status.BAD_REQUEST);
+  //     }));
+
+  it('should GET /actions/:tenantId/tenant_status', async () =>
+    request(express)
+      .get(`/actions/${tenant.id}/tenant_status`)
+      .set('host', 'example.com')
+      .set('authorization', `Bearer`)
+      .expect(({ body, status }) => {
+        expect(status).toEqual(Status.OK);
+        expect(body?.data).toEqual({ isActivated: true, isSchemaExist: true, isAgentReady: true });
       }));
 
   it('should GET /is_agent_exist, after activation', async () =>
@@ -180,17 +228,24 @@ describe('Oidc Issuer Tests', () => {
       .set('authorization', `Bearer`)
       .expect(({ body }) => expect(body).toEqual({ data: 'Agent found' })));
 
-  // it('should fail to GET openid-configuration, invalid issuer', async () =>
-  //   request(express)
-  //     .get(`/oidc/issuers/d9721cac-4239-4b1a-a690-d283c66f4e49/.well-known/openid-configuration`)
-  //     .set('host', 'issuer.example.com')
-  //     .expect(({ body }) => expect(body?.error).toContain('Invalid issuer id')));
-  //
-  // // TODO: currently, there is no check in CREATE. Need the check, before adding negative test cases.
-  // it('should create oidc-issuer', async () =>
+  /**
+   * Part 2: Oidc Issuer tests
+   */
+  it('wait 5s', async () => new Promise((ok) => setTimeout(() => ok(true), 5000)));
+
+  // IMPORTANT: host is used to determine the tenant
+  it('should fail to GET openid-configuration, invalid issuer', async () =>
+    request(express)
+      .get(`/oidc/issuers/d9721cac-4239-4b1a-a690-d283c66f4e49/.well-known/openid-configuration`)
+      .set('host', 'issuer.example.com')
+      .set('authorization', `Bearer`)
+      .expect(({ body }) => expect(body?.error).toContain('Invalid issuer id')));
+
+  // it('should POST /oidc/issuers', async () =>
   //   request(express)
   //     .post('/oidc/issuers')
   //     .set('host', 'issuer.example.com')
+  //     .set('authorization', `Bearer`)
   //     .send(<CreateOidcIssuerArgs>{
   //       credential: {
   //         issuerDid: 'did:web:issuer.example.com',
@@ -213,7 +268,7 @@ describe('Oidc Issuer Tests', () => {
   //         },
   //       ],
   //     })
-  //     .expect(({ body }) => {
+  //     .expect(({ body, status }) => {
   //       console.log(body);
   //     }));
 
@@ -224,7 +279,31 @@ describe('Oidc Issuer Tests', () => {
   //     .set('X-Forwarded-Proto', 'https')
   //     .expect(({ body }) => expect(body.subject_types_supported).toEqual(['public'])));
 
-  it('should POST /oidc/issuers', async () => {
-    return true;
-  });
+  // it('should POST /oidc/issuers', async () => {
+  //   return true;
+  // });
+
+  /**
+   * Tear down tests
+   */
+  it('should POST /actions/:tenantId/deactivate', async () =>
+    request(express)
+      .post(`/actions/${tenant.id}/deactivate`)
+      .set('host', 'issuer.example.com')
+      .set('authorization', `Bearer`)
+      .expect(({ body, status }) => {
+        expect(status).toEqual(Status.OK);
+        expect(body?.data).toBeTruthy();
+      }));
+
+  // NOTE: deactivation will NOT drop Schema
+  it('should GET /actions/tenant_summary, after deactivation', async () =>
+    request(express)
+      .get('/actions/tenant_summary')
+      .set('host', 'issuer.example.com')
+      .set('authorization', `Bearer`)
+      .expect(({ body, status }) => {
+        expect(status).toEqual(Status.OK);
+        expect(body?.data?.agentCount).toEqual(0);
+      }));
 });
