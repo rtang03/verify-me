@@ -4,7 +4,7 @@ import intersection from 'lodash/intersection';
 import omit from 'lodash/omit';
 import { Repository } from 'typeorm';
 import { Tenant, Users } from '../entities';
-import type { CommonResponse, CreateTenantArgs, Paginated } from '../types';
+import type { CreateTenantArgs, Paginated } from '../types';
 import { createRestRoute } from '../utils';
 
 const debug = Debug('utils:createTenantRouter');
@@ -15,19 +15,22 @@ export const createTenantRoute = (
   envVariables?: any
 ) =>
   createRestRoute({
+    // TODO: Bug here. Should use token, to verify req.params.id is correct.
+    // Here any one can query all tenants.
     GET: async (req, res) => {
       const items = await tenantRepo.findByIds([req.params.id]);
       const filtered = items.map((data) =>
         omit(data, 'db_name', 'db_host', 'db_port', 'db_username', 'db_password')
       );
-      const data: Paginated<Partial<Tenant>> = {
-        total: 1,
-        cursor: 1,
+      const data = <Paginated<Partial<Tenant>>>{
+        total: items.length,
+        cursor: items.length,
         hasMore: false,
         items: filtered,
       };
-      if (data) res.status(Status.OK).send({ status: 'OK', data });
-      else res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND' });
+
+      if (data?.total) res.status(Status.OK).send({ status: 'OK', data });
+      else res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND', data });
     },
     // TODO: Bug here. Parameter tampering with query parameter "user_id".
     // The query parameter "user_id" should be replaced user revealed by bearer token
@@ -56,11 +59,10 @@ export const createTenantRoute = (
       );
       const hasMore = skip + take < total;
       const cursor = hasMore ? skip + take : total;
-      const response: CommonResponse<Paginated<Partial<Tenant>>> = {
-        status: 'OK',
-        data: { total, cursor, hasMore, items: filtered },
-      };
-      res.status(Status.OK).send(response);
+      const data = <Paginated<Partial<Tenant>>>{ total, cursor, hasMore, items: filtered };
+
+      if (data?.total) res.status(Status.OK).send({ status: 'OK', data });
+      else res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND', data });
     },
     POST: async (req, res) => {
       const body: CreateTenantArgs = req.body;

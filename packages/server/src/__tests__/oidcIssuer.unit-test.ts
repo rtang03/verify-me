@@ -3,9 +3,15 @@ import { Express } from 'express';
 import Status from 'http-status';
 import request from 'supertest';
 import { Connection, ConnectionOptions, getRepository } from 'typeorm';
-import { Accounts, Sessions, Tenant, Users } from '../entities';
-import type { CommonResponse, CreateOidcIssuerArgs, Paginated, TenantManager } from '../types';
-import { createHttpServer, isTenant } from '../utils';
+import { Accounts, OidcIssuer, Sessions, Tenant, Users } from '../entities';
+import type {
+  CommonResponse,
+  CreateOidcIssuerArgs,
+  CreateOidcIssuerClientArgs,
+  Paginated,
+  TenantManager,
+} from '../types';
+import { createHttpServer, isOidcClient, isOidcIssuer, isTenant } from '../utils';
 
 const slug = `tenant_${~~(Math.random() * 1000)}`;
 const ENV_VAR = {
@@ -33,11 +39,14 @@ const commonConnectionOptions: ConnectionOptions = {
   logging: true,
   entities: [Tenant, Accounts, Users, Sessions],
 };
+const notFoundData = { total: 0, cursor: 0, hasMore: false, items: [] };
 
 let express: Express;
 let conn: Connection;
 let user: Users;
 let tenant: Tenant;
+let issuerId: string;
+let openIdConfiguraiton: any;
 
 beforeAll(async () => {
   try {
@@ -49,7 +58,7 @@ beforeAll(async () => {
     conn = commonConnections;
 
     const _user = new Users();
-    _user.name = `tenant-tester_${~~(Math.random() * 1000)}`;
+    _user.name = `tenant-tester_${~~(Math.random() * 10000)}`;
     _user.email = `${_user.name}@example.com`;
     user = await getRepository(Users).save(_user);
 
@@ -93,12 +102,14 @@ describe('Oidc Issuer Tests', () => {
   /**
    * Part 1: Tenants tests
    */
+  // OK
   it('should fail to GET /is_agent_exist', async () =>
     request(express)
       .get('/is_agent_exist')
       .set('host', 'issuer.example.com')
       .expect(({ body }) => expect(body).toEqual({ data: 'Agent not found' })));
 
+  // OK
   // it('should fail to create new tenant: missing user_id', async () =>
   //   request(express)
   //     .post('/tenants')
@@ -157,6 +168,7 @@ describe('Oidc Issuer Tests', () => {
 
   // TODO: Bug here. Parameter tampering with query parameter "user_id".
   // The query parameter "user_id" should be replaced user revealed by bearer token
+  // OK
   it('should GET /tenants', async () =>
     request(express)
       .get(`/tenants?user_id=${user.id}`)
@@ -169,6 +181,43 @@ describe('Oidc Issuer Tests', () => {
         expect(status).toEqual(Status.OK);
       }));
 
+  // OK
+  it('should GET /tenants/:tenantId, NOT FOUND', async () =>
+    request(express)
+      .get(`/tenants/0ac6d292-1868-44d3-a161-923052e11fb8`)
+      .set('host', 'example.com')
+      .set('authorization', `Bearer`)
+      .expect(({ body, status }: { body: CommonResponse<Paginated<Tenant>>; status: number }) => {
+        expect(body?.data?.total).toEqual(0);
+        expect(status).toEqual(Status.NOT_FOUND);
+      }));
+
+  // OK
+  it('should GET /tenants/:tenantId', async () =>
+    request(express)
+      .get(`/tenants/${tenant.id}`)
+      .set('host', 'example.com')
+      .set('authorization', `Bearer`)
+      .expect(({ body, status }: { body: CommonResponse<Paginated<Tenant>>; status: number }) => {
+        tenant = body?.data?.items?.[0];
+        expect(isTenant(tenant)).toBeTruthy();
+        expect(body?.data?.total).toEqual(1);
+        expect(status).toEqual(Status.OK);
+      }));
+
+  // OK
+  // it('should PUT /tenants/:tenantId', async () =>
+  //   request(express)
+  //     .put(`/tenants/${tenant.id}`)
+  //     .set('host', 'example.com')
+  //     .set('authorization', `Bearer`)
+  //     .send({ name: 'my_new_name' })
+  //     .expect(({ body, status }) => {
+  //       expect(body?.data?.affected).toEqual(1);
+  //       expect(status).toEqual(Status.OK);
+  //     }));
+
+  // OK
   // it('should fail to POST /actions/:tenantId/activate, invalid tenantId', async () =>
   //   request(express)
   //     .post(`/actions/0ac6d292-1868-44d3-a161-923052e11fb8/activate`)
@@ -178,6 +227,8 @@ describe('Oidc Issuer Tests', () => {
   //       expect(body).toEqual({ status: 'ERROR', error: 'tenant not found' });
   //       expect(status).toEqual(Status.BAD_REQUEST);
   //     }));
+
+  it('wait 2s', async () => new Promise((ok) => setTimeout(() => ok(true), 2000)));
 
   it('should POST /actions/:tenantId/activate', async () =>
     request(express)
@@ -189,18 +240,29 @@ describe('Oidc Issuer Tests', () => {
         expect(status).toEqual(Status.OK);
       }));
 
-  // Add new test, for repeated "activate"
+  // OK
+  // it('should fail to repeatedly POST /actions/:tenantId/activate', async () =>
+  //   request(express)
+  //     .post(`/actions/${tenant.id}/activate`)
+  //     .set('host', 'example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(async ({ body, status }) => {
+  //       expect(body).toEqual({ status: 'ERROR', error: 'fail to activate; tenant already exist.' });
+  //       expect(status).toEqual(Status.BAD_REQUEST);
+  //     }));
 
-  it('should GET /actions/tenant_summary, after activation', async () =>
-    request(express)
-      .get('/actions/tenant_summary')
-      .set('host', 'example.com')
-      .set('authorization', `Bearer`)
-      .expect(({ body, status }) => {
-        expect(status).toEqual(Status.OK);
-        expect(body?.data?.agentCount).toEqual(1);
-      }));
+  // OK
+  // it('should GET /actions/tenant_summary, after activation', async () =>
+  //   request(express)
+  //     .get('/actions/tenant_summary')
+  //     .set('host', 'example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(({ body, status }) => {
+  //       expect(status).toEqual(Status.OK);
+  //       expect(body?.data?.agentCount).toEqual(1);
+  //     }));
 
+  // OK
   // it('should fail to GET /actions/:tenantId/tenant_status, invalid tenantId', async () =>
   //   request(express)
   //     .get(`/actions/0ac6d292-1868-44d3-a161-923052e11fb8/tenant_status`)
@@ -211,22 +273,24 @@ describe('Oidc Issuer Tests', () => {
   //       expect(status).toEqual(Status.BAD_REQUEST);
   //     }));
 
-  it('should GET /actions/:tenantId/tenant_status', async () =>
-    request(express)
-      .get(`/actions/${tenant.id}/tenant_status`)
-      .set('host', 'example.com')
-      .set('authorization', `Bearer`)
-      .expect(({ body, status }) => {
-        expect(status).toEqual(Status.OK);
-        expect(body?.data).toEqual({ isActivated: true, isSchemaExist: true, isAgentReady: true });
-      }));
+  // OK
+  // it('should GET /actions/:tenantId/tenant_status', async () =>
+  //   request(express)
+  //     .get(`/actions/${tenant.id}/tenant_status`)
+  //     .set('host', 'example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(({ body, status }) => {
+  //       expect(status).toEqual(Status.OK);
+  //       expect(body?.data).toEqual({ isActivated: true, isSchemaExist: true, isAgentReady: true });
+  //     }));
 
-  it('should GET /is_agent_exist, after activation', async () =>
-    request(express)
-      .get('/is_agent_exist')
-      .set('host', 'issuer.example.com')
-      .set('authorization', `Bearer`)
-      .expect(({ body }) => expect(body).toEqual({ data: 'Agent found' })));
+  // OK
+  // it('should GET /is_agent_exist, after activation', async () =>
+  //   request(express)
+  //     .get('/is_agent_exist')
+  //     .set('host', 'issuer.example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(({ body }) => expect(body).toEqual({ data: 'Agent found' })));
 
   /**
    * Part 2: Oidc Issuer tests
@@ -241,69 +305,200 @@ describe('Oidc Issuer Tests', () => {
       .set('authorization', `Bearer`)
       .expect(({ body }) => expect(body?.error).toContain('Invalid issuer id')));
 
-  // it('should POST /oidc/issuers', async () =>
+  // OK
+  // it('should fail to POST /oidc/issuers, invalid argument', async () =>
   //   request(express)
   //     .post('/oidc/issuers')
   //     .set('host', 'issuer.example.com')
   //     .set('authorization', `Bearer`)
   //     .send(<CreateOidcIssuerArgs>{
-  //       credential: {
-  //         issuerDid: 'did:web:issuer.example.com',
-  //         name: 'federated_credential',
-  //         description: 'unit test',
-  //         context: ['https://schema.org'],
-  //         type: 'AlumniCredential',
-  //       },
-  //       federatedProvider: {
-  //         url: 'https://dashslab.us.auth0.com',
-  //         scope: ['openid', 'profile', 'email'],
-  //         clientId: ENV_VAR.AUTH0_CLIENT_ID,
-  //         clientSecret: ENV_VAR.AUTH0_CLIENT_SECRET,
-  //       },
-  //       // TODO: need to revisit all openId claim mappings
-  //       claimMappings: [
-  //         {
-  //           jsonLdTerm: 'userid',
-  //           oidcClaim: 'userid',
-  //         },
-  //       ],
+  //       credential: null,
+  //       federatedProvider: null,
+  //       claimMappings: null,
   //     })
   //     .expect(({ body, status }) => {
-  //       console.log(body);
+  //       expect(body).toEqual({ status: 'ERROR', error: 'invalid argument' });
+  //       expect(status).toEqual(Status.BAD_REQUEST);
   //     }));
 
-  // it('should GET /oidc/.well-known/openid-configuration', async () =>
+  it('should POST /oidc/issuers', async () =>
+    request(express)
+      .post('/oidc/issuers')
+      .set('host', 'issuer.example.com')
+      .set('authorization', `Bearer`)
+      .send(<CreateOidcIssuerArgs>{
+        credential: {
+          issuerDid: 'did:web:issuer.example.com',
+          name: 'federated_credential',
+          description: 'unit test',
+          context: ['https://schema.org'],
+          type: 'AlumniCredential',
+        },
+        federatedProvider: {
+          url: 'https://dashslab.us.auth0.com',
+          scope: ['openid', 'profile', 'email'],
+          clientId: ENV_VAR.AUTH0_CLIENT_ID,
+          clientSecret: ENV_VAR.AUTH0_CLIENT_SECRET,
+        },
+        // TODO: need to revisit all openId claim mappings
+        claimMappings: [
+          {
+            jsonLdTerm: 'userid',
+            oidcClaim: 'userid',
+          },
+        ],
+      })
+      .expect(({ body, status }) => {
+        expect(isOidcIssuer(body?.data)).toBeTruthy();
+        expect(status).toEqual(Status.CREATED);
+        issuerId = body?.data?.id;
+      }));
+
+  // OK
+  // it('should fail to GET /oidc/.well-known/openid-configuration', async () =>
   //   request(express)
   //     .get(`/oidc/issuers/123123/.well-known/openid-configuration`)
   //     .set('host', 'issuer.example.com')
-  //     .set('X-Forwarded-Proto', 'https')
-  //     .expect(({ body }) => expect(body.subject_types_supported).toEqual(['public'])));
+  //     .set('authorization', `Bearer`)
+  //     // .set('X-Forwarded-Proto', 'https')
+  //     .expect(({ body, status }) => {
+  //       expect(body?.error).toContain('invalid input syntax for uuid');
+  //       expect(status).toEqual(Status.BAD_REQUEST);
+  //     }));
 
-  // it('should POST /oidc/issuers', async () => {
-  //   return true;
-  // });
+  // OK
+  it('should GET /oidc/issuers/:id/.well-known/openid-configuration', async () =>
+    request(express)
+      .get(`/oidc/issuers/${issuerId}/.well-known/openid-configuration`)
+      .set('host', 'issuer.example.com')
+      .set('authorization', `Bearer`)
+      // handle this warning
+      // oidc-provider WARNING: x-forwarded-proto header not detected for an https issuer, you must configure your ssl offloading proxy and the provider
+      .set('X-Forwarded-Proto', 'https')
+      .expect(({ body, status }) => {
+        expect(body.subject_types_supported).toEqual(['public']);
+        expect(status).toEqual(Status.OK);
+        openIdConfiguraiton = body;
+      }));
+
+  // OK
+  // it('should fail to GET /oidc/issuers/:id, invalid input', async () =>
+  //   request(express)
+  //     .get(`/oidc/issuers/123123`)
+  //     .set('host', 'issuer.example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(({ body, status }) => {
+  //       expect(body?.message).toContain('invalid input syntax for uuid');
+  //       expect(status).toEqual(Status.BAD_REQUEST);
+  //     }));
+
+  // OK
+  // it('should GET /oidc/issuers/:id, non-existing', async () =>
+  //   request(express)
+  //     .get(`/oidc/issuers/0ac6d292-1868-44d3-a161-923052e11fb8`)
+  //     .set('host', 'issuer.example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(({ body, status }) => {
+  //       expect(body?.data).toEqual(notFoundData);
+  //       expect(status).toEqual(Status.NOT_FOUND);
+  //     }));
+
+  // OK
+  // it('should GET /oidc/issuers/:id', async () =>
+  //   request(express)
+  //     .get(`/oidc/issuers/${issuerId}`)
+  //     .set('host', 'issuer.example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(
+  //       ({ body, status }: { body: CommonResponse<Paginated<OidcIssuer>>; status: number }) => {
+  //         expect(isOidcIssuer(body?.data?.items?.[0])).toBeTruthy();
+  //         expect(status).toEqual(Status.OK);
+  //       }
+  //     ));
+
+  it('should fail to register oidc client, missing client_name', async () =>
+    request(express)
+      .post(`/oidc/issuers/${issuerId}/reg`)
+      .set('host', 'issuer.example.com')
+      .set('authorization', `Bearer`)
+      .send(<CreateOidcIssuerClientArgs>{
+        redirect_uris: ['https://jwt.io'],
+        response_types: ['id_token'],
+        grant_types: ['implicit'],
+        token_endpoint_auth_method: 'client_secret_post',
+        id_token_signed_response_alg: 'ES256',
+        application_type: 'web',
+      })
+      .expect(({ body, status }) => {
+        expect(body).toEqual({ status: 'ERROR', error: 'invalid argument' });
+        expect(status).toEqual(Status.BAD_REQUEST);
+      }));
+
+  it('should register oidc client', async () =>
+    request(express)
+      .post(`/oidc/issuers/${issuerId}/reg`)
+      .set('host', 'issuer.example.com')
+      .set('authorization', `Bearer`)
+      .send(<CreateOidcIssuerClientArgs>{
+        client_name: 'Oidc client for wallet',
+        redirect_uris: ['https://jwt.io'],
+        response_types: ['id_token'],
+        grant_types: ['implicit'],
+        token_endpoint_auth_method: 'client_secret_post',
+        id_token_signed_response_alg: 'ES256',
+        application_type: 'web',
+      })
+      .expect(({ body, status }) => {
+        expect(isOidcClient(body?.data)).toBeTruthy();
+        expect(status).toEqual(Status.CREATED);
+      }));
+
+  // TODO: Placeholder. Not well implementated yet
+  // it('should PUT /oidc/issuers/:id', async () =>
+  //   request(express)
+  //     .put(`/oidc/issuers/${issuerId}`)
+  //     .set('host', 'issuer.example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(({ body }) => {
+  //       console.log(body);
+  //     }));
 
   /**
    * Tear down tests
    */
-  it('should POST /actions/:tenantId/deactivate', async () =>
-    request(express)
-      .post(`/actions/${tenant.id}/deactivate`)
-      .set('host', 'issuer.example.com')
-      .set('authorization', `Bearer`)
-      .expect(({ body, status }) => {
-        expect(status).toEqual(Status.OK);
-        expect(body?.data).toBeTruthy();
-      }));
+  // OK
+  // it('should POST /actions/:tenantId/deactivate', async () =>
+  //   request(express)
+  //     .post(`/actions/${tenant.id}/deactivate`)
+  //     .set('host', 'example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(({ body, status }) => {
+  //       expect(status).toEqual(Status.OK);
+  //       expect(body?.data).toBeTruthy();
+  //     }));
 
+  // OK
   // NOTE: deactivation will NOT drop Schema
-  it('should GET /actions/tenant_summary, after deactivation', async () =>
-    request(express)
-      .get('/actions/tenant_summary')
-      .set('host', 'issuer.example.com')
-      .set('authorization', `Bearer`)
-      .expect(({ body, status }) => {
-        expect(status).toEqual(Status.OK);
-        expect(body?.data?.agentCount).toEqual(0);
-      }));
+  // it('should GET /actions/tenant_summary, after deactivation', async () =>
+  //   request(express)
+  //     .get('/actions/tenant_summary')
+  //     .set('host', 'example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(({ body, status }) => {
+  //       expect(status).toEqual(Status.OK);
+  //       expect(body?.data?.agentCount).toEqual(0);
+  //     }));
+
+  // todo: Add more test, to delete tenant
+  // Below is NOT yet tested ok
+  // it('should DELETE /tenants/:tenantId', async () =>
+  //   request(express)
+  //     .delete(`/tenants/${tenant.id}`)
+  //     .set('host', 'example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(({ body, error }) => {
+  //       expect(body.status).toEqual('OK');
+  //       expect(body.data).toEqual({ raw: [], affected: 1 });
+  //       expect(error).toBeFalsy();
+  //     }));
 });

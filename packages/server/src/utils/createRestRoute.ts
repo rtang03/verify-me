@@ -12,16 +12,14 @@ type Action = {
 export const createRestRoute = ({ GET, GET_ALL, POST, DELETE, PUT }: Action) => {
   const router = Router();
 
-  const catchErrors = (fn: (req: Request, res: Response) => Promise<void>) => async (
-    req: Request,
-    res: Response
-  ) => {
-    try {
-      await fn(req, res);
-    } catch (error) {
-      res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: error.message });
-    }
-  };
+  const catchErrors =
+    (fn: (req: Request, res: Response) => Promise<void>) => async (req: Request, res: Response) => {
+      try {
+        await fn(req, res);
+      } catch (error) {
+        res.status(Status.BAD_REQUEST).send({ status: 'ERROR', message: error.message });
+      }
+    };
 
   router.get(
     '/',

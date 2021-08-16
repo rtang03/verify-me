@@ -13,15 +13,17 @@ interface RequestWithVhost extends Request {
   issuerId?: string;
 }
 
-const debug = Debug('utils:createOidcRoute');
+const debug = Debug('utils:createOidcClientRoute');
 
 export const createOidcClientRoute = () =>
   createRestRoute({
+    // TODO: Bug. No endpoint
     GET: async (req: RequestWithVhost, res) => {
       const issuerId = req.issuerId;
       const clientId = req.params.id;
       res.status(Status.OK).send({ issuerId, clientId });
     },
+    // TODO: Bug. No endpoint
     GET_ALL: async (req: RequestWithVhost, res, skip, take) => {
       const issuerId = req.issuerId;
       const clientRepo = getConnection(req.tenantId).getRepository(OidcClient);
@@ -57,14 +59,16 @@ export const createOidcClientRoute = () =>
         debug('POST /oidc/issuers/:id/clients, %O', data);
 
         res.status(Status.CREATED).send({ status: 'OK', data });
-      } else res.status(Status.BAD_REQUEST).send({ error: 'invalid argument' });
+      } else res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'invalid argument' });
     },
+    // TODO: Bug. No endpoint
     DELETE: async (req: RequestWithVhost, res) => {
       const issuerId = req.issuerId;
       const clientRepo = getConnection(req.tenantId).getRepository(OidcClient);
       const data = await clientRepo.delete(req.params.id);
       res.status(Status.OK).send({ status: 'OK', data });
     },
+    // TODO: Bug. No endpoint
     PUT: async (req: RequestWithVhost, res) => {
       const issuerId = req.issuerId;
       const clientRepo = getConnection(req.tenantId).getRepository(OidcClient);

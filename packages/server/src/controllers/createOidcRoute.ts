@@ -54,7 +54,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
   router.use(
     '/issuers/:issuer_id/reg',
     async (req: RequestWithVhost, res, next) => {
-      debug('USE /issuers/%s/reg', req.params.issuer_id);
+      debug('/oidc/issuers/%s/reg', req.params.issuer_id);
 
       req.issuerId = req.params.issuer_id;
       next();
@@ -344,7 +344,12 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     }
   );
 
-  // IMPORTANT: Oidc-provider is added to each Oidc-issuer
+  // ⁉️ TODO: DOUBLE CHECK ME, IF I AM AT THE RIGHT POSITION
+  router.use('/issuers', createOidcIssuerRoute());
+
+  /**
+   * 📌 IMPORTANT: Oidc-provider is added to each Oidc-issuer
+   */
   router.use('/issuers/:id', async (req: RequestWithVhost, res) => {
     const issuerId = req.params.id;
     const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
@@ -354,8 +359,8 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
       if (!issuer) return res.status(Status.BAD_REQUEST).send({ error: 'Invalid issuer id' });
     } catch (error) {
-      console.error(error);
-      return res.status(Status.BAD_REQUEST).send({ error });
+      console.warn(error);
+      return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: error.message });
     }
 
     const oidc = tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
@@ -366,10 +371,6 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
       ? oidc.callback()(req, res)
       : res.status(Status.BAD_REQUEST).send({ error: 'Oidc provider not found' });
   });
-
-  // RESTful route for "Issuers" entity
-  // Note: must be placed at last
-  router.use('/issuers', createOidcIssuerRoute());
 
   return router;
 };

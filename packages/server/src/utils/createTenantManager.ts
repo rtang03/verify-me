@@ -107,7 +107,10 @@ export const createTenantManager: (
       const connectionOption = createConnOption(tenant);
       const { name } = connectionOption; // this is tenantId
 
-      if (connectionPromises[name]) console.warn('connectionPromise already exists');
+      if (connectionPromises[name]) {
+        console.warn('connectionPromise already exists');
+        throw new Error('fail to activate; tenant already exist.');
+      }
       const promise = createConnection(connectionOption);
       connectionPromises[name] = promise;
 
