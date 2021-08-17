@@ -23,7 +23,10 @@ interface RequestWithVhost extends Request {
 }
 
 const debug = Debug('utils:createOidcRoute');
-
+const issuerIdMiddleware = async (req: RequestWithVhost, res: Response, next: NextFunction) => {
+  req.issuerId = req.params.issuer_id;
+  next();
+};
 const setNoCache = (req: Request, res: Response, next: NextFunction) => {
   res.set('Pragma', 'no-cache');
   res.set('Cache-Control', 'no-cache, no-store');
@@ -50,17 +53,11 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     next();
   });
 
-  // parse issuer_id and add client registration
-  router.use(
-    '/issuers/:issuer_id/reg',
-    async (req: RequestWithVhost, res, next) => {
-      debug('/oidc/issuers/%s/reg', req.params.issuer_id);
+  // REST for oidc-issuer's client
+  router.use('/issuers/:issuer_id/clients', issuerIdMiddleware, createOidcClientRoute());
 
-      req.issuerId = req.params.issuer_id;
-      next();
-    },
-    createOidcClientRoute()
-  );
+  // oidc client registration, using default endpoint "oidc/issuers/:id/reg"
+  router.use('/issuers/:issuer_id/reg', issuerIdMiddleware, createOidcClientRoute());
 
   // federated OIDC provide callback here, to exchange token
   // this endpoint will redirect to /issuers/interaction/:uid/login

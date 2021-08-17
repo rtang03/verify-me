@@ -7,7 +7,7 @@ export class OidcClient {
   @PrimaryGeneratedColumn('uuid')
   client_id: string;
 
-  // TODO: fix camcel case
+  // TODO: verifiy the use of this field
   @Column({ type: 'varchar', length: 255, nullable: false })
   issuerId: string;
 

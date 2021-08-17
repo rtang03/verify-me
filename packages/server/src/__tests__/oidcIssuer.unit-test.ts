@@ -46,6 +46,7 @@ let conn: Connection;
 let user: Users;
 let tenant: Tenant;
 let issuerId: string;
+let clientId: string;
 let openIdConfiguraiton: any;
 
 beforeAll(async () => {
@@ -416,6 +417,16 @@ describe('Oidc Issuer Tests', () => {
   //       }
   //     ));
 
+  // TODO: Placeholder. Not well implementated yet
+  // it('should PUT /oidc/issuers/:id', async () =>
+  //   request(express)
+  //     .put(`/oidc/issuers/${issuerId}`)
+  //     .set('host', 'issuer.example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(({ body }) => {
+  //       console.log(body);
+  //     }));
+
   it('should fail to register oidc client, missing client_name', async () =>
     request(express)
       .post(`/oidc/issuers/${issuerId}/reg`)
@@ -434,6 +445,7 @@ describe('Oidc Issuer Tests', () => {
         expect(status).toEqual(Status.BAD_REQUEST);
       }));
 
+  // OK
   it('should register oidc client', async () =>
     request(express)
       .post(`/oidc/issuers/${issuerId}/reg`)
@@ -451,16 +463,66 @@ describe('Oidc Issuer Tests', () => {
       .expect(({ body, status }) => {
         expect(isOidcClient(body?.data)).toBeTruthy();
         expect(status).toEqual(Status.CREATED);
+        clientId = body?.data?.client_id;
       }));
 
-  // TODO: Placeholder. Not well implementated yet
-  // it('should PUT /oidc/issuers/:id', async () =>
+  // OK
+  // it('should fail to GET /oidc/issuers/:issuerId/clients/:id, invalid issuerId', async () =>
   //   request(express)
-  //     .put(`/oidc/issuers/${issuerId}`)
+  //     .get(`/oidc/issuers/123123/clients/${clientId}`)
   //     .set('host', 'issuer.example.com')
   //     .set('authorization', `Bearer`)
-  //     .expect(({ body }) => {
-  //       console.log(body);
+  //     .expect(({ body, status }) => {
+  //       expect(body?.data?.total).toEqual(0);
+  //       expect(status).toEqual(Status.NOT_FOUND);
+  //     }));
+
+  // OK
+  // it('should fail to GET /oidc/issuers/:issuerId/clients/:id, invalid clientId', async () =>
+  //   request(express)
+  //     .get(`/oidc/issuers/${issuerId}/clients/123123123`)
+  //     .set('host', 'issuer.example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(({ body, status }) => {
+  //       expect(body?.message).toContain('invalid input syntax for uuid');
+  //       expect(status).toEqual(Status.BAD_REQUEST);
+  //     }));
+
+  // OK
+  // it('should GET /oidc/issuers/:issuerId/clients/:clientId', async () =>
+  //   request(express)
+  //     .get(`/oidc/issuers/${issuerId}/clients/${clientId}`)
+  //     .set('host', 'issuer.example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(({ body, status }) => {
+  //       expect(body?.data?.total).toEqual(1);
+  //       expect(isOidcClient(body?.data?.items?.[0])).toBeTruthy();
+  //       expect(body?.data?.items?.[0].client_id).toEqual(clientId);
+  //       expect(status).toEqual(Status.OK);
+  //     }));
+
+  // OK
+  // it('should fail to GET /oidc/issuers/:id/clients', async () =>
+  //   request(express)
+  //     .get(`/oidc/issuers/123123123/clients`)
+  //     .set('host', 'issuer.example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(({ body, status }) => {
+  //       expect(body?.data?.total).toEqual(0);
+  //       expect(status).toEqual(Status.NOT_FOUND);
+  //     }));
+
+  // OK
+  // it('should GET /oidc/issuers/:id/clients', async () =>
+  //   request(express)
+  //     .get(`/oidc/issuers/${issuerId}/clients`)
+  //     .set('host', 'issuer.example.com')
+  //     .set('authorization', `Bearer`)
+  //     .expect(({ body, status }) => {
+  //       expect(body?.data?.total).toEqual(1);
+  //       expect(isOidcClient(body?.data?.items?.[0])).toBeTruthy();
+  //       expect(body?.data?.items?.[0].client_id).toEqual(clientId);
+  //       expect(status).toEqual(Status.OK);
   //     }));
 
   /**

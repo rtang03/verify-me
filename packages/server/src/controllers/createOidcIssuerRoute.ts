@@ -101,6 +101,7 @@ export const createOidcIssuerRoute = () =>
       const body = req.body;
 
       // TODO: need some validation here
+      // e.g. add typeguard "isUpdateIssuerClientArg"
 
       const data = await issuerRepo.update(req.params.id, body);
       res.status(Status.OK).send({ status: 'OK', data });
