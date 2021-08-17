@@ -6,6 +6,9 @@ import { getRepository } from 'typeorm';
 import { Tenant, Users } from '../entities';
 import { createHttpServer, isTenant } from '../utils';
 
+/**
+ * THIS FILE IS TO BE REMOVED
+ */
 const slug = `tenant_${Math.floor(Math.random() * 1000)}`;
 const ENV_VAR = {
   HOST: process.env.HOST || '0.0.0.0',
