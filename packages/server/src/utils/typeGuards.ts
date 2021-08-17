@@ -1,6 +1,6 @@
 import type { IIdentifier } from '@veramo/core';
 import { VerifiableCredential } from '@veramo/core';
-import { Tenant } from '../entities';
+import { OidcIssuer, Tenant, OidcClient } from '../entities';
 import type { CreateOidcIssuerArgs, CreateOidcIssuerClientArgs } from '../types';
 
 export const isIdentitifer = (input: any): input is IIdentifier =>
@@ -20,20 +20,42 @@ export const isVerifiableCredential = (input: any): input is VerifiableCredentia
 export const isTenant = (input: any): input is Tenant =>
   input?.slug !== undefined &&
   input?.id !== undefined &&
-  input?.user_id !== undefined &&
   input?.created_at !== undefined &&
-  input?.updated_at !== undefined &&
-  input?.db_name !== undefined &&
-  input?.db_host !== undefined &&
-  input?.db_username !== undefined &&
-  input?.db_password !== undefined &&
-  input?.db_port !== undefined;
+  input?.updated_at !== undefined;
 
-// Todo: full other condition later
 export const isCreateOidcIssuerArgs = (input: any): input is CreateOidcIssuerArgs =>
-  input?.credential?.name !== undefined;
+  input?.credential?.context !== undefined &&
+  input?.credential?.name !== undefined &&
+  input?.credential?.issuerDid !== undefined &&
+  input?.credential?.type !== undefined &&
+  input?.federatedProvider?.url !== undefined &&
+  input?.federatedProvider?.scope !== undefined &&
+  input?.federatedProvider?.clientId !== undefined &&
+  input?.federatedProvider?.clientSecret !== undefined &&
+  input?.claimMappings !== undefined;
 
 export const isCreateOidcIssuerClientArgs = (input: any): input is CreateOidcIssuerClientArgs =>
+  input?.client_name !== undefined &&
   input?.redirect_uris !== undefined &&
   input?.response_types !== undefined &&
-  input?.grant_types !== undefined;
+  input?.grant_types !== undefined &&
+  input?.token_endpoint_auth_method !== undefined &&
+  input?.id_token_signed_response_alg !== undefined &&
+  input?.application_type !== undefined;
+
+export const isOidcIssuer = (input: any): input is OidcIssuer =>
+  input?.id !== undefined &&
+  input?.claimMappings !== undefined &&
+  input?.credential !== undefined &&
+  input?.federatedProvider !== undefined;
+
+export const isOidcClient = (input: any): input is OidcClient =>
+  input?.client_id !== undefined &&
+  input?.client_secret &&
+  input?.client_name &&
+  input?.redirect_uris &&
+  input?.response_types !== undefined &&
+  input?.grant_types !== undefined &&
+  input?.application_type !== undefined &&
+  input?.token_endpoint_auth_method !== undefined &&
+  input?.id_token_signed_response_alg !== undefined;

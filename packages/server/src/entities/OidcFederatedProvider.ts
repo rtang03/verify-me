@@ -5,7 +5,7 @@ export class OidcFederatedProvider {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   callbackUrl: string;
 
   @Column({ type: 'varchar', length: 255, nullable: false })

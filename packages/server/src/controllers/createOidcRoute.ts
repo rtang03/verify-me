@@ -23,7 +23,10 @@ interface RequestWithVhost extends Request {
 }
 
 const debug = Debug('utils:createOidcRoute');
-
+const issuerIdMiddleware = async (req: RequestWithVhost, res: Response, next: NextFunction) => {
+  req.issuerId = req.params.issuer_id;
+  next();
+};
 const setNoCache = (req: Request, res: Response, next: NextFunction) => {
   res.set('Pragma', 'no-cache');
   res.set('Cache-Control', 'no-cache, no-store');
@@ -50,17 +53,11 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     next();
   });
 
-  // parse issuer_id and add client registration
-  router.use(
-    '/issuers/:issuer_id/reg',
-    async (req: RequestWithVhost, res, next) => {
-      debug('USE /issuers/%s/reg', req.params.issuer_id);
+  // REST for oidc-issuer's client
+  router.use('/issuers/:issuer_id/clients', issuerIdMiddleware, createOidcClientRoute());
 
-      req.issuerId = req.params.issuer_id;
-      next();
-    },
-    createOidcClientRoute()
-  );
+  // oidc client registration, using default endpoint "oidc/issuers/:id/reg"
+  router.use('/issuers/:issuer_id/reg', issuerIdMiddleware, createOidcClientRoute());
 
   // federated OIDC provide callback here, to exchange token
   // this endpoint will redirect to /issuers/interaction/:uid/login
@@ -344,20 +341,33 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     }
   );
 
-  router.use('/issuers/:id', (req: RequestWithVhost, res) => {
+  // ⁉️ TODO: DOUBLE CHECK ME, IF I AM AT THE RIGHT POSITION
+  router.use('/issuers', createOidcIssuerRoute());
+
+  /**
+   * 📌 IMPORTANT: Oidc-provider is added to each Oidc-issuer
+   */
+  router.use('/issuers/:id', async (req: RequestWithVhost, res) => {
     const issuerId = req.params.id;
+    const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
+
+    try {
+      const issuer = await issuerRepo.findOne(issuerId);
+
+      if (!issuer) return res.status(Status.BAD_REQUEST).send({ error: 'Invalid issuer id' });
+    } catch (error) {
+      console.warn(error);
+      return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: error.message });
+    }
+
     const oidc = tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
 
-    debug('USE /oidc/issuers/:issuer_id');
+    debug('at /oidc/issuers/:issuer_id, %s', issuerId);
 
     return oidc
       ? oidc.callback()(req, res)
       : res.status(Status.BAD_REQUEST).send({ error: 'Oidc provider not found' });
   });
-
-  // RESTful route for "Issuers" entity
-  // Note: must be placed at last
-  router.use('/issuers', createOidcIssuerRoute());
 
   return router;
 };

@@ -1,4 +1,5 @@
-import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { Users } from './Users';
 
 @Entity()
 export class Tenant {
@@ -18,8 +19,11 @@ export class Tenant {
   @Column({ type: 'simple-array', nullable: true })
   members: string[];
 
-  @Column({ type: 'int', nullable: false })
-  user_id: number;
+  // @Column({ type: 'text', nullable: false })
+  // user_id: string;
+
+  @ManyToOne(() => Users)
+  users: Users;
 
   @Column({ type: 'varchar', length: 100, nullable: false })
   db_name: string;

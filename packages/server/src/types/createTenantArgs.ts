@@ -1,6 +1,6 @@
 export type CreateTenantArgs = {
   slug: string;
-  user_id: number;
+  user_id: string;
   name?: string;
   db_name?: string;
   db_host?: string;

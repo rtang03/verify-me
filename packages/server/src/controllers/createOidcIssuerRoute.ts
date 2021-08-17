@@ -14,6 +14,9 @@ interface RequestWithVhost extends Request {
 
 const debug = Debug('utils:createOidcRoute');
 
+/**
+ * Restful api for /oidc/issuers, being invoked via createOidcRoute.ts
+ */
 export const createOidcIssuerRoute = () =>
   createRestRoute({
     GET: async (req: RequestWithVhost, res) => {
@@ -28,10 +31,8 @@ export const createOidcIssuerRoute = () =>
         items,
       };
 
-      debug('GET /oidc/:id, %O', data);
-
-      if (data) res.status(Status.OK).send({ status: 'OK', data });
-      else res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND' });
+      if (data?.total) res.status(Status.OK).send({ status: 'OK', data });
+      else res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND', data });
     },
     GET_ALL: async (req: RequestWithVhost, res, skip, take) => {
       const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
@@ -43,21 +44,18 @@ export const createOidcIssuerRoute = () =>
       });
       const hasMore = skip + take < total;
       const cursor = hasMore ? skip + take : total;
-      const response: CommonResponse<Paginated<OidcIssuer>> = {
-        status: 'OK',
-        data: { total, cursor, hasMore, items },
-      };
-      res.status(Status.OK).send(response);
+      const data = <Paginated<OidcIssuer>>{ total, cursor, hasMore, items };
+
+      if (data?.total) res.status(Status.OK).send({ status: 'OK', data });
+      else res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND', data });
     },
+    // TODO: currently, there is no check in CREATE. Need the check, before adding negative test cases.
     POST: async (req: RequestWithVhost, res) => {
       const body: unknown = req.body;
 
       if (isCreateOidcIssuerArgs(body)) {
         const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
         const providerRepo = getConnection(req.tenantId).getRepository(OidcFederatedProvider);
-
-        // Todo: implement check later
-        // const isExist = await issuerRepo.findOne({  });
 
         const credential = new OidcCredential();
         credential.context = body.credential.context;
@@ -79,6 +77,7 @@ export const createOidcIssuerRoute = () =>
         issuer.federatedProvider = provider;
         issuer.claimMappings = body.claimMappings;
 
+        // cascade insert
         const data = await issuerRepo.save(issuer);
 
         // update the callbackUrl
@@ -90,7 +89,7 @@ export const createOidcIssuerRoute = () =>
         debug('POST /oidc/issuers, %O', data);
 
         res.status(Status.CREATED).send({ status: 'OK', data });
-      } else res.status(Status.BAD_REQUEST).send({ error: 'invalid argument' });
+      } else res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'invalid argument' });
     },
     DELETE: async (req: RequestWithVhost, res) => {
       const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
@@ -102,6 +101,7 @@ export const createOidcIssuerRoute = () =>
       const body = req.body;
 
       // TODO: need some validation here
+      // e.g. add typeguard "isUpdateIssuerClientArg"
 
       const data = await issuerRepo.update(req.params.id, body);
       res.status(Status.OK).send({ status: 'OK', data });
