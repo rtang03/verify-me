@@ -45,7 +45,6 @@ let user: Users;
 let tenant: Tenant;
 let issuerId: string;
 let clientId: string;
-let openIdConfiguraiton: any;
 
 beforeAll(async () => {
   try {
@@ -158,6 +157,7 @@ describe('Oidc Issuer Tests', () => {
         expect(isTenant(body?.data)).toBeTruthy();
         expect(body?.status).toEqual('OK');
         expect(status).toEqual(Status.CREATED);
+        tenant = body?.data;
       }));
 
   // TODO: Bug here. Parameter tampering with query parameter "user_id".
@@ -169,7 +169,6 @@ describe('Oidc Issuer Tests', () => {
       .set('host', 'example.com')
       .set('authorization', `Bearer`)
       .expect(({ body, status }: { body: CommonResponse<Paginated<Tenant>>; status: number }) => {
-        tenant = body?.data?.items?.[0];
         expect(isTenant(tenant)).toBeTruthy();
         expect(body?.data?.total).toEqual(1);
         expect(status).toEqual(Status.OK);
@@ -372,7 +371,6 @@ describe('Oidc Issuer Tests', () => {
       .expect(({ body, status }) => {
         expect(body.subject_types_supported).toEqual(['public']);
         expect(status).toEqual(Status.OK);
-        openIdConfiguraiton = body;
       }));
 
   // OK
@@ -420,6 +418,9 @@ describe('Oidc Issuer Tests', () => {
   //       console.log(body);
   //     }));
 
+  /**
+   * Part 3: Oidc Client tests
+   */
   it('should fail to register oidc client, missing client_name', async () =>
     request(express)
       .post(`/oidc/issuers/${issuerId}/reg`)

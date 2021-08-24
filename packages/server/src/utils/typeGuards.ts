@@ -1,7 +1,11 @@
 import type { IIdentifier } from '@veramo/core';
 import { VerifiableCredential } from '@veramo/core';
 import { OidcIssuer, Tenant, OidcClient } from '../entities';
-import type { CreateOidcIssuerArgs, CreateOidcIssuerClientArgs } from '../types';
+import type {
+  CreateOidcIssuerArgs,
+  CreateOidcIssuerClientArgs,
+  CredentialRequestPayload,
+} from '../types';
 
 export const isIdentitifer = (input: any): input is IIdentifier =>
   input.did !== undefined &&
@@ -59,3 +63,9 @@ export const isOidcClient = (input: any): input is OidcClient =>
   input?.application_type !== undefined &&
   input?.token_endpoint_auth_method !== undefined &&
   input?.id_token_signed_response_alg !== undefined;
+
+export const isCredentialRequestPayload = (input: any): input is CredentialRequestPayload =>
+  input?.iss !== undefined &&
+  input?.sub !== undefined &&
+  input?.iat !== undefined &&
+  input?.aud !== undefined;

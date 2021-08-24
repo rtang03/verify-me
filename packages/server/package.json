@@ -6,15 +6,16 @@
   "private": true,
   "scripts": {
     "dev": "npm run build && node dist/app",
-    "dev:sudo": "npm run build && sudo DEBUG=utils:createOidcRoute NODE_TLS_REJECT_UNAUTHORIZED=\"0\" node dist/app",
+    "dev:sudo": "npm run build && sudo DEBUG=utils:createOidcRoute NODE_TLS_REJECT_UNAUTHORIZED=\"0\" node --stack-trace-limit=50 dist/app",
     "clean": "rimraf dist",
     "build": "yarn clean && tsc",
     "prebuild": "rimraf dist",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start:prod": "node dist/app",
     "test:veramo": "jest --forceExit --detectOpenHandles veramo.unit-test",
-    "test:issuer": "DEBUG=utils:* jest --forceExit --forceExit --detectOpenHandles oidcIssuer.unit-test",
-    "test:tenant": "jest --forceExit --detectOpenHandles tenant.unit-test"
+    "test:oidc-issuer": "DEBUG=utils:* jest --forceExit --forceExit --detectOpenHandles oidcIssuer.unit-test",
+    "test:issue-credential-flow": "DEBUG=utils:* jest --forceExit --detectOpenHandles issue-credential.unit-test",
+    "gen-rs256": "ts-node ./src/utils/generate-keys.ts"
   },
   "dependencies": {
     "@veramo/core": "2.0.2-next.10",
@@ -47,6 +48,7 @@
     "jwt-decode": "^3.1.2",
     "oidc-provider": "^7.6.0",
     "pg": "^8.6.0",
+    "qs": "^6.10.1",
     "rimraf": "^3.0.2",
     "typeorm": "^0.2.32",
     "vhost": "^3.0.2",
@@ -72,6 +74,7 @@
     "prettier": "^2.2.1",
     "supertest": "^6.1.3",
     "ts-jest": "^27.0.4",
+    "ts-node": "^10.2.1",
     "typescript": "^4.2.3"
   }
 }

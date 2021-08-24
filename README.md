@@ -70,3 +70,6 @@ openssl req -new -x509 -nodes -sha1 -days 3650 -key host.key > host.crt
 - https://github.com/hyperledger/aries-rfcs/blob/master/features/0334-jwe-envelope/README.md
 - https://medium.com/@CreatorNader/introducing-oidc-credential-provider-7845391a9881
 - https://openid.net/specs/openid-connect-self-issued-v2-1_0.html
+- https://mattrglobal.github.io/oidc-client-bound-assertions-spec/
+
+https://jwt.io/?error=invalid_request&error_description=Authorization%20Server%20policy%20requires%20PKCE%20to%20be%20used%20for%20this%20request

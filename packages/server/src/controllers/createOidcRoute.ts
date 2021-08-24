@@ -1,15 +1,18 @@
 import assert from 'assert';
+import { createPublicKey } from 'crypto';
+import fs from 'fs';
 import { URLSearchParams } from 'url';
 import util from 'util';
 import Debug from 'debug';
 import { NextFunction, Request, Response, Router } from 'express';
 import Status from 'http-status';
+import { jwtVerify, JWTVerifyResult } from 'jose/jwt/verify';
 import jwt_decode from 'jwt-decode';
 import { Provider } from 'oidc-provider';
 import { getConnection } from 'typeorm';
 import { OidcIssuer, Tenant } from '../entities';
 import type { TenantManager } from '../types';
-import { CONIG, fetchOpenIdConfiguration } from '../utils';
+import { CONIG, fetchOpenIdConfiguration, isCredentialRequestPayload } from '../utils';
 import { createOidcClientRoute } from './createOidcClientRoute';
 import { createOidcIssuerRoute } from './createOidcIssuerRoute';
 
@@ -181,6 +184,21 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
         const { uid, prompt, params } = details;
         const client = await oidc.Client.find(params.client_id as string);
+        const state = params.state;
+        const credentialRequest = params.request;
+
+        // console.log('=========', params);
+        // {
+        //   client_id: '97a38418-c63e-49c4-96af-88fd596de47f',
+        //     code_challenge: '1234567890123456789012345678901234567890123456',
+        //   code_challenge_method: 'plain',
+        //   nonce: '43747d5962a5',
+        //   redirect_uri: 'https://jwt.io',
+        //   response_type: 'code',
+        //   scope: 'openid openid_credential',
+        //   state: 'foobar2',
+        //   claims: '{"userinfo":{"given_name":{"essential":true},"nickname":null,"email":{"essential":true},"email_verified":{"essential":true},"picture":null},"id_token":{"gender":null,"birthdate":{"essential":true},"acr":{"values":["urn:mace:incommon:iap:silver"]}}}'
+        // }
 
         // fetch OpenId Configuration
         const openIdConfigUrl = issuer?.federatedProvider?.url;
@@ -199,13 +217,11 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           const scope = 'openid%20profile%20email';
 
           // uid (session id) is used as state
-          const url = `${loginUrl}?response_type=${response_type}&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}&state=${uid}`;
-
+          const url = `${loginUrl}?response_type=${response_type}&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}&state=${state}`;
+          console.log('========', url);
           res.writeHead(Status.FOUND, { Location: url });
           res.end();
         } else {
-          // Authorize
-
           // todo: XXXXXX, Grant is checked before calling it
           // console.log('========>>>>', params);
           //   client_id: '2843faca-8911-45ac-b605-f15c5556b88e',
@@ -218,6 +234,10 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           //     claims: '{ "userinfo": { "email": { "essential": true } }, "id_token": { "email": { "essential": true } } }',
           //     did: 'did:web:issuer.example.com'
           // }
+
+          /**
+           * Authorize will render screen to Grant Access, after login successfully
+           */
           res.render('interaction', {
             client,
             uid,
@@ -343,6 +363,46 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
   // ⁉️ TODO: DOUBLE CHECK ME, IF I AM AT THE RIGHT POSITION
   router.use('/issuers', createOidcIssuerRoute());
+
+  /**
+   * @see https://mattrglobal.github.io/oidc-client-bound-assertions-spec/#name-credential-endpoint-request
+   */
+  router.post('/issuers/:id/credential', async (req: RequestWithVhost, res) => {
+    const issuerId = req.params.id;
+    const credentailRequest: string | undefined = req.body?.request;
+    const clientId = req.body?.client_id as string;
+
+    // TODO Verifiy access token
+
+    if (!credentailRequest)
+      return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'request not found' });
+
+    let payload: unknown;
+    try {
+      // decode signed-jwt-request-obj
+      // payload = jwt_decode(credentailRequest);
+      const publicKey = createPublicKey(fs.readFileSync('./certs/host.pem'));
+      const { payload, protectedHeader }: JWTVerifyResult = await jwtVerify(
+        credentailRequest,
+        publicKey,
+        {
+          issuer: `urn:wallet:${clientId}`,
+          audience: `urn:issuer:${issuerId}`,
+        }
+      );
+
+      console.log(payload);
+
+      // if (isCredentialRequestPayload(payload)) {
+      //   // check signature
+      //   console.log(payload);
+      // }
+      // TODO: Dummy code
+      res.send(Status.OK).send({ data: 'ok' });
+    } catch (error) {
+      console.warn(error);
+    }
+  });
 
   /**
    * 📌 IMPORTANT: Oidc-provider is added to each Oidc-issuer

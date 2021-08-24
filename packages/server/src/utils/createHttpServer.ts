@@ -19,6 +19,7 @@ import { Accounts, Tenant, Users } from '../entities';
 import type { TenantManager } from '../types';
 import { createTenantManager } from './createTenantManager';
 import { genJwks } from './genJwks';
+import fs from 'fs';
 
 export const createHttpServer: (option: {
   commonConnectionOptions?: ConnectionOptions;
@@ -39,7 +40,7 @@ export const createHttpServer: (option: {
     }
 
     try {
-      jwks = await genJwks(envVariables.OIDC_JWKS_PRIVATE_KEY_FILE);
+      jwks = JSON.parse(fs.readFileSync(envVariables.JWKS_JSON, { encoding: 'utf8' }));
     } catch (e) {
       console.error('Fail to read private key');
       console.error(e);

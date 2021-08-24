@@ -59,7 +59,7 @@ export const createOidcProviderConfig = (
       claimsParameter: { enabled: true }, // defaults to false
       devInteractions: { enabled: false }, // defaults to true
       deviceFlow: { enabled: true }, // defaults to false
-      registration: { enabled: true },
+      registration: { enabled: false },
       resourceIndicators: {
         enabled: false,
         // defaultResource: async (ctx) => {
@@ -80,6 +80,13 @@ export const createOidcProviderConfig = (
       },
       revocation: { enabled: true }, // defaults to false
       userinfo: { enabled: true },
+      requestObjects: {
+        mode: 'strict',
+        request: true,
+        requestUri: true,
+        requireUriRegistration: false,
+        requireSignedRequestObject: true,
+      },
       ciba: {
         ack: undefined,
         deliveryModes: ['poll'],
@@ -147,14 +154,16 @@ export const createOidcProviderConfig = (
       'code id_token token',
       'none',
     ],
-    scopes: ['openid', 'offline_access', 'oidc_credential'],
+    scopes: ['openid', 'offline_access', 'openid_credential'],
+    // see full example for discovery: https://learn.mattr.global/api-reference/v1.0.1#operation/issuerWellKnownOidcConfig
+    // standard params: https://openid.net/specs/openid-connect-discovery-1_0.html
     discovery: {
       // issuer expressing support for did
       dids_supported: true,
       did_methods_supported: ['did:"web'],
       // issuer advertising support for issuing credentials
       credential_supported: true,
-      credential_formats_supports: ['jwt'],
+      credential_formats_supports: ['jwt', 'w3cvc-jsonld'],
       // information about credential the issuer offer
       credential_claims_supported: [
         'given_name',
@@ -162,6 +171,12 @@ export const createOidcProviderConfig = (
         'https://www.w3.org/2018/credentials/examples/v1/degree',
       ],
       credential_name: 'University Credential',
+      credential_endpoint: `https://issuer.example.com/oidc/issuers/${issuerId}/credential`,
+      request_parameter_supported: true,
+      require_signed_request_object: true,
+    },
+    enabledJWA: {
+      requestObjectSigningAlgValues: ['RS256', 'HS384', 'HS256'],
     },
   };
 };

@@ -62,6 +62,8 @@ export * from './tenantManager';
 export * from './createOidcIssuerClientArgs';
 export * from './createOidcIssuerArgs';
 export * from './createTenantArgs';
+export * from './credentialRequestPayload';
+export * from './credentialResponse';
 
 export type PaginatedDIDDocument = Paginated<DidDocument>;
 export type GetPaginatedDidDocument = CommonResponse<Paginated<DidDocument>>;
