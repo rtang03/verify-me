@@ -1,9 +1,10 @@
 import Debug from 'debug';
 import { Request } from 'express';
 import Status from 'http-status';
+import { nanoid } from 'nanoid';
 import { getConnection } from 'typeorm';
 import { OidcCredential, OidcFederatedProvider, OidcIssuer } from '../entities';
-import type { CommonResponse, Paginated } from '../types';
+import type { Paginated } from '../types';
 import { createRestRoute, isCreateOidcIssuerArgs } from '../utils';
 
 interface RequestWithVhost extends Request {
@@ -52,6 +53,7 @@ export const createOidcIssuerRoute = () =>
     // TODO: currently, there is no check in CREATE. Need the check, before adding negative test cases.
     POST: async (req: RequestWithVhost, res) => {
       const body: unknown = req.body;
+      const id = nanoid();
 
       if (isCreateOidcIssuerArgs(body)) {
         const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
@@ -73,6 +75,7 @@ export const createOidcIssuerRoute = () =>
         provider.clientSecret = body.federatedProvider.clientSecret;
 
         const issuer = new OidcIssuer();
+        issuer.id = id;
         issuer.credential = credential;
         issuer.federatedProvider = provider;
         issuer.claimMappings = body.claimMappings;

@@ -36,7 +36,7 @@ export const createOidcProviderConfig = (
     cookies: {
       keys: ['some secret key', 'and also the old rotated away some time ago', 'and one more'],
     },
-    extraParams: ['did'],
+    extraParams: ['did', 'sub_jwk', 'credential_format'],
     extraTokenClaims: (ctx, token) => {
       // add to accessToken via resource indicator
       return {
@@ -81,9 +81,9 @@ export const createOidcProviderConfig = (
       revocation: { enabled: true }, // defaults to false
       userinfo: { enabled: true },
       requestObjects: {
-        mode: 'strict',
+        mode: 'lax',
         request: true,
-        requestUri: true,
+        requestUri: false,
         requireUriRegistration: false,
         requireSignedRequestObject: true,
       },

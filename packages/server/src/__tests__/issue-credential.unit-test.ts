@@ -1,15 +1,15 @@
 require('dotenv').config({ path: './.env' });
-import { createPrivateKey } from 'crypto';
 import fs from 'fs';
 import { Express } from 'express';
 import Status from 'http-status';
+import { parseJwk } from 'jose/jwk/parse';
 import { SignJWT } from 'jose/jwt/sign';
+import { generators } from 'openid-client';
 import request from 'supertest';
 import { Connection, ConnectionOptions, getRepository } from 'typeorm';
 import { Accounts, Sessions, Tenant, Users } from '../entities';
 import type { CreateOidcIssuerArgs, CreateOidcIssuerClientArgs } from '../types';
 import { createHttpServer, isOidcClient, isOidcIssuer, isTenant } from '../utils';
-import { parseJwk } from 'jose/jwk/parse';
 
 const ENV_VAR = {
   HOST: process.env.HOST || '0.0.0.0',
@@ -222,31 +222,11 @@ describe('Authz unit test', () => {
 
   // see https://mattrglobal.github.io/oidc-client-bound-assertions-spec
   it('should kick off Credential Request', async () => {
-    const requestObject = {
-      iss: 'RP client_id',
-      aud: 'https://issuer.example.com/oidc/issuers/:id',
-      response_type: 'code id_token',
-      client_id: 'RP client_id',
-      redirect_uri: 'https://jwt.io',
-      scope: 'openid openid_credential',
-      state: '',
-      nonce: '',
-      max_age: 86400,
-      claims: {
-        userinfo: {
-          given_name: { essential: true },
-          nickname: null,
-          email: { essential: true },
-          email_verified: { essential: true },
-          picture: null,
-        },
-        id_token: {
-          gender: null,
-          birthdate: { essential: true },
-          acr: { values: ['urn:mace:incommon:iap:silver'] },
-        },
-      },
-    };
+    const nonce = generators.nonce();
+    const state = generators.state();
+    const code_verifier = generators.codeVerifier();
+    const code_challenge = generators.codeChallenge(code_verifier);
+
     const keyObject = JSON.parse(fs.readFileSync('./certs/jwks.json', { encoding: 'utf-8' }))
       .keys[0];
     const privateKey = await parseJwk(keyObject, 'RS256');
@@ -256,17 +236,12 @@ describe('Authz unit test', () => {
       scope: 'openid openid_credential',
       redirect_uri: 'https://jwt.io',
       client_id: clientId,
-      nonce: '43747d5962a5',
+      nonce,
       credential_format: 'w3cvc-jwt',
-      code_challenge: 1234567890123456789012345678901234567890123456,
-      // sub_jwk: {
-      //   crv: 'secp256k1',
-      //   kid: 'YkDpvGNsch2lFBf6p8u3',
-      //   kty: 'EC',
-      //   x: '7KEKZa5xJPh7WVqHJyUpb2MgEe3nA8Rk7eUlXsmBl-M',
-      //   y: '3zIgl_ml4RhapyEm5J7lvU-4f5jiBvZr4KgxUjEhl9o',
-      // },
-      // CANNOT BE DECODED AT SERVER
+      code_challenge,
+      code_challenge_method: 'S256',
+      // EITHER did OR sub_jwk
+      // did: 'did:web:issuer.example.com',
       sub_jwk: {
         kty: 'RSA',
         use: 'sig',
@@ -304,8 +279,8 @@ describe('Authz unit test', () => {
         client_id: clientId,
         redirect_uri: 'https://jwt.io',
         scope: 'openid openid_credential',
-        state: 'foobar',
-        code_challenge: '1234567890123456789012345678901234567890123456',
+        state,
+        code_challenge,
         // use did or sub_jwk
         did: 'did:web:issuer.example.com',
         request: signedRequest,

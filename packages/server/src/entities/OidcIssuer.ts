@@ -1,10 +1,13 @@
-import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from 'typeorm';
 import { OidcCredential } from './OidcCredential';
 import { OidcFederatedProvider } from './OidcFederatedProvider';
 
 @Entity()
 export class OidcIssuer {
-  @PrimaryGeneratedColumn('uuid')
+  // @PrimaryGeneratedColumn('uuid')
+  // id: string;
+
+  @PrimaryColumn()
   id: string;
 
   @OneToOne(() => OidcFederatedProvider, { cascade: true })
