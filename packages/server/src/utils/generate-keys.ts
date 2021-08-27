@@ -19,9 +19,9 @@ import { fromKeyLike } from 'jose/jwk/from_key_like';
 import { generateKeyPair } from 'jose/util/generate_key_pair';
 
 (async () => {
-  const privKeys = [
-    { use: 'RS256', options: { crv: 'EC' } },
-  ].map(({ use, options }) => generateKeyPair(use, options).then(({ privateKey }) => privateKey));
+  const privKeys = [{ use: 'RS256', options: { crv: 'EC' } }].map(({ use, options }) =>
+    generateKeyPair(use, options).then(({ privateKey }) => privateKey)
+  );
   const keys = [];
   for await (const key of privKeys) {
     keys.push(await fromKeyLike(key));

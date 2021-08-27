@@ -12,6 +12,10 @@ import type {
 } from '../types';
 import { createHttpServer, isOidcClient, isOidcIssuer, isTenant } from '../utils';
 
+/**
+ * Tests with Oidc-Issuers CRUD
+ */
+
 const ENV_VAR = {
   HOST: process.env.HOST || '0.0.0.0',
   PORT: parseInt(process.env.PORT, 10) || 3002,

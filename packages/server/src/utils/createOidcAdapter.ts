@@ -90,6 +90,9 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
       )(id);
 
       const data = await repo;
+
+      // TODO: Fix me
+
       data.jwks = {
         keys: [
           {

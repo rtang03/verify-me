@@ -1,10 +1,11 @@
+import type { IDIDManagerGetOrCreateArgs, IIdentifier } from '@veramo/core';
 import Debug from 'debug';
-import { Request } from 'express';
+import type { Request } from 'express';
 import Status from 'http-status';
 import { nanoid } from 'nanoid';
 import { getConnection } from 'typeorm';
 import { OidcCredential, OidcFederatedProvider, OidcIssuer } from '../entities';
-import type { Paginated } from '../types';
+import type { Paginated, TenantManager } from '../types';
 import { createRestRoute, isCreateOidcIssuerArgs } from '../utils';
 
 interface RequestWithVhost extends Request {
@@ -13,12 +14,12 @@ interface RequestWithVhost extends Request {
   issuerId?: string;
 }
 
-const debug = Debug('utils:createOidcRoute');
+const debug = Debug('utils:createOidcIssuerRoute');
 
 /**
  * Restful api for /oidc/issuers, being invoked via createOidcRoute.ts
  */
-export const createOidcIssuerRoute = () =>
+export const createOidcIssuerRoute = (tenantManger: TenantManager) =>
   createRestRoute({
     GET: async (req: RequestWithVhost, res) => {
       const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
@@ -53,11 +54,36 @@ export const createOidcIssuerRoute = () =>
     // TODO: currently, there is no check in CREATE. Need the check, before adding negative test cases.
     POST: async (req: RequestWithVhost, res) => {
       const body: unknown = req.body;
-      const id = nanoid();
+
+      // NOTE: When running Jest, we need a FIXED Oidc-issuer Id, so that the federated oidc provider is
+      // configured with fixed "allowed Callback url"
+      const isRunningJest = process.env.NODE_ENV === 'test';
+      const id = isRunningJest ? process.env.JEST_FIXED_OIDC_ISSUER_ID : nanoid();
+
+      isRunningJest && console.log('create fixed Id for TEST purpose');
 
       if (isCreateOidcIssuerArgs(body)) {
         const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
         const providerRepo = getConnection(req.tenantId).getRepository(OidcFederatedProvider);
+
+        // Add did to new Oidc issuer
+        const slug = req.vhost[0];
+        const agent = tenantManger.getAgents()[slug];
+        const agentArgs: IDIDManagerGetOrCreateArgs = {
+          alias: id, // oidc-issuer 's id
+          provider: 'did:key',
+          // Ed22519 is the required key for did:key
+          // options: { keyType: 'Ed25519' },
+          kms: 'local',
+        };
+        const identifier: IIdentifier = await agent.execute('didManagerGetOrCreate', agentArgs);
+
+        debug('identifier, %O', identifier);
+
+        if (!identifier)
+          return res
+            .status(Status.BAD_REQUEST)
+            .send({ status: 'ERROR', error: 'fail to create did' });
 
         const credential = new OidcCredential();
         credential.context = body.credential.context;
@@ -79,6 +105,9 @@ export const createOidcIssuerRoute = () =>
         issuer.credential = credential;
         issuer.federatedProvider = provider;
         issuer.claimMappings = body.claimMappings;
+
+        // OidcIssuer is bound to Did (and also its key)
+        issuer.identifierDid = identifier.did;
 
         // cascade insert
         const data = await issuerRepo.save(issuer);

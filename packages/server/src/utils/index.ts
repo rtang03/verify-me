@@ -9,4 +9,5 @@ export * from './createDidDocument';
 export * from './fetchOpenIdConfiguration';
 export * from './createOidcAdapter';
 export * from './createOidcProviderConfig';
-export * from './genJwks';
+export * from './generators';
+export * from './convertKeyPairToJwkEd22519';

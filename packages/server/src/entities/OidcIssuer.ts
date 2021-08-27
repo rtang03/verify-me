@@ -23,4 +23,8 @@ export class OidcIssuer {
     jsonLdTerm: string;
     oidcClaim: string;
   }>;
+
+  // Veramo IIdentifier
+  @Column({ nullable: true })
+  identifierDid: string;
 }

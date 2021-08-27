@@ -1,4 +1,10 @@
 import util from 'util';
+import type {
+  IDIDManagerGetOrCreateArgs,
+  IIdentifier,
+  IKey,
+  IKeyManagerGetArgs,
+} from '@veramo/core';
 import { Entities } from '@veramo/data-store';
 import Debug from 'debug';
 import includes from 'lodash/includes';
@@ -14,6 +20,7 @@ import {
   OidcPayload,
 } from '../entities';
 import type { TenantManager, TenantStatus } from '../types';
+import { convertKeyPairsToJwkEd22519 } from './convertKeyPairToJwkEd22519';
 import { createOidcProviderConfig } from './createOidcProviderConfig';
 import type { TTAgent } from './setupVeramo';
 import { setupVeramo } from './setupVeramo';
@@ -45,20 +52,46 @@ const createConnOption: (tenant: Tenant) => ConnectionOptions = (tenant) => ({
 
 const debug = Debug('utils:createTenantManager');
 
-export const createTenantManager: (
-  commonConnection: Connection,
-  jwks: { keys: JWK[] }
-) => TenantManager = (commonConnection, jwks) => {
+export const createTenantManager: (commonConnection: Connection) => TenantManager = (
+  commonConnection
+) => {
   // connectionPromises' key is "tenantId"
   let connectionPromises: Record<string, Promise<Connection>>;
+
   // agents' key is "slug"
   const agents: Record<string, TTAgent> = {};
+
   // oidcProvider's key is "tenantId"
   const oidcProivders: Record<string, Provider> = {};
   const tenantRepo = getConnection('default').getRepository(Tenant);
 
   return {
-    createOrGetOidcProvider: (hostname, tenantId, issuerId) => {
+    createOrGetOidcProvider: async (hostname, tenantId, issuerId) => {
+      // step 1: Add did to new Tenant; which generate key pair, for use by Oidc provider's jwks_uri
+      const slug = hostname.split('.')[0];
+      const agent = agents[slug];
+      const agentArgs: IDIDManagerGetOrCreateArgs = {
+        alias: tenantId,
+        provider: 'did:key',
+        // Ed22519 is the required key for did:key
+        // options: { keyType: 'Ed25519' },
+        kms: 'local',
+      };
+      const identifier: IIdentifier = await agent.execute('didManagerGetOrCreate', agentArgs);
+
+      if (!identifier) throw new Error('fail to create did');
+
+      // step 2: retrieve keys
+      const getKeyArgs: IKeyManagerGetArgs = { kid: identifier.controllerKeyId };
+      const key: IKey = await agent.execute('keyManagerGet', getKeyArgs);
+
+      if (!key) throw new Error('fail to retrieve key');
+
+      // Veramo's did:key is in format of publicKeyHex and privateKeyHex
+      const keyJwk = convertKeyPairsToJwkEd22519(key.publicKeyHex, key.privateKeyHex);
+      const jwks = { keys: [keyJwk.privateKeyJwk] };
+
+      // step 3: get or create Provider
       const uri = `https://${hostname}/oidc/issuers/${issuerId}`;
       oidcProivders[tenantId] ??= new Provider(
         uri,

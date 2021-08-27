@@ -15,7 +15,8 @@
     "test:veramo": "jest --forceExit --detectOpenHandles veramo.unit-test",
     "test:oidc-issuer": "DEBUG=utils:* jest --forceExit --forceExit --detectOpenHandles oidcIssuer.unit-test",
     "test:issue-credential-flow": "DEBUG=utils:* jest --forceExit --detectOpenHandles issue-credential.unit-test",
-    "gen-rs256": "ts-node ./src/utils/generate-keys.ts"
+    "gen-rs256": "ts-node ./src/utils/generate-keys.ts",
+    "genkey-test": "ts-node ./src/utils/genJwks.ts"
   },
   "dependencies": {
     "@veramo/core": "2.0.2-next.10",
@@ -35,6 +36,7 @@
     "@veramo/did-comm": "2.0.2-next.10",
     "@veramo/selective-disclosure": "2.0.2-next.10",
     "web-did-resolver": "^2.0.4",
+    "base64url": "^3.0.1",
     "blakejs": "^1.1.0",
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
@@ -48,14 +50,14 @@
     "jwt-decode": "^3.1.2",
     "nanoid": "^3.1.25",
     "oidc-provider": "^7.6.0",
-    "oidc-client": "^1.11.5",
     "pg": "^8.6.0",
     "qs": "^6.10.1",
     "rimraf": "^3.0.2",
     "typeorm": "^0.2.32",
     "vhost": "^3.0.2",
     "yamljs": "^0.3.0",
-    "yup": "^0.32.9"
+    "yup": "^0.32.9",
+    "uint8arrays": "^2.1.5"
   },
   "devDependencies": {
     "@types/debug": "^4.1.5",

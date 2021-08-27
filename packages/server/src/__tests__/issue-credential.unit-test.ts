@@ -4,12 +4,15 @@ import { Express } from 'express';
 import Status from 'http-status';
 import { parseJwk } from 'jose/jwk/parse';
 import { SignJWT } from 'jose/jwt/sign';
-import { generators } from 'openid-client';
 import request from 'supertest';
 import { Connection, ConnectionOptions, getRepository } from 'typeorm';
 import { Accounts, Sessions, Tenant, Users } from '../entities';
 import type { CreateOidcIssuerArgs, CreateOidcIssuerClientArgs } from '../types';
-import { createHttpServer, isOidcClient, isOidcIssuer, isTenant } from '../utils';
+import { createHttpServer, isOidcClient, isOidcIssuer, isTenant, generators } from '../utils';
+
+/**
+ * Tests with Issue Credential workflow
+ */
 
 const ENV_VAR = {
   HOST: process.env.HOST || '0.0.0.0',
@@ -178,6 +181,7 @@ describe('Authz unit test', () => {
         expect(isOidcIssuer(body?.data)).toBeTruthy();
         expect(status).toEqual(Status.CREATED);
         issuerId = body?.data?.id;
+        console.log('Oidc-issuer', body.data);
       }));
 
   it('should register oidc client', async () =>
@@ -220,12 +224,19 @@ describe('Authz unit test', () => {
         openIdConfig = body;
       }));
 
+  /*
   // see https://mattrglobal.github.io/oidc-client-bound-assertions-spec
   it('should kick off Credential Request', async () => {
     const nonce = generators.nonce();
     const state = generators.state();
     const code_verifier = generators.codeVerifier();
     const code_challenge = generators.codeChallenge(code_verifier);
+
+    // Todo: this is improper implementation. Need refactor
+    // discover the public key of the oidc-issuer
+    const response = await fetch(openIdConfig.jwks_uri);
+    const jwks_keys = await response.json();
+    const sub_jwk = jwks_keys.keys[0];
 
     const keyObject = JSON.parse(fs.readFileSync('./certs/jwks.json', { encoding: 'utf-8' }))
       .keys[0];
@@ -242,13 +253,7 @@ describe('Authz unit test', () => {
       code_challenge_method: 'S256',
       // EITHER did OR sub_jwk
       // did: 'did:web:issuer.example.com',
-      sub_jwk: {
-        kty: 'RSA',
-        use: 'sig',
-        kid: 'nL_5KPQjG45gpvegzs-d2pUUrjj2jRSNhI9cPK7xWG0',
-        e: 'AQAB',
-        n: 'mPV1Bc2mHCFxvtSAQkUHPlYMncXyMclSAayfBknpqznACwERQHvVksHfuf2CJSixgR7TwM2EiJuccM8Q2Er2WlCKMwMU2PYWzX-Lx2Eaiui44yfCqOJfMjhsDzoxwgosKTWmMTDOZY-NpWTe8XVisoi4Dll9UsU02ge1bABBtkgzkI7pdBC5jhQjXqClo4yLXUNataIzgAL7rE2FI_7pOz7DlMKB-46OBDA5fP9GGcb820O2u9BWMGni8qJ7Kc3oitUHEKV61IbKMxld9F6HlDLuvtrMYJFh8FzPM26wOakNhsylh1HOBLUvMNVWHa2uA0XSv0BN-1FKqEWc22kL8Q',
-      },
+      sub_jwk,
       claims: {
         userinfo: {
           given_name: { essential: true },
@@ -293,4 +298,6 @@ describe('Authz unit test', () => {
         console.log(headers);
       });
   });
+
+   */
 });

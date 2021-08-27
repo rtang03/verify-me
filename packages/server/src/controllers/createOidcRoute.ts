@@ -81,7 +81,11 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         const issuerId = req.params.issuer_id;
         const code = req.query.code as string;
         const state = req.query.state;
-        const oidc = tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
+        const oidc = await tenantManger.createOrGetOidcProvider(
+          req.hostname,
+          req.tenantId,
+          issuerId
+        );
         const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
         const issuer = await issuerRepo.findOne(issuerId, {
           relations: ['credential', 'federatedProvider'],
@@ -171,7 +175,11 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     async (req: RequestWithVhost, res, next) => {
       try {
         const issuerId = req.params.issuer_id;
-        const oidc = tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
+        const oidc = await tenantManger.createOrGetOidcProvider(
+          req.hostname,
+          req.tenantId,
+          issuerId
+        );
         const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
         const issuer = await issuerRepo.findOne(issuerId, {
           relations: ['credential', 'federatedProvider'],
@@ -198,7 +206,6 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         //   scope: 'openid openid_credential',
         //   claims: '{"userinfo":{"given_name":{"essential":true},"nickname":null,"email":{"essential":true},"email_verified":{"essential":true},"picture":null},"id_token":{"gender":null,"birthdate":{"essential":true},"acr":{"values":["urn:mace:incommon:iap:silver"]}}}'
         // }
-
 
         // fetch OpenId Configuration
         const openIdConfigUrl = issuer?.federatedProvider?.url;
@@ -247,7 +254,11 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     async (req: RequestWithVhost, res, next) => {
       try {
         const issuerId = req.params.issuer_id;
-        const oidc = tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
+        const oidc = await tenantManger.createOrGetOidcProvider(
+          req.hostname,
+          req.tenantId,
+          issuerId
+        );
         const interactionDetails = await oidc.interactionDetails(req, res);
         // returnTo:
         //   'https://issuer.example.com/oidc/issuers/bb41301f-0fc6-406d-ac34-3afeb003769e/auth/h_2x-LM_dtOMWwMbaMT0z',
@@ -333,7 +344,11 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     async (req: RequestWithVhost, res, next) => {
       try {
         const issuerId = req.params.issuer_id;
-        const oidc = tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
+        const oidc = await tenantManger.createOrGetOidcProvider(
+          req.hostname,
+          req.tenantId,
+          issuerId
+        );
         const interactionDetails = await oidc.interactionDetails(req, res);
 
         debug('POST /oidc/issuers/:issuer_id/interaction/%s/abort', interactionDetails.uid);
@@ -350,7 +365,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
   );
 
   // ⁉️ TODO: DOUBLE CHECK ME, IF I AM AT THE RIGHT POSITION
-  router.use('/issuers', createOidcIssuerRoute());
+  router.use('/issuers', createOidcIssuerRoute(tenantManger));
 
   /**
    * @see https://mattrglobal.github.io/oidc-client-bound-assertions-spec/#name-credential-endpoint-request
@@ -408,7 +423,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
       return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: error.message });
     }
 
-    const oidc = tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
+    const oidc = await tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
 
     debug('at /oidc/issuers/:issuer_id, %s', issuerId);
 
