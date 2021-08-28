@@ -1,14 +1,21 @@
 require('dotenv').config({ path: './.env' });
-import fs from 'fs';
+import { Identifier } from '@veramo/data-store';
 import { Express } from 'express';
 import Status from 'http-status';
 import { parseJwk } from 'jose/jwk/parse';
 import { SignJWT } from 'jose/jwt/sign';
 import request from 'supertest';
-import { Connection, ConnectionOptions, getRepository } from 'typeorm';
-import { Accounts, Sessions, Tenant, Users } from '../entities';
+import { Connection, ConnectionOptions, getRepository, getConnection } from 'typeorm';
+import { Accounts, OidcClient, Sessions, Tenant, Users } from '../entities';
 import type { CreateOidcIssuerArgs, CreateOidcIssuerClientArgs } from '../types';
-import { createHttpServer, isOidcClient, isOidcIssuer, isTenant, generators } from '../utils';
+import {
+  createHttpServer,
+  isOidcClient,
+  isOidcIssuer,
+  isTenant,
+  generators,
+  convertKeyPairsToJwkEd22519,
+} from '../utils';
 
 /**
  * Tests with Issue Credential workflow
@@ -25,7 +32,9 @@ const ENV_VAR = {
   OIDC_JWKS_PRIVATE_KEY_FILE: process.env.OIDC_JWKS_PRIVATE_KEY_FILE,
   AUTH0_CLIENT_ID: process.env.AUTH0_ID,
   AUTH0_CLIENT_SECRET: process.env.AUTH0_SECRET,
-  JWKS_JSON: process.env.JWKS_JSON,
+  JEST_FIXED_OIDC_ISSUER_ID: process.env.JEST_FIXED_OIDC_ISSUER_ID,
+  JEST_FIXED_OIDC_ClIENT_ID: process.env.JEST_FIXED_OIDC_ClIENT_ID,
+  // JWKS_JSON: process.env.JWKS_JSON,
 };
 const commonConnectionOptions: ConnectionOptions = {
   name: 'default',
@@ -224,7 +233,6 @@ describe('Authz unit test', () => {
         openIdConfig = body;
       }));
 
-  /*
   // see https://mattrglobal.github.io/oidc-client-bound-assertions-spec
   it('should kick off Credential Request', async () => {
     const nonce = generators.nonce();
@@ -232,15 +240,22 @@ describe('Authz unit test', () => {
     const code_verifier = generators.codeVerifier();
     const code_challenge = generators.codeChallenge(code_verifier);
 
-    // Todo: this is improper implementation. Need refactor
-    // discover the public key of the oidc-issuer
-    const response = await fetch(openIdConfig.jwks_uri);
-    const jwks_keys = await response.json();
-    const sub_jwk = jwks_keys.keys[0];
+    // retrieve key pair for newly created Oidc-client
+    const clientRepo = getConnection(tenant.id).getRepository(OidcClient);
+    const oidcClient = await clientRepo.findOne(clientId);
+    const identifierRepo = getConnection(tenant.id).getRepository(Identifier);
+    const identifier = await identifierRepo.findOne(oidcClient.did, { relations: ['keys'] });
+    const { publicKeyHex, privateKeyHex } = identifier.keys[0];
+    const { publicKeyJwk, privateKeyJwk } = convertKeyPairsToJwkEd22519(
+      publicKeyHex,
+      privateKeyHex
+    );
+    console.log('==== privateKeyJwk', privateKeyJwk);
 
-    const keyObject = JSON.parse(fs.readFileSync('./certs/jwks.json', { encoding: 'utf-8' }))
-      .keys[0];
-    const privateKey = await parseJwk(keyObject, 'RS256');
+    // parse from Jwk into KeyLike object (from Nodejs crypto)
+    const privateKey = await parseJwk(privateKeyJwk);
+    console.log('===PrivateKey', privateKey);
+
     // @see https://github.com/panva/jose/blob/main/docs/classes/jwt_sign.SignJWT.md
     const signedRequest = await new SignJWT({
       response_type: 'code',
@@ -253,7 +268,7 @@ describe('Authz unit test', () => {
       code_challenge_method: 'S256',
       // EITHER did OR sub_jwk
       // did: 'did:web:issuer.example.com',
-      sub_jwk,
+      sub_jwk: publicKeyJwk,
       claims: {
         userinfo: {
           given_name: { essential: true },
@@ -269,11 +284,11 @@ describe('Authz unit test', () => {
         },
       },
     })
-      .setProtectedHeader({ alg: 'RS256' })
+      .setProtectedHeader({ alg: 'EdDSA' })
       .setIssuedAt()
       .setIssuer(clientId)
       .setAudience(`https://issuer.example.com/oidc/issuers/${issuerId}`)
-      .setSubject(`urn:uuid:${clientId}`)
+      .setSubject(clientId)
       .setExpirationTime('100h')
       .sign(privateKey);
 
@@ -298,6 +313,4 @@ describe('Authz unit test', () => {
         console.log(headers);
       });
   });
-
-   */
 });

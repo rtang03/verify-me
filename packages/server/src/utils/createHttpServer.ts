@@ -6,7 +6,6 @@ import errorHandler from 'errorhandler';
 import express, { Express, json, urlencoded } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import type { JWK } from 'oidc-provider';
 import { Connection, ConnectionOptions, createConnection, getConnection } from 'typeorm';
 import vhost from 'vhost';
 import {
@@ -27,7 +26,6 @@ export const createHttpServer: (option: {
 }) => Promise<{ app: Express; commonConnections: Connection; tenantManager: TenantManager }> =
   async ({ commonConnectionOptions, envVariables, baseUrl }) => {
     let commonConnections: Connection;
-    let jwks: { keys: JWK[] };
 
     try {
       // Connect common connection
@@ -37,15 +35,6 @@ export const createHttpServer: (option: {
       console.error(e);
       process.exit(1);
     }
-
-    // TODO: CAN REMOVE
-    // try {
-    //   jwks = JSON.parse(fs.readFileSync(envVariables.JWKS_JSON, { encoding: 'utf8' }));
-    // } catch (e) {
-    //   console.error('Fail to read private key');
-    //   console.error(e);
-    //   process.exit(1);
-    // }
 
     const tenantManager = createTenantManager(commonConnections);
 

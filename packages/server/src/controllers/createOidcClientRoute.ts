@@ -1,10 +1,13 @@
 import { randomBytes } from 'crypto';
+import type { IDIDManagerGetOrCreateArgs, IIdentifier } from '@veramo/core';
 import Debug from 'debug';
 import type { Request } from 'express';
 import Status from 'http-status';
+import { nanoid } from 'nanoid';
 import { getConnection } from 'typeorm';
 import { OidcClient } from '../entities';
 import type { Paginated } from '../types';
+import type { TenantManager } from '../types';
 import { createRestRoute, isCreateOidcIssuerClientArgs } from '../utils';
 
 interface RequestWithVhost extends Request {
@@ -15,7 +18,7 @@ interface RequestWithVhost extends Request {
 
 const debug = Debug('utils:createOidcClientRoute');
 
-export const createOidcClientRoute = () =>
+export const createOidcClientRoute = (tenantManger: TenantManager) =>
   createRestRoute({
     GET: async (req: RequestWithVhost, res) => {
       const issuerId = req.issuerId;
@@ -54,9 +57,33 @@ export const createOidcClientRoute = () =>
       const issuerId = req.issuerId;
       const body: unknown = req.body;
 
+      // NOTE: When running Jest, we need a FIXED Oidc-issuer Id, so that the federated oidc provider is
+      // configured with fixed "allowed Callback url"
+      const isRunningJest = process.env.NODE_ENV === 'test';
+      const id = isRunningJest ? process.env.JEST_FIXED_OIDC_ISSUER_ID : nanoid();
+
       if (isCreateOidcIssuerClientArgs(body)) {
         const clientRepo = getConnection(req.tenantId).getRepository(OidcClient);
+
+        // Add did to new Oidc-client
+        const slug = req.vhost[0];
+        const agent = tenantManger.getAgents()[slug];
+        const agentArgs: IDIDManagerGetOrCreateArgs = {
+          alias: id, // oidc-client 's id
+          provider: 'did:key',
+          kms: 'local',
+        };
+        const identifier: IIdentifier = await agent.execute('didManagerGetOrCreate', agentArgs);
+
+        debug('oidc-client did, %O', identifier);
+
+        if (!identifier)
+          return res
+            .status(Status.BAD_REQUEST)
+            .send({ status: 'ERROR', error: 'fail to create did' });
+
         const client = new OidcClient();
+        client.client_id = id;
         client.client_name = body.client_name;
         client.redirect_uris = body.redirect_uris;
         client.response_types = body.response_types;
@@ -66,6 +93,9 @@ export const createOidcClientRoute = () =>
         client.application_type = body.application_type;
         client.issuerId = issuerId;
         client.client_secret = randomBytes(12).toString('hex');
+
+        // OidcClient is bound to Did (and also its key)
+        client.did = identifier.did;
 
         const data = await clientRepo.save(client);
 

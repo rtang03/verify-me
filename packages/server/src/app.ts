@@ -17,8 +17,8 @@ const ENV_VAR = {
   DB_USERNAME: process.env.TYPEORM_USERNAME,
   DB_PASSWORD: process.env.TYPEORM_PASSWORD,
   DB_NAME: process.env.TYPEORM_DATABASE,
-  OIDC_JWKS_PRIVATE_KEY_FILE: process.env.OIDC_JWKS_PRIVATE_KEY_FILE,
-  JWKS_JSON: process.env.JWKS_JSON,
+  // OIDC_JWKS_PRIVATE_KEY_FILE: process.env.OIDC_JWKS_PRIVATE_KEY_FILE,
+  // JWKS_JSON: process.env.JWKS_JSON,
 };
 
 const commonConnectionOptions: ConnectionOptions = {

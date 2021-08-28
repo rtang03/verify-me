@@ -1,10 +1,10 @@
 import type { ClientAuthMethod, ResponseType, SigningAlgorithmWithNone } from 'oidc-provider';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 // https://openid.net/specs/openid-connect-registration-1_0.html
 @Entity()
 export class OidcClient {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn()
   client_id: string;
 
   // TODO: verifiy the use of this field
@@ -34,6 +34,9 @@ export class OidcClient {
 
   @Column({ type: 'varchar', length: 255, nullable: false })
   application_type: 'web' | 'native';
+
+  @Column({ nullable: true })
+  did: string;
 
   [key: string]: unknown;
 }

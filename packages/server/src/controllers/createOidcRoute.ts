@@ -57,10 +57,14 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
   });
 
   // REST for oidc-issuer's client
-  router.use('/issuers/:issuer_id/clients', issuerIdMiddleware, createOidcClientRoute());
+  router.use(
+    '/issuers/:issuer_id/clients',
+    issuerIdMiddleware,
+    createOidcClientRoute(tenantManger)
+  );
 
   // oidc client registration, using default endpoint "oidc/issuers/:id/reg"
-  router.use('/issuers/:issuer_id/reg', issuerIdMiddleware, createOidcClientRoute());
+  router.use('/issuers/:issuer_id/reg', issuerIdMiddleware, createOidcClientRoute(tenantManger));
 
   // federated OIDC provide callback here, to exchange token
   // this endpoint will redirect to /issuers/interaction/:uid/login
@@ -384,6 +388,9 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     try {
       // decode signed-jwt-request-obj
       // payload = jwt_decode(credentailRequest);
+
+      // todo: below is incorrect
+
       const publicKey = createPublicKey(fs.readFileSync('./certs/host.pem'));
       const { payload, protectedHeader }: JWTVerifyResult = await jwtVerify(
         credentailRequest,

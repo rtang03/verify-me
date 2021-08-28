@@ -4,9 +4,6 @@ import { OidcFederatedProvider } from './OidcFederatedProvider';
 
 @Entity()
 export class OidcIssuer {
-  // @PrimaryGeneratedColumn('uuid')
-  // id: string;
-
   @PrimaryColumn()
   id: string;
 
@@ -24,7 +21,8 @@ export class OidcIssuer {
     oidcClaim: string;
   }>;
 
-  // Veramo IIdentifier
+  // Note: intentionally, not picking OneToOne JoinColumn, because the corresponding did is created
+  // using veramo agent method, instead of direct psql-insert
   @Column({ nullable: true })
-  identifierDid: string;
+  did: string;
 }

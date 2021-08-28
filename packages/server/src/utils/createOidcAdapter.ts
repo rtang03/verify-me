@@ -1,7 +1,10 @@
+import type { IIdentifier } from '@veramo/core';
+import { Identifier } from '@veramo/data-store';
 import Debug from 'debug';
 import type { Adapter, AdapterPayload } from 'oidc-provider';
 import { getConnection } from 'typeorm';
 import { OidcClient, OidcPayload } from '../entities';
+import { convertKeyPairsToJwkEd22519 } from './convertKeyPairToJwkEd22519';
 
 const debug = Debug('utils:createOidcRoute');
 const TCLIENT = 7;
@@ -32,6 +35,7 @@ const parseResult: (input: OidcPayload) => OidcPayload = (data) =>
 export const createOidcAdapter: (connectionName: string) => any = (connectionName) => {
   const oidcPayloadRepo = getConnection(connectionName).getRepository(OidcPayload);
   const oidcClientRepo = getConnection(connectionName).getRepository(OidcClient);
+  const identifierRepo = getConnection(connectionName).getRepository(Identifier);
 
   return class PsqlAdapter implements Adapter {
     type: number;
@@ -91,19 +95,14 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
 
       const data = await repo;
 
-      // TODO: Fix me
+      // add keystore (public key) to each client
+      if (this.type === TCLIENT) {
+        const identifier: IIdentifier = await identifierRepo.findOne(data.did);
+        data.jwks = identifier && {
+          keys: [convertKeyPairsToJwkEd22519(identifier.controllerKeyId).publicKeyJwk],
+        };
+      }
 
-      data.jwks = {
-        keys: [
-          {
-            kty: 'RSA',
-            use: 'sig',
-            kid: 'nL_5KPQjG45gpvegzs-d2pUUrjj2jRSNhI9cPK7xWG0',
-            e: 'AQAB',
-            n: 'mPV1Bc2mHCFxvtSAQkUHPlYMncXyMclSAayfBknpqznACwERQHvVksHfuf2CJSixgR7TwM2EiJuccM8Q2Er2WlCKMwMU2PYWzX-Lx2Eaiui44yfCqOJfMjhsDzoxwgosKTWmMTDOZY-NpWTe8XVisoi4Dll9UsU02ge1bABBtkgzkI7pdBC5jhQjXqClo4yLXUNataIzgAL7rE2FI_7pOz7DlMKB-46OBDA5fP9GGcb820O2u9BWMGni8qJ7Kc3oitUHEKV61IbKMxld9F6HlDLuvtrMYJFh8FzPM26wOakNhsylh1HOBLUvMNVWHa2uA0XSv0BN-1FKqEWc22kL8Q',
-          },
-        ],
-      };
       const result = this.type === TCLIENT ? data : parseResult(data as OidcPayload);
 
       debug('Find-result, %O', result);

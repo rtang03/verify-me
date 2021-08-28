@@ -8,7 +8,7 @@ import type {
 import { Entities } from '@veramo/data-store';
 import Debug from 'debug';
 import includes from 'lodash/includes';
-import { JWK, Provider } from 'oidc-provider';
+import { Provider } from 'oidc-provider';
 import { Connection, ConnectionOptions, createConnection, getConnection } from 'typeorm';
 import {
   Tenant,

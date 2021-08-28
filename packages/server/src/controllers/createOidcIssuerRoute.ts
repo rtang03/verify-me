@@ -55,6 +55,8 @@ export const createOidcIssuerRoute = (tenantManger: TenantManager) =>
     POST: async (req: RequestWithVhost, res) => {
       const body: unknown = req.body;
 
+      debug('body: %O', body);
+
       // NOTE: When running Jest, we need a FIXED Oidc-issuer Id, so that the federated oidc provider is
       // configured with fixed "allowed Callback url"
       const isRunningJest = process.env.NODE_ENV === 'test';
@@ -72,13 +74,11 @@ export const createOidcIssuerRoute = (tenantManger: TenantManager) =>
         const agentArgs: IDIDManagerGetOrCreateArgs = {
           alias: id, // oidc-issuer 's id
           provider: 'did:key',
-          // Ed22519 is the required key for did:key
-          // options: { keyType: 'Ed25519' },
           kms: 'local',
         };
         const identifier: IIdentifier = await agent.execute('didManagerGetOrCreate', agentArgs);
 
-        debug('identifier, %O', identifier);
+        debug('oidc-issuer did, %O', identifier);
 
         if (!identifier)
           return res
@@ -107,7 +107,7 @@ export const createOidcIssuerRoute = (tenantManger: TenantManager) =>
         issuer.claimMappings = body.claimMappings;
 
         // OidcIssuer is bound to Did (and also its key)
-        issuer.identifierDid = identifier.did;
+        issuer.did = identifier.did;
 
         // cascade insert
         const data = await issuerRepo.save(issuer);

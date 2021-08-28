@@ -15,8 +15,7 @@
     "test:veramo": "jest --forceExit --detectOpenHandles veramo.unit-test",
     "test:oidc-issuer": "DEBUG=utils:* jest --forceExit --forceExit --detectOpenHandles oidcIssuer.unit-test",
     "test:issue-credential-flow": "DEBUG=utils:* jest --forceExit --detectOpenHandles issue-credential.unit-test",
-    "gen-rs256": "ts-node ./src/utils/generate-keys.ts",
-    "genkey-test": "ts-node ./src/utils/genJwks.ts"
+    "gen-rs256": "ts-node ./src/utils/generate-keys.ts"
   },
   "dependencies": {
     "@veramo/core": "2.0.2-next.10",
