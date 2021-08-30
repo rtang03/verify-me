@@ -15,6 +15,7 @@ import type { TenantManager } from '../types';
 import { CONIG, fetchOpenIdConfiguration, isCredentialRequestPayload } from '../utils';
 import { createOidcClientRoute } from './createOidcClientRoute';
 import { createOidcIssuerRoute } from './createOidcIssuerRoute';
+import { createRemoteJWKSet } from 'jose/jwks/remote';
 
 interface RequestWithVhost extends Request {
   vhost?: any;
@@ -67,18 +68,23 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
   router.use('/issuers/:issuer_id/reg', issuerIdMiddleware, createOidcClientRoute(tenantManger));
 
   // federated OIDC provide callback here, to exchange token
-  // this endpoint will redirect to /issuers/interaction/:uid/login
+  // this endpoint will FURTHER redirect to /issuers/interaction/:uid/login
+  // this endpoint is ensuring a stable api for federated provider.
   router.get('/issuers/:issuer_id/callback', (req, res) => {
     debug('GET /oidc/issuers/:issuer_id/callback');
     const issuerId = req.params.issuer_id;
+
+    // NOTE: the "state" between oidc-issurer and federated provider is the interaction id "jti"
     const url = `/oidc/issuers/${issuerId}/interaction/${req.query.state}/login?code=${req.query.code}&state=${req.query.state}`;
 
     res.writeHead(302, { Location: url });
     res.end();
   });
 
+  // the endpoint is invoked after the authenticated user is redirected from /callback?code=xxxxx
+  // "code" is ready to exchange tokens
   router.get(
-    '/issuers/:issuer_id/interaction/:uid/login',
+    '/issuers/:issuer_id/interaction/:jti/login',
     setNoCache,
     async (req: RequestWithVhost, res, next) => {
       try {
@@ -90,16 +96,38 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           req.tenantId,
           issuerId
         );
+
+        // find Oidc-issuer
         const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
         const issuer = await issuerRepo.findOne(issuerId, {
           relations: ['credential', 'federatedProvider'],
         });
 
-        const { uid, prompt, params } = await oidc.interactionDetails(req, res);
+        const { uid, prompt, params, jti } = await oidc.interactionDetails(req, res);
 
-        debug('GET /oidc/issuers/:issuer_id/interaction/%s/login', uid);
+        debug('GET /oidc/issuers/:issuer_id/interaction/%s/login', jti);
+
         debug('prompt: %O', prompt);
+        // DEBUG: returns
+        // { name: 'login', reasons: ['no_session'], details: {} };
+
         debug('params, %O', params);
+        // returns
+        // params = {
+        //   client_id: 'V1StGXR8_Z5jdHi6B-myT',
+        //   code_challenge: 'W2g1aioZbU_vV4ENw0poi6Hl0Glh4cuw_ZGWPvJDqdQ',
+        //   code_challenge_method: 'S256',
+        //   nonce: 'Zn6s54rgRDZSoo_IB_oumGCVYP_GVw-pR0SYXBjmxTg',
+        //   redirect_uri: 'https://jwt.io',
+        //   response_type: 'code',
+        //   scope: 'openid openid_credential',
+        //   state: 'ODXyVX2ZM4r4Z_X3RoeFBIJjMLuSPWBqmwLE4V9HyPY',
+        //   claims:
+        //     '{"userinfo":{"given_name":{"essential":true},"nickname":null,"email":{"essential":true},"email_verified":{"essential":true},"picture":null},"id_token":{"gender":null,"birthdate":{"essential":true},"acr":{"values":["urn:mace:incommon:iap:silver"]}}}',
+        //   sub_jwk:
+        //     '{"kty":"OKP","crv":"Ed25519","alg":"EdDSA","kid":"f68e25c94fb09c7f748d82d9dfe844a0ca6a9ed58771f14a4d5ff889f8ee2180","x":"9o4lyU-wnH90jYLZ3-hEoMpqntWHcfFKTV_4ifjuIYA"}',
+        //   credential_format: 'w3cvc-jwt',
+        // };
 
         if (state !== uid) {
           // this handles replay attack
@@ -124,8 +152,14 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         // this fetch will give the tls warning
         // (node:34683) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification
         const response = await fetch(url, { method: 'POST', body });
+
         if (response.status === Status.OK) {
           const tokens: { access_token: string; id_token: string } = await response.json();
+          // NOTE: access_token issued by oidc-provider will expire, based oidc-provider (auth0) configuration
+          // https://auth0.com/docs/tokens/access-tokens#-userinfo-endpoint-token-lifetime
+          // expires by 24 hours. The expired tokens will fail the JWTVerify operations.
+
+          // e.g. tokens
           // {
           //   access_token: 'oYNaAuIgHw_pzyet-hLxJfjU64vKBjTu',
           //   id_token:
@@ -135,7 +169,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           //   token_type: 'Bearer',
           // };
           // id_token decodes to {
-          //   'https://tenant.vii.mattr.global/educationalCredentialAwarded': 'Certificate Name',
+          //   'https://tenant.vii.mattr.global/educationalCredentialAwarded': 'Certificate Name', <== custom meta_data field
           //   nickname: 'tangross',
           //   name: 'tangross@hotmail.com',
           //   picture:
@@ -143,23 +177,29 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           //   updated_at: '2021-07-01T07:53:46.794Z',
           //   email: 'tangross@hotmail.com',
           //   email_verified: true,
-          //   iss: 'https://dashslab.us.auth0.com/',
-          //   sub: 'auth0|6059aed4aa7803006a20d824',
-          //   aud: 'cGExcP4cy3eljzlhghBhToRP46bP3bLY',
+          //   iss: 'https://dashslab.us.auth0.com/', <== Auth0's tenant url
+          //   sub: 'auth0|6059aed4aa7803006a20d824', <== user_id of Auth0
+          //   aud: 'cGExcP4cy3eljzlhghBhToRP46bP3bLY', <== client_id of Auth0's application
           //   iat: 1625135903,
           //   exp: 1625171903,
           // };
+          // NOTE: see https://auth0.com/docs/tokens/id-tokens
+          // Here decides to using id_token, to translate from Oidc claim into JsonLdTern
+          // No further fetch from /userinfo is required.
 
-          // retrieve id_token
-          const id_token: any = jwt_decode(tokens.id_token);
+          // retrieve id_token, and verify it the JWS signature, and claims
+          // see https://github.com/panva/jose/blob/main/docs/interfaces/jwt_verify.JWTVerifyOptions.md
+          // const id_token: any = jwt_decode(tokens.id_token);
+          const jwks = createRemoteJWKSet(new URL(openIdConfig[CONIG.JWKS]));
+          const { payload } = await jwtVerify(tokens.id_token, jwks, {
+            issuer: issuer.federatedProvider.url,
+            audience: issuer.federatedProvider.clientId,
+          });
 
-          // retrieve userInfo
-          const userInfoUrl = openIdConfig[CONIG.ME];
-          const userInfo = await fetch(userInfoUrl, {
-            headers: { authorization: `Bearer ${tokens.access_token}` },
-          }).then((r) => r.json());
+          // convert oidc claim to jsonLdTerm
 
-          const result = { login: { accountId: id_token?.sub, acr: '0' }, id_token, userInfo };
+          // decoded payload will be passed, via "result" to next interaction.
+          const result = { login: { accountId: payload.sub, acr: '0' }, id_token: payload };
           await oidc.interactionFinished(req, res, result, { mergeWithLastSubmission: false });
         } else {
           const error = await response.text();
@@ -174,7 +214,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
   // kick off interaction
   router.get(
-    '/issuers/:issuer_id/interaction/:uid',
+    '/issuers/:issuer_id/interaction/:jti',
     setNoCache,
     async (req: RequestWithVhost, res, next) => {
       try {
@@ -194,22 +234,10 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         debug('see what else is available to you for interaction views');
         debug('%O', details);
 
-        const { uid, prompt, params } = details;
+        const { uid, prompt, params, jti } = details;
         const client = await oidc.Client.find(params.client_id as string);
         const state = params.state;
-        const credentialRequest = params.request;
-
-        // params returns
-        // {
-        //   client_id: 'f1ece6ac-973f-424b-b929-2e64033f9772',
-        //   code_challenge: '1234567890123456789012345678901234567890123456',
-        //   code_challenge_method: 'plain',
-        //   nonce: '43747d5962a5',
-        //   redirect_uri: 'https://jwt.io',
-        //   response_type: 'code',
-        //   scope: 'openid openid_credential',
-        //   claims: '{"userinfo":{"given_name":{"essential":true},"nickname":null,"email":{"essential":true},"email_verified":{"essential":true},"picture":null},"id_token":{"gender":null,"birthdate":{"essential":true},"acr":{"values":["urn:mace:incommon:iap:silver"]}}}'
-        // }
+        // const credentialRequest = params.request;
 
         // fetch OpenId Configuration
         const openIdConfigUrl = issuer?.federatedProvider?.url;
@@ -217,8 +245,36 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
         if (!openIdConfig) return next(new Error('missing openid-configuration'));
 
-        // redirect to federatedProvider
+        // Different prompt will have different details / params
+        // "login" will redirect to federatedProvider
+        // "consent"
         if (prompt.name === 'login') {
+          // Debug:  details returns
+          // details = {
+          //   grantId: null,
+          //   iat: 1630164728,
+          //   exp: 1630168328,
+          //   returnTo:
+          //     'https://issuer.example.com/oidc/issuers/ObjEGmwtFV-8Ys35WBiF5/auth/WUABDA0dp3iBCuTdhD8F5',
+          //   prompt: { name: 'login', reasons: ['no_session'], details: {} },
+          //   params: {
+          //     client_id: 'V1StGXR8_Z5jdHi6B-myT',
+          //     code_challenge: 'W2g1aioZbU_vV4ENw0poi6Hl0Glh4cuw_ZGWPvJDqdQ',
+          //     code_challenge_method: 'S256',
+          //     nonce: 'Zn6s54rgRDZSoo_IB_oumGCVYP_GVw-pR0SYXBjmxTg',
+          //     redirect_uri: 'https://jwt.io',
+          //     response_type: 'code',
+          //     scope: 'openid openid_credential',
+          //     state: 'ODXyVX2ZM4r4Z_X3RoeFBIJjMLuSPWBqmwLE4V9HyPY',
+          //     claims:
+          //       '{"userinfo":{"given_name":{"essential":true},"nickname":null,"email":{"essential":true},"email_verified":{"essential":true},"picture":null},"id_token":{"gender":null,"birthdate":{"essential":true},"acr":{"values":["urn:mace:incommon:iap:silver"]}}}',
+          //     sub_jwk:
+          //       '{"kty":"OKP","crv":"Ed25519","alg":"EdDSA","kid":"f68e25c94fb09c7f748d82d9dfe844a0ca6a9ed58771f14a4d5ff889f8ee2180","x":"9o4lyU-wnH90jYLZ3-hEoMpqntWHcfFKTV_4ifjuIYA"}',
+          //     credential_format: 'w3cvc-jwt',
+          //   },
+          //   jti: 'WUABDA0dp3iBCuTdhD8F5',
+          // };
+
           const loginUrl = openIdConfig[CONIG.AUTH];
           const response_type = 'code';
           const client_id = issuer.federatedProvider.clientId;
@@ -227,12 +283,66 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           // this scope is default scope, used in Auth0.com
           const scope = 'openid%20profile%20email';
 
-          // uid (session id) is used as state
-          const url = `${loginUrl}?response_type=${response_type}&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}&state=${state}`;
+          // NOTE: jti (interaction/payload id) is used as state; so that the federated provider
+          // will response to /oidc/issuers/:issuer_id/callback with query param "state" = jti
+          const url = `${loginUrl}?response_type=${response_type}&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}&state=${jti}`;
           res.writeHead(Status.FOUND, { Location: url });
           res.end();
         } else {
-          // todo: XXXXXX, Grant is checked before calling it
+          // Giving consent
+
+          // Debug:  details returns
+          // const details = {
+          //   grantId: null,
+          //   iat: 1630310666,
+          //   exp: 1630314266,
+          //   returnTo:
+          //     'https://issuer.example.com/oidc/issuers/ObjEGmwtFV-8Ys35WBiF5/auth/vQbw7zkWSKBUSNYzNTTcE',
+          //   prompt: {
+          //     name: 'consent',
+          //     reasons: ['op_scopes_missing', 'op_claims_missing'],
+          //     details: { missingOIDCScope: [Array], missingOIDCClaims: [Array] },
+          //   },
+          //   lastSubmission: {
+          //     login: { accountId: 'auth0|6059aed4aa7803006a20d824', acr: '0' },
+          //     id_token: {
+          //       'https://tenant.vii.mattr.global/educationalCredentialAwarded': 'Certificate Name',
+          //       nickname: 'tangross',
+          //       name: 'tangross@hotmail.com',
+          //       picture: 'xxxx'
+          //       updated_at: '2021-08-28T05:54:47.837Z',
+          //       email: 'tangross@hotmail.com',
+          //       email_verified: true,
+          //       iss: 'https://dashslab.us.auth0.com/',
+          //       sub: 'auth0|6059aed4aa7803006a20d824',
+          //       aud: 'cGExcP4cy3eljzlhghBhToRP46bP3bLY',
+          //       iat: 1630310664,
+          //       exp: 1630346664,
+          //     },
+          //   },
+          //   params: {
+          //     client_id: 'V1StGXR8_Z5jdHi6B-myT',
+          //     code_challenge: 'l-nibgGrV8OcJkAog-IpkkjM2uZgwz2MgI9AqIeUo4c',
+          //     code_challenge_method: 'S256',
+          //     nonce: '5fZ0Qn0fSyLtbwL43eAB0RLmauxukAqWaBn2nXzGMIA',
+          //     redirect_uri: 'https://jwt.io',
+          //     response_type: 'code',
+          //     scope: 'openid openid_credential',
+          //     state: 'W0T4OS4-DYqDaZ0x0SwzKfc2z8g65o3pt2GSgPaBJqc',
+          //     claims:
+          //       '{"userinfo":{"given_name":{"essential":true},"nickname":null,"email":{"essential":true},"email_verified":{"essential":true},"picture":null},"id_token":{"gender":null,"birthdate":{"essential":true},"acr":{"values":["urn:mace:incommon:iap:silver"]}}}',
+          //     sub_jwk:
+          //       '{"kty":"OKP","crv":"Ed25519","alg":"EdDSA","kid":"b8cd08b3bd9f5724bea975994e12a71fd87c0f2d1524274839310cc6e9217420","x":"uM0Is72fVyS-qXWZThKnH9h8Dy0VJCdIOTEMxukhdCA"}',
+          //     credential_format: 'w3cvc-jwt',
+          //   },
+          //   session: {
+          //     accountId: 'auth0|6059aed4aa7803006a20d824',
+          //     uid: 'M_ZWtDW8TwKO7CN2GA5YS',
+          //     cookie: 'pgXv1OhEl0KXlAg7mRpHa',
+          //     acr: '0',
+          //   },
+          //   jti: 'vQbw7zkWSKBUSNYzNTTcE',
+          // };
 
           /**
            * Authorize will render screen to Grant Access, after login successfully
@@ -432,7 +542,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
     const oidc = await tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
 
-    debug('at /oidc/issuers/:issuer_id, %s', issuerId);
+    debug('Start at /oidc/issuers/:issuer_id, %s', issuerId);
 
     return oidc
       ? oidc.callback()(req, res)
