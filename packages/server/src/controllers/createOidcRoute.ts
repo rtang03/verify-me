@@ -335,9 +335,8 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           res.writeHead(Status.FOUND, { Location: url });
           res.end();
         } else {
-          // Giving consent
-          console.log('=====missing scope', prompt.details.missingOIDCScope);
-          console.log('=====missing claim', prompt.details.missingOIDCClaims);
+          // Authorize - giving consent
+
           // Debug:  details returns
           // const details = {
           //   grantId: null,

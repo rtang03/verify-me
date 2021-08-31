@@ -63,13 +63,14 @@ let openIdConfig: any;
 
 // Test data
 const claims = {
-  // userinfo: {
-  //   given_name: { essential: true },
-  //   nickname: null,
-  //   email: { essential: true },
-  //   email_verified: { essential: true },
-  //   picture: null,
-  // },
+  userinfo: {
+    given_name: { essential: true },
+    nickname: null,
+    email: { essential: true },
+    email_verified: { essential: true },
+    picture: null,
+    'https://tenant.vii.mattr.global/educationalCredentialAwarded': { essential: true },
+  },
   id_token: {
     given_name: { essential: true },
     nickname: null,
@@ -78,7 +79,6 @@ const claims = {
     picture: null,
     gender: null,
     birthdate: { essential: true },
-    'https://tenant.vii.mattr.global/educationalCredentialAwarded': { essential: true },
   },
 };
 const redirect_uri = 'https://jwt.io';

@@ -71,4 +71,4 @@ openssl req -new -x509 -nodes -sha1 -days 3650 -key host.key > host.crt
 - https://medium.com/@CreatorNader/introducing-oidc-credential-provider-7845391a9881
 - https://openid.net/specs/openid-connect-self-issued-v2-1_0.html
 - https://mattrglobal.github.io/oidc-client-bound-assertions-spec/
-
+- https://openid.net/specs/openid-connect-4-verifiable-presentations-1_0.html

@@ -11,43 +11,37 @@ export const createOidcProviderConfig = (
     acrValues: ['0'],
     adapter: createOidcAdapter(connectionName),
     claims: {
-      // NOTE: All other scopes are disabled. The oidc-bridge replaces the default scope "email profile" from "openid_credential"
-      // Below scope can REMOVE
-      // address: ['address'],
-      // email: ['email', 'email_verified'],
-      // phone: ['phone_number', 'phone_number_verified'],
-      // profile: [
-      //   'birthdate',
-      //   'family_name',
-      //   'gender',
-      //   'given_name',
-      //   'locale',
-      //   'middle_name',
-      //   'name',
-      //   'nickname',
-      //   'picture',
-      //   'preferred_username',
-      //   'profile',
-      //   'updated_at',
-      //   'website',
-      //   'zoneinfo',
-      // ],
-      // New scope "openid_credential"
-      openid_credential: [],
+      // NOTE: Default oidc scopes
+      // https://github.com/panva/node-oidc-provider/blob/2b91e5bc2338e6b45eb73fbeb8aa045ffb1e367a/recipes/claim_configuration.md
+      address: ['address'],
+      email: ['email', 'email_verified'],
+      phone: ['phone_number', 'phone_number_verified'],
+      profile: [
+        'birthdate',
+        'family_name',
+        'gender',
+        'given_name',
+        'locale',
+        'middle_name',
+        'name',
+        'nickname',
+        'picture',
+        'preferred_username',
+        'profile',
+        'updated_at',
+        'website',
+        'zoneinfo',
+      ],
+      // NOTE: Custom scope "openid_credential"
+      'https://tenant.vii.mattr.global/educationalCredentialAwarded': null,
       openid: ['sub'],
     },
-    conformIdTokenClaims: true,
+    conformIdTokenClaims: false,
     cookies: {
       keys: ['some secret key', 'and also the old rotated away some time ago', 'and one more'],
     },
     // NOTE: did is not currently used. Can remove. The did is retrived from Oidc-client record, instead of signed request object
     extraParams: ['did', 'sub_jwk', 'credential_format'],
-    extraTokenClaims: (ctx, token) => {
-      // add to accessToken via resource indicator
-      return {
-        'urn:oidc-provider:example:foo': 'bar',
-      };
-    },
     // see https://github.com/panva/node-oidc-provider/tree/main/docs#findaccount
     findAccount: async (ctx, sub, token) => {
       return {
@@ -61,30 +55,11 @@ export const createOidcProviderConfig = (
       };
     },
     features: {
-      // claimsParameter: { enabled: true }, // defaults to false
+      claimsParameter: { enabled: true }, // defaults to false
       devInteractions: { enabled: false }, // defaults to true
       deviceFlow: { enabled: true }, // defaults to false
       registration: { enabled: false },
-      resourceIndicators: {
-        enabled: false,
-        // defaultResource: async (ctx) => {
-        //   return undefined;
-        // },
-        // getResourceServerInfo: async (ctx, resourceIndicator, client) => {
-        //   return {
-        //     scope: 'oidc oidc_credential',
-        //     audience: client.clientId,
-        //     accessTokenTTL: 2 * 60 * 60, // 2 hours
-        //     accessTokenFormat: 'jwt',
-        //     jwt: { sign: { alg: 'RS256' } },
-        //   };
-        // },
-        // useGrantedResource: async (ctx, model) => {
-        //   return true;
-        // },
-      },
       revocation: { enabled: true }, // defaults to false
-      // Todo: may need to disable userInfo endpoint, while it is replaced by /credential endpoint
       userinfo: { enabled: true },
       requestObjects: {
         mode: 'lax',
@@ -92,48 +67,6 @@ export const createOidcProviderConfig = (
         requestUri: false,
         requireUriRegistration: false,
         requireSignedRequestObject: true,
-      },
-      ciba: {
-        ack: undefined,
-        deliveryModes: ['poll'],
-        enabled: false,
-        processLoginHint: async (ctx, loginHint) => {
-          // @param ctx - koa request context
-          // @param loginHint - string value of the login_hint parameter
-          throw new Error('features.ciba.processLoginHint not implemented');
-        },
-        processLoginHintToken: async (ctx, loginHintToken) => {
-          // @param ctx - koa request context
-          // @param loginHintToken - string value of the login_hint_token parameter
-          throw new Error('features.ciba.processLoginHintToken not implemented');
-        },
-        triggerAuthenticationDevice: async (ctx, request, account, client) => {
-          // @param ctx - koa request context
-          // @param request - the BackchannelAuthenticationRequest instance
-          // @param account - the account object retrieved by findAccount
-          // @param client - the Client instance
-          throw new Error('features.ciba.triggerAuthenticationDevice not implemented');
-        },
-        validateBindingMessage: async (ctx, bindingMessage) => {
-          // @param ctx - koa request context
-          // @param bindingMessage - string value of the binding_message parameter, when not provided it is undefined
-          // if (bindingMessage && !/^[a-zA-Z0-9-._+/!?#]{1,20}$/.exec(bindingMessage)) {
-          //   throw new errors.InvalidBindingMessage(
-          //     'the binding_message value, when provided, needs to be 1 - 20 characters in length and use only a basic set of characters (matching the regex: ^[a-zA-Z0-9-._+/!?#]{1,20}$ )'
-          //   );
-          // }
-        },
-        validateRequestContext: async (ctx, requestContext) => {
-          // @param ctx - koa request context
-          // @param requestContext - string value of the request_context parameter, when not provided it is undefined
-          throw new Error('features.ciba.validateRequestContext not implemented');
-        },
-        // verifyUserCode: async (ctx, account, userCode) => {
-        //   // @param ctx - koa request context
-        //   // @param account -
-        //   // @param userCode - string value of the user_code parameter, when not provided it is undefined
-        //   throw new Error('features.ciba.verifyUserCode not implemented');
-        // },
       },
     },
     interactions: {
@@ -155,14 +88,15 @@ export const createOidcProviderConfig = (
     // NOTE: id_token may be REMOVE. Should use access_token to fetch /credential endpoint instead.
     responseTypes: [
       'code',
-      'code token',
-      'id_token',
-      'id_token token',
-      'code id_token',
-      'code id_token token',
+      // 'code token',
+      // 'id_token',
+      // 'id_token token',
+      // 'code id_token',
+      // 'code id_token token',
       // 'none',
     ],
-    scopes: ['openid', 'offline_access', 'openid_credential'],
+    // Notes: there will be no missing-scope checking
+    scopes: ['openid' /* 'offline_access', 'profile', 'email', 'address', 'openid_credential' */],
     // see full example for discovery: https://learn.mattr.global/api-reference/v1.0.1#operation/issuerWellKnownOidcConfig
     // standard params: https://openid.net/specs/openid-connect-discovery-1_0.html
     discovery: {
