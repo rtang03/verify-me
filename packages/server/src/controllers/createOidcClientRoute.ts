@@ -60,7 +60,7 @@ export const createOidcClientRoute = (tenantManger: TenantManager) =>
       // NOTE: When running Jest, we need a FIXED Oidc-issuer Id, so that the federated oidc provider is
       // configured with fixed "allowed Callback url"
       const isRunningJest = process.env.NODE_ENV === 'test';
-      const id = isRunningJest ? process.env.JEST_FIXED_OIDC_ISSUER_ID : nanoid();
+      const id = isRunningJest ? process.env.JEST_FIXED_OIDC_CLIENT_ID : nanoid();
 
       if (isCreateOidcIssuerClientArgs(body)) {
         const clientRepo = getConnection(req.tenantId).getRepository(OidcClient);

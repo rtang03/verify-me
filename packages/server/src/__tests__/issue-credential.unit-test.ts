@@ -1,5 +1,8 @@
+import { fakedKeys } from './__utils__/fakeKeys';
+
 require('dotenv').config({ path: './.env' });
 import { Identifier } from '@veramo/data-store';
+import didJWT from 'did-jwt';
 import { Express } from 'express';
 import Status from 'http-status';
 import { parseJwk } from 'jose/jwk/parse';
@@ -57,6 +60,33 @@ let tenant: Tenant;
 let issuerId: string;
 let clientId: string;
 let openIdConfig: any;
+
+// Test data
+const claims = {
+  // userinfo: {
+  //   given_name: { essential: true },
+  //   nickname: null,
+  //   email: { essential: true },
+  //   email_verified: { essential: true },
+  //   picture: null,
+  // },
+  id_token: {
+    given_name: { essential: true },
+    nickname: null,
+    email: { essential: true },
+    email_verified: { essential: true },
+    picture: null,
+    gender: null,
+    birthdate: { essential: true },
+    'https://tenant.vii.mattr.global/educationalCredentialAwarded': { essential: true },
+  },
+};
+const redirect_uri = 'https://jwt.io';
+const credential_format = 'w3cvc-jwt';
+const code_challenge_method = 'S256';
+const scope = 'openid openid_credential';
+const response_type = 'code';
+const alg = { alg: 'EdDSA' };
 
 beforeAll(async () => {
   try {
@@ -203,11 +233,9 @@ describe('Authz unit test', () => {
         redirect_uris: ['https://jwt.io'],
         response_types: ['code'],
         grant_types: ['authorization_code'],
-        // response_types: ['id_token'],
-        // grant_types: ['implicit'],
         token_endpoint_auth_method: 'client_secret_post',
         // must be 'RS256' or 'PS256', in order to use "state" params
-        id_token_signed_response_alg: 'RS256',
+        id_token_signed_response_alg: 'EdDSA',
         application_type: 'web',
       })
       .expect(({ body, status }) => {
@@ -233,6 +261,56 @@ describe('Authz unit test', () => {
         openIdConfig = body;
       }));
 
+  // Each oidc-client is bound with one did:key.
+  // Request-Object is required to signed with private key of this did:key identifier
+  it('should fail to kick off Credential Request, faked signed JWT', async () => {
+    const nonce = generators.nonce();
+    const state = generators.state();
+    const code_verifier = generators.codeVerifier();
+    const code_challenge = generators.codeChallenge(code_verifier);
+    const { privateKeyHex } = fakedKeys;
+    const signer = didJWT.EdDSASigner(privateKeyHex);
+    const signedRequest = await didJWT.createJWT(
+      {
+        aud: `https://issuer.example.com/oidc/issuers/${issuerId}`,
+        response_type,
+        scope,
+        state,
+        redirect_uri,
+        client_id: clientId,
+        nonce,
+        credential_format,
+        code_challenge,
+        code_challenge_method,
+        did: 'did:web:issuer.example.com',
+        claims,
+      },
+      { issuer: clientId, signer },
+      alg
+    );
+
+    return request(express)
+      .get(`/oidc/issuers/${issuerId}/auth`)
+      .query({
+        response_type,
+        client_id: clientId,
+        redirect_uri,
+        scope,
+        state,
+        code_challenge,
+        request: signedRequest,
+      })
+      .set('host', 'issuer.example.com')
+      .set('Context-Type', 'application/x-www-form-urlencoded')
+      .set('X-Forwarded-Proto', 'https')
+      .expect(({ header }) =>
+        // return error="invalid_request_object"
+        expect(header.location).toContain(
+          'https://jwt.io?error=invalid_request_object&error_description=could%20not%20validate%20Request%20Object'
+        )
+      );
+  });
+
   // see https://mattrglobal.github.io/oidc-client-bound-assertions-spec
   it('should kick off Credential Request', async () => {
     const nonce = generators.nonce();
@@ -246,71 +324,47 @@ describe('Authz unit test', () => {
     const identifierRepo = getConnection(tenant.id).getRepository(Identifier);
     const identifier = await identifierRepo.findOne(oidcClient.did, { relations: ['keys'] });
     const { publicKeyHex, privateKeyHex } = identifier.keys[0];
-    const { publicKeyJwk, privateKeyJwk } = convertKeyPairsToJwkEd22519(
-      publicKeyHex,
-      privateKeyHex
-    );
-    console.log('==== privateKeyJwk', privateKeyJwk);
+    const { publicKeyJwk } = convertKeyPairsToJwkEd22519(publicKeyHex);
 
-    // parse from Jwk into KeyLike object (from Nodejs crypto)
-    const privateKey = await parseJwk(privateKeyJwk);
-    console.log('===PrivateKey', privateKey);
-
-    // @see https://github.com/panva/jose/blob/main/docs/classes/jwt_sign.SignJWT.md
-    const signedRequest = await new SignJWT({
-      response_type: 'code',
-      scope: 'openid openid_credential',
-      redirect_uri: 'https://jwt.io',
-      client_id: clientId,
-      nonce,
-      credential_format: 'w3cvc-jwt',
-      code_challenge,
-      code_challenge_method: 'S256',
-      // EITHER did OR sub_jwk
-      // did: 'did:web:issuer.example.com',
-      sub_jwk: publicKeyJwk,
-      claims: {
-        userinfo: {
-          given_name: { essential: true },
-          nickname: null,
-          email: { essential: true },
-          email_verified: { essential: true },
-          picture: null,
-        },
-        id_token: {
-          gender: null,
-          birthdate: { essential: true },
-          acr: { values: ['urn:mace:incommon:iap:silver'] },
-        },
+    const signer = didJWT.EdDSASigner(privateKeyHex);
+    const signedRequest = await didJWT.createJWT(
+      {
+        aud: `https://issuer.example.com/oidc/issuers/${issuerId}`,
+        response_type,
+        scope,
+        state,
+        redirect_uri,
+        client_id: clientId,
+        nonce,
+        credential_format,
+        code_challenge,
+        code_challenge_method,
+        sub_jwk: JSON.stringify(publicKeyJwk),
+        claims,
       },
-    })
-      .setProtectedHeader({ alg: 'EdDSA' })
-      .setIssuedAt()
-      .setIssuer(clientId)
-      .setAudience(`https://issuer.example.com/oidc/issuers/${issuerId}`)
-      .setSubject(clientId)
-      .setExpirationTime('100h')
-      .sign(privateKey);
+      // see https://github.com/decentralized-identity/did-jwt/blob/master/docs/guides/index.md
+      { issuer: clientId, signer, expiresIn: 86400 }, // 24 hrs
+      alg
+    );
 
     return request(express)
       .get(`/oidc/issuers/${issuerId}/auth`)
       .query({
-        response_type: 'code',
+        response_type,
         client_id: clientId,
-        redirect_uri: 'https://jwt.io',
-        scope: 'openid openid_credential',
+        redirect_uri,
+        scope,
         state,
         code_challenge,
-        // use did or sub_jwk
-        did: 'did:web:issuer.example.com',
         request: signedRequest,
       })
       .set('host', 'issuer.example.com')
       .set('Context-Type', 'application/x-www-form-urlencoded')
       .set('X-Forwarded-Proto', 'https')
       .redirects(1)
-      .expect(({ headers }) => {
+      .expect(({ headers, body }) => {
         console.log(headers);
+        console.log(body);
       });
   });
 });

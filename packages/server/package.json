@@ -15,7 +15,8 @@
     "test:veramo": "jest --forceExit --detectOpenHandles veramo.unit-test",
     "test:oidc-issuer": "DEBUG=utils:* jest --forceExit --forceExit --detectOpenHandles oidcIssuer.unit-test",
     "test:issue-credential-flow": "DEBUG=utils:* jest --forceExit --detectOpenHandles issue-credential.unit-test",
-    "gen-rs256": "ts-node ./src/utils/generate-keys.ts"
+    "gen-rs256": "ts-node ./src/utils/generate-keys.ts",
+    "gentest": "ts-node ./src/utils/testkeys.ts"
   },
   "dependencies": {
     "@veramo/core": "2.0.2-next.10",
@@ -40,6 +41,7 @@
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
     "debug": "^4.3.1",
+    "did-jwt": "^5.6.2",
     "dotenv": "^8.2.0",
     "errorhandler": "^1.5.1",
     "express": "^4.17.1",

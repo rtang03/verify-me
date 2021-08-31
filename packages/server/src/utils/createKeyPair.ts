@@ -2,6 +2,11 @@ import EC from 'elliptic';
 import { keccak_256 } from 'js-sha3';
 import u8a from 'uint8arrays';
 
+/**
+ * NOT CURRENTLY USED. Keep it as example code
+ * @param data
+ */
+
 export const keccak: (data: Uint8Array) => Uint8Array = (data) =>
   new Uint8Array((keccak_256 as any).arrayBuffer(data));
 

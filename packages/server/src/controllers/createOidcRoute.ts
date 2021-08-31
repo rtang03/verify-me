@@ -72,10 +72,13 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
   // this endpoint is ensuring a stable api for federated provider.
   router.get('/issuers/:issuer_id/callback', (req, res) => {
     debug('GET /oidc/issuers/:issuer_id/callback');
+
+    const s = req.query.state;
+    const c = req.query.code;
     const issuerId = req.params.issuer_id;
 
     // NOTE: the "state" between oidc-issurer and federated provider is the interaction id "jti"
-    const url = `/oidc/issuers/${issuerId}/interaction/${req.query.state}/login?code=${req.query.code}&state=${req.query.state}`;
+    const url = `/oidc/issuers/${issuerId}/interaction/${s}/login?code=${c}&state=${s}`;
 
     res.writeHead(302, { Location: url });
     res.end();
@@ -149,8 +152,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         body.append('code', code);
         body.append('redirect_uri', issuer.federatedProvider.callbackUrl);
 
-        // this fetch will give the tls warning
-        // (node:34683) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification
+        // TODO: this fetch will give the tls warning, need fixing
         const response = await fetch(url, { method: 'POST', body });
 
         if (response.status === Status.OK) {
@@ -182,24 +184,54 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           //   aud: 'cGExcP4cy3eljzlhghBhToRP46bP3bLY', <== client_id of Auth0's application
           //   iat: 1625135903,
           //   exp: 1625171903,
+          //   nonce: 'eZqhpaSuYMsBNNNt31PBbniLTiIiEpBKS2jgvmMOKuE'
           // };
           // NOTE: see https://auth0.com/docs/tokens/id-tokens
           // Here decides to using id_token, to translate from Oidc claim into JsonLdTern
           // No further fetch from /userinfo is required.
 
-          // retrieve id_token, and verify it the JWS signature, and claims
+          let result;
+          let id_token;
+          // Validation 1: retrieve id_token, and verify it, and claims against the federated Oidc provider
           // see https://github.com/panva/jose/blob/main/docs/interfaces/jwt_verify.JWTVerifyOptions.md
-          // const id_token: any = jwt_decode(tokens.id_token);
-          const jwks = createRemoteJWKSet(new URL(openIdConfig[CONIG.JWKS]));
-          const { payload } = await jwtVerify(tokens.id_token, jwks, {
-            issuer: issuer.federatedProvider.url,
-            audience: issuer.federatedProvider.clientId,
-          });
+          try {
+            const jwks = createRemoteJWKSet(new URL(openIdConfig[CONIG.JWKS]));
+            const { payload } = await jwtVerify(tokens.id_token, jwks, {
+              // ‼️ NOTE: "iss" of id_token by Auth0 is ended with "/". This is dangerous to assume, other Idp will behaviour similarly
+              issuer: issuer.federatedProvider.url + '/',
+              audience: issuer.federatedProvider.clientId,
+            });
+
+            // decoded payload (i.e. id_token) will be passed, via "result" to next interaction.
+            id_token = payload;
+            result = { login: { accountId: payload.sub, acr: '0' }, id_token };
+          } catch (err) {
+            console.error(err);
+            result = {
+              error: 'invalid_jwt',
+              error_description: 'fail to validate jwt',
+            };
+          }
+
+          // Validation 2: nonce (handling replay attack)
+          !result?.error &&
+            params.nonce !== id_token?.nonce &&
+            (result = {
+              error: 'invalid_nonce',
+              error_description: 'fail to validate nonce',
+            });
+
+          // Validation 3: state (handling csrf)
+          // The state of federated request is "jti"
+          !result?.error &&
+            jti !== state &&
+            (result = {
+              error: 'invalid_state',
+              error_description: 'fail to validate state',
+            });
 
           // convert oidc claim to jsonLdTerm
 
-          // decoded payload will be passed, via "result" to next interaction.
-          const result = { login: { accountId: payload.sub, acr: '0' }, id_token: payload };
           await oidc.interactionFinished(req, res, result, { mergeWithLastSubmission: false });
         } else {
           const error = await response.text();
@@ -236,8 +268,6 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
         const { uid, prompt, params, jti } = details;
         const client = await oidc.Client.find(params.client_id as string);
-        const state = params.state;
-        // const credentialRequest = params.request;
 
         // fetch OpenId Configuration
         const openIdConfigUrl = issuer?.federatedProvider?.url;
@@ -275,22 +305,39 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           //   jti: 'WUABDA0dp3iBCuTdhD8F5',
           // };
 
-          const loginUrl = openIdConfig[CONIG.AUTH];
-          const response_type = 'code';
-          const client_id = issuer.federatedProvider.clientId;
-          const redirect_uri = issuer.federatedProvider.callbackUrl;
+          const base = openIdConfig[CONIG.AUTH];
+          const t = 'code';
+          const c = issuer.federatedProvider?.clientId;
+          const r = issuer.federatedProvider?.callbackUrl;
+          const s = issuer.federatedProvider?.scope;
+          const n = params.nonce;
 
-          // this scope is default scope, used in Auth0.com
-          const scope = 'openid%20profile%20email';
+          if (!r)
+            return res
+              .status(Status.BAD_REQUEST)
+              .send({ status: 'ERROR', error: 'missing redirect_uri' });
+
+          if (!n)
+            return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'missing nonce' });
+
+          if (!s.includes('openid'))
+            return res
+              .status(Status.BAD_REQUEST)
+              .send({ status: 'ERROR', error: 'scope must include openid' });
+
+          // return e.g. 'openid%20profile%20email';
+          const scope = s.reduce((prev, curr) => (prev ? `${prev}%20${curr}` : curr), '');
 
           // NOTE: jti (interaction/payload id) is used as state; so that the federated provider
           // will response to /oidc/issuers/:issuer_id/callback with query param "state" = jti
-          const url = `${loginUrl}?response_type=${response_type}&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}&state=${jti}`;
+          const url = `${base}?response_type=${t}&client_id=${c}&redirect_uri=${r}&scope=${scope}&state=${jti}&nonce=${n}`;
+
           res.writeHead(Status.FOUND, { Location: url });
           res.end();
         } else {
           // Giving consent
-
+          console.log('=====missing scope', prompt.details.missingOIDCScope);
+          console.log('=====missing claim', prompt.details.missingOIDCClaims);
           // Debug:  details returns
           // const details = {
           //   grantId: null,

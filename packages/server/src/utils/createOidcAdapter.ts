@@ -23,8 +23,10 @@ const types = [
   'PushedAuthorizationRequest',
   'Grant',
 ].reduce((map, name, i) => ({ ...map, [name]: i + 1 }), {});
+
 const getExpireAt = (expiresIn) =>
   expiresIn ? new Date(Date.now() + expiresIn * 1000) : undefined;
+
 const parseResult: (input: OidcPayload) => OidcPayload = (data) =>
   data && {
     ...data,
@@ -106,6 +108,23 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
       const result = this.type === TCLIENT ? data : parseResult(data as OidcPayload);
 
       debug('Find-result, %O', result);
+
+      // DEBUG: find CLIENT returns
+      // result = {
+      //   client_id: 'V1StGXR8_Z5jdHi6B-myT',
+      //   issuerId: 'ObjEGmwtFV-8Ys35WBiF5',
+      //   client_secret: '98494cb8284a08a389ee1609',
+      //   client_name: 'Oidc client for wallet',
+      //   redirect_uris: ['https://jwt.io'],
+      //   response_types: ['code'],
+      //   grant_types: ['authorization_code'],
+      //   token_endpoint_auth_method: 'client_secret_post',
+      //   id_token_signed_response_alg: 'EdDSA',
+      //   application_type: 'web',
+      //   did: 'did:key:z6Mkw3i49unLBCUxqv3bUE4ZXZzVdKwXPFAJLUaThXp4qa6j',
+      //   jwks: { keys: [[Object]] },
+      // };
+
       return result;
     }
 

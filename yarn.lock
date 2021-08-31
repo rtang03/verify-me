@@ -2799,10 +2799,10 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-16.4.0.tgz#2c219eaa3b8d1e4d04f4dd6e40bc68c7467d5272"
   integrity sha512-HrJuE7Mlqcjj+00JqMWpZ3tY8w7EUd+S0U3L1+PQSWiXZbOgyQDvi+ogoUxaHApPJq5diKxYBQwA3iIlNcPqOg==
 
-"@types/node@^14.14.31":
-  version "14.17.5"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.17.5.tgz#b59daf6a7ffa461b5648456ca59050ba8e40ed54"
-  integrity sha512-bjqH2cX/O33jXT/UmReo2pM7DIJREPMnarixbQ57DOOzzFaI6D2+IcwaJQaJpv0M1E9TIhPCYVxrkcityLjlqA==
+"@types/node@^14.17.12":
+  version "14.17.12"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.17.12.tgz#7a31f720b85a617e54e42d24c4ace136601656c7"
+  integrity sha512-vhUqgjJR1qxwTWV5Ps5txuy2XMdf7Fw+OrdChRboy8BmWUPkckOhphaohzFG6b8DW7CrxaBMdrdJ47SYFq1okw==
 
 "@types/normalize-package-data@^2.4.0":
   version "2.4.1"
@@ -5285,6 +5285,22 @@ did-jwt@5.6.2, did-jwt@^5.6.1:
     elliptic "^6.5.4"
     js-sha3 "^0.8.0"
     uint8arrays "^2.1.5"
+
+did-jwt@^5.6.2:
+  version "5.6.3"
+  resolved "https://registry.yarnpkg.com/did-jwt/-/did-jwt-5.6.3.tgz#b04213cd094f85f390cfa19591f92cc88e2563aa"
+  integrity sha512-posWqrRi8b7fW2m6ZUb+k/aZjNIbGEGG09vHw1MLN3PkWkGvtwAYlz7mw0Z058cLHCYmPsE9PnGeaz7V1DjgPw==
+  dependencies:
+    "@stablelib/ed25519" "^1.0.2"
+    "@stablelib/random" "^1.0.1"
+    "@stablelib/sha256" "^1.0.1"
+    "@stablelib/x25519" "^1.0.1"
+    "@stablelib/xchacha20poly1305" "^1.0.1"
+    canonicalize "^1.0.5"
+    did-resolver "^3.1.0"
+    elliptic "^6.5.4"
+    js-sha3 "^0.8.0"
+    uint8arrays "^3.0.0"
 
 did-resolver@3.1.0, did-resolver@^3.1.0:
   version "3.1.0"

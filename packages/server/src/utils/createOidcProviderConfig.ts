@@ -11,31 +11,36 @@ export const createOidcProviderConfig = (
     acrValues: ['0'],
     adapter: createOidcAdapter(connectionName),
     claims: {
-      address: ['address'],
-      email: ['email', 'email_verified'],
-      phone: ['phone_number', 'phone_number_verified'],
-      profile: [
-        'birthdate',
-        'family_name',
-        'gender',
-        'given_name',
-        'locale',
-        'middle_name',
-        'name',
-        'nickname',
-        'picture',
-        'preferred_username',
-        'profile',
-        'updated_at',
-        'website',
-        'zoneinfo',
-      ],
+      // NOTE: All other scopes are disabled. The oidc-bridge replaces the default scope "email profile" from "openid_credential"
+      // Below scope can REMOVE
+      // address: ['address'],
+      // email: ['email', 'email_verified'],
+      // phone: ['phone_number', 'phone_number_verified'],
+      // profile: [
+      //   'birthdate',
+      //   'family_name',
+      //   'gender',
+      //   'given_name',
+      //   'locale',
+      //   'middle_name',
+      //   'name',
+      //   'nickname',
+      //   'picture',
+      //   'preferred_username',
+      //   'profile',
+      //   'updated_at',
+      //   'website',
+      //   'zoneinfo',
+      // ],
+      // New scope "openid_credential"
+      openid_credential: [],
       openid: ['sub'],
     },
     conformIdTokenClaims: true,
     cookies: {
       keys: ['some secret key', 'and also the old rotated away some time ago', 'and one more'],
     },
+    // NOTE: did is not currently used. Can remove. The did is retrived from Oidc-client record, instead of signed request object
     extraParams: ['did', 'sub_jwk', 'credential_format'],
     extraTokenClaims: (ctx, token) => {
       // add to accessToken via resource indicator
@@ -56,7 +61,7 @@ export const createOidcProviderConfig = (
       };
     },
     features: {
-      claimsParameter: { enabled: true }, // defaults to false
+      // claimsParameter: { enabled: true }, // defaults to false
       devInteractions: { enabled: false }, // defaults to true
       deviceFlow: { enabled: true }, // defaults to false
       registration: { enabled: false },
@@ -79,6 +84,7 @@ export const createOidcProviderConfig = (
         // },
       },
       revocation: { enabled: true }, // defaults to false
+      // Todo: may need to disable userInfo endpoint, while it is replaced by /credential endpoint
       userinfo: { enabled: true },
       requestObjects: {
         mode: 'lax',
@@ -131,28 +137,30 @@ export const createOidcProviderConfig = (
       },
     },
     interactions: {
-      url: (ctx, interaction) => `/oidc/issuers/${issuerId}/interaction/${interaction.uid}`,
+      // ❓TODO: change from interaction.uid to interaction.jti ..... NOT sure if this correct. Need revisit
+      url: (ctx, interaction) => `/oidc/issuers/${issuerId}/interaction/${interaction.jti}`,
     },
     ttl: {
-      AuthorizationCode: 600 /* 10 minutes in seconds */,
-      DeviceCode: 600 /* 10 minutes in seconds */,
+      AuthorizationCode: 7200 /* 2 hours */,
       Grant: 1209600 /* 14 days in seconds */,
-      IdToken: 3600 /* 1 hour in seconds */,
       Interaction: 3600 /* 1 hour in seconds */,
       Session: 1209600 /* 14 days in seconds */,
+      // IdToken: 7200 /* 2 hour in seconds */,
+      // DeviceCode: 600 /* 10 minutes in seconds */,
     },
     pkce: {
       methods: ['S256', 'plain'],
       pkceRequired: (ctx, client) => true,
     },
+    // NOTE: id_token may be REMOVE. Should use access_token to fetch /credential endpoint instead.
     responseTypes: [
       'code',
+      'code token',
       'id_token',
       'id_token token',
       'code id_token',
-      'code token',
       'code id_token token',
-      'none',
+      // 'none',
     ],
     scopes: ['openid', 'offline_access', 'openid_credential'],
     // see full example for discovery: https://learn.mattr.global/api-reference/v1.0.1#operation/issuerWellKnownOidcConfig
@@ -165,6 +173,7 @@ export const createOidcProviderConfig = (
       credential_supported: true,
       credential_formats_supports: ['jwt', 'w3cvc-jsonld'],
       // information about credential the issuer offer
+      // TODO: should be refactored, based on OidcIssuer's claim mapping
       credential_claims_supported: [
         'given_name',
         'last_name',
@@ -176,7 +185,7 @@ export const createOidcProviderConfig = (
       require_signed_request_object: true,
     },
     enabledJWA: {
-      requestObjectSigningAlgValues: ['RS256', 'HS384', 'HS256'],
+      requestObjectSigningAlgValues: ['EdDSA'],
     },
   };
 };
