@@ -1,24 +1,22 @@
-import { fakedKeys } from './__utils__/fakeKeys';
-
 require('dotenv').config({ path: './.env' });
 import { Identifier } from '@veramo/data-store';
 import didJWT from 'did-jwt';
 import { Express } from 'express';
 import Status from 'http-status';
-import { parseJwk } from 'jose/jwk/parse';
-import { SignJWT } from 'jose/jwt/sign';
 import request from 'supertest';
 import { Connection, ConnectionOptions, getRepository, getConnection } from 'typeorm';
 import { Accounts, OidcClient, Sessions, Tenant, Users } from '../entities';
 import type { CreateOidcIssuerArgs, CreateOidcIssuerClientArgs } from '../types';
 import {
   createHttpServer,
+  getClaimMappings,
   isOidcClient,
   isOidcIssuer,
   isTenant,
   generators,
   convertKeyPairsToJwkEd22519,
 } from '../utils';
+import { fakedKeys } from './__utils__/fakeKeys';
 
 /**
  * Tests with Issue Credential workflow
@@ -72,21 +70,31 @@ const claims = {
     'https://tenant.vii.mattr.global/educationalCredentialAwarded': { essential: true },
   },
   id_token: {
-    given_name: { essential: true },
-    nickname: null,
-    email: { essential: true },
-    email_verified: { essential: true },
-    picture: null,
-    gender: null,
-    birthdate: { essential: true },
+    acr: null,
+    verifiable_presentations: {
+      credential_types: [
+        {
+          type: 'https://tenant.vii.mattr.global/educationalCredentialAwarded',
+          claims: {
+            email: null,
+            name: null,
+            'https://tenant.vii.mattr.global/educationalCredentialAwarded': null,
+          },
+        },
+      ],
+    },
   },
 };
 const redirect_uri = 'https://jwt.io';
 const credential_format = 'w3cvc-jwt';
 const code_challenge_method = 'S256';
-const scope = 'openid openid_credential';
+const scope = 'openid';
 const response_type = 'code';
 const alg = { alg: 'EdDSA' };
+const mapping = {
+  jsonLdTerm: 'educationalCredentialAwarded',
+  oidcClaim: 'https://tenant.vii.mattr.global/educationalCredentialAwarded',
+};
 
 beforeAll(async () => {
   try {
@@ -208,13 +216,7 @@ describe('Authz unit test', () => {
           clientId: ENV_VAR.AUTH0_CLIENT_ID,
           clientSecret: ENV_VAR.AUTH0_CLIENT_SECRET,
         },
-        // TODO: need to revisit all openId claim mappings
-        claimMappings: [
-          {
-            jsonLdTerm: 'userid',
-            oidcClaim: 'userid',
-          },
-        ],
+        claimMappings: getClaimMappings([mapping]).mappings,
       })
       .expect(({ body, status }) => {
         expect(isOidcIssuer(body?.data)).toBeTruthy();

@@ -1,39 +1,22 @@
 import type { Configuration, JWK } from 'oidc-provider';
 import { createOidcAdapter } from './createOidcAdapter';
+import { ClaimMapping, getClaimMappings } from './oidcProfileClaimMappings';
 
 export const createOidcProviderConfig = (
   connectionName: string,
   issuerId: string,
-  jwks: { keys: JWK[] }
+  jwks: { keys: JWK[] },
+  claimMappings: ClaimMapping[]
 ) => {
+  const { supportedClaims } = getClaimMappings(claimMappings);
+  const claims = supportedClaims.reduce((prev, curr) => ({ ...prev, [curr]: null }), {});
+
   return <Configuration>{
     jwks,
     acrValues: ['0'],
     adapter: createOidcAdapter(connectionName),
     claims: {
-      // NOTE: Default oidc scopes
-      // https://github.com/panva/node-oidc-provider/blob/2b91e5bc2338e6b45eb73fbeb8aa045ffb1e367a/recipes/claim_configuration.md
-      address: ['address'],
-      email: ['email', 'email_verified'],
-      phone: ['phone_number', 'phone_number_verified'],
-      profile: [
-        'birthdate',
-        'family_name',
-        'gender',
-        'given_name',
-        'locale',
-        'middle_name',
-        'name',
-        'nickname',
-        'picture',
-        'preferred_username',
-        'profile',
-        'updated_at',
-        'website',
-        'zoneinfo',
-      ],
-      // NOTE: Custom scope "openid_credential"
-      'https://tenant.vii.mattr.global/educationalCredentialAwarded': null,
+      ...claims,
       openid: ['sub'],
     },
     conformIdTokenClaims: false,
@@ -108,11 +91,7 @@ export const createOidcProviderConfig = (
       credential_formats_supports: ['jwt', 'w3cvc-jsonld'],
       // information about credential the issuer offer
       // TODO: should be refactored, based on OidcIssuer's claim mapping
-      credential_claims_supported: [
-        'given_name',
-        'last_name',
-        'https://www.w3.org/2018/credentials/examples/v1/degree',
-      ],
+      credential_claims_supported: supportedClaims,
       credential_name: 'University Credential',
       credential_endpoint: `https://issuer.example.com/oidc/issuers/${issuerId}/credential`,
       request_parameter_supported: true,

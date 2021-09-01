@@ -11,3 +11,4 @@ export * from './createOidcAdapter';
 export * from './createOidcProviderConfig';
 export * from './generators';
 export * from './convertKeyPairToJwkEd22519';
+export * from './oidcProfileClaimMappings';

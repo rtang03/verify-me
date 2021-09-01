@@ -15,6 +15,9 @@ export class OidcIssuer {
   @JoinColumn()
   credential: OidcCredential;
 
+  /**
+   * List of supported claims, in addition of standard openid "profile"
+   */
   @Column({ type: 'simple-json', nullable: false })
   claimMappings: Array<{
     jsonLdTerm: string;

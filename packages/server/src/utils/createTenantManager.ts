@@ -22,6 +22,7 @@ import {
 import type { TenantManager, TenantStatus } from '../types';
 import { convertKeyPairsToJwkEd22519 } from './convertKeyPairToJwkEd22519';
 import { createOidcProviderConfig } from './createOidcProviderConfig';
+import type { ClaimMapping } from './oidcProfileClaimMappings';
 import type { TTAgent } from './setupVeramo';
 import { setupVeramo } from './setupVeramo';
 
@@ -93,9 +94,23 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
 
       // step 3: get or create Provider
       const uri = `https://${hostname}/oidc/issuers/${issuerId}`;
+
+      // if creating new OidcProvider, retrieve OidcIssuer's claimMapping
+      let mappings: ClaimMapping[] = [];
+      if (!oidcProivders[tenantId]) {
+        const oidcIssuerRepo = await getConnection(tenantId).getRepository(OidcIssuer);
+        try {
+          const issuer = await oidcIssuerRepo.findOne(issuerId);
+          mappings = issuer?.claimMappings || [];
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      // create or get OidcProvider
       oidcProivders[tenantId] ??= new Provider(
         uri,
-        createOidcProviderConfig(tenantId, issuerId, jwks)
+        createOidcProviderConfig(tenantId, issuerId, jwks, mappings)
       );
 
       // see https://github.com/panva/node-oidc-provider/tree/main/docs#trusting-tls-offloading-proxies
