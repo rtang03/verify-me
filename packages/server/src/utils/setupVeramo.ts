@@ -21,7 +21,7 @@ import { DIDCommHttpTransport } from '@veramo/did-comm/build/transports/transpor
 import { IDIDDiscovery, DIDDiscovery } from '@veramo/did-discovery';
 import { JwtMessageHandler } from '@veramo/did-jwt';
 import { DIDManager, AliasDiscoveryProvider } from '@veramo/did-manager';
-import { KeyDIDProvider } from '@veramo/did-provider-key';
+// import { KeyDIDProvider } from '@veramo/did-provider-key';
 import { getDidKeyResolver } from '@veramo/did-provider-key';
 import { WebDIDProvider } from '@veramo/did-provider-web';
 import { DIDResolverPlugin } from '@veramo/did-resolver';
@@ -36,6 +36,7 @@ import {
 import { Resolver } from 'did-resolver';
 import { Connection } from 'typeorm';
 import { getResolver } from 'web-did-resolver';
+import { KeyDIDProvider } from './did-provider-key';
 
 export type TTAgent = TAgent<
   IDIDManager &
@@ -79,9 +80,7 @@ export const setupVeramo = (connection: Promise<Connection>) =>
         defaultProvider: 'did:web',
         providers: {
           'did:web': new WebDIDProvider({ defaultKms: 'local' }),
-          'did:key': new KeyDIDProvider({
-            defaultKms: 'local',
-          }),
+          'did:key': new KeyDIDProvider({ defaultKms: 'local' }),
         },
       }),
       new DIDResolverPlugin({

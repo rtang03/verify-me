@@ -4,9 +4,10 @@ import Debug from 'debug';
 import type { Adapter, AdapterPayload } from 'oidc-provider';
 import { getConnection } from 'typeorm';
 import { OidcClient, OidcPayload } from '../entities';
-import { convertKeyPairsToJwkEd22519 } from './convertKeyPairToJwkEd22519';
+import { convertKeysToJwkSecp256k1 } from './convertKeysToJwkSecp256k1';
 
-const debug = Debug('utils:createOidcRoute');
+const debug = Debug('utils:createOidcAdapter');
+
 const TCLIENT = 7;
 const types = [
   'Session',
@@ -101,7 +102,7 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
       if (this.type === TCLIENT) {
         const identifier: IIdentifier = await identifierRepo.findOne(data.did);
         data.jwks = identifier && {
-          keys: [convertKeyPairsToJwkEd22519(identifier.controllerKeyId).publicKeyJwk],
+          keys: [convertKeysToJwkSecp256k1(identifier.controllerKeyId).publicKeyJwk],
         };
       }
 

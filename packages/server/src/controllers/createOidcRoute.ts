@@ -6,16 +6,15 @@ import util from 'util';
 import Debug from 'debug';
 import { NextFunction, Request, Response, Router } from 'express';
 import Status from 'http-status';
+import { createRemoteJWKSet } from 'jose/jwks/remote';
 import { jwtVerify, JWTVerifyResult } from 'jose/jwt/verify';
-import jwt_decode from 'jwt-decode';
 import { Provider } from 'oidc-provider';
 import { getConnection } from 'typeorm';
 import { OidcIssuer, Tenant } from '../entities';
 import type { TenantManager } from '../types';
-import { CONIG, fetchOpenIdConfiguration, isCredentialRequestPayload } from '../utils';
+import { CONIG, fetchOpenIdConfiguration } from '../utils';
 import { createOidcClientRoute } from './createOidcClientRoute';
 import { createOidcIssuerRoute } from './createOidcIssuerRoute';
-import { createRemoteJWKSet } from 'jose/jwks/remote';
 
 interface RequestWithVhost extends Request {
   vhost?: any;
@@ -27,10 +26,12 @@ interface RequestWithVhost extends Request {
 }
 
 const debug = Debug('utils:createOidcRoute');
+
 const issuerIdMiddleware = async (req: RequestWithVhost, res: Response, next: NextFunction) => {
   req.issuerId = req.params.issuer_id;
   next();
 };
+
 const setNoCache = (req: Request, res: Response, next: NextFunction) => {
   res.set('Pragma', 'no-cache');
   res.set('Cache-Control', 'no-cache, no-store');
@@ -229,8 +230,6 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
               error: 'invalid_state',
               error_description: 'fail to validate state',
             });
-
-          // convert oidc claim to jsonLdTerm
 
           await oidc.interactionFinished(req, res, result, { mergeWithLastSubmission: false });
         } else {

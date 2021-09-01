@@ -20,11 +20,12 @@ import {
   OidcPayload,
 } from '../entities';
 import type { TenantManager, TenantStatus } from '../types';
-import { convertKeyPairsToJwkEd22519 } from './convertKeyPairToJwkEd22519';
+// import { convertKeyPairsToJwkEd22519 } from './convertKeyPairToJwkEd22519';
 import { createOidcProviderConfig } from './createOidcProviderConfig';
 import type { ClaimMapping } from './oidcProfileClaimMappings';
 import type { TTAgent } from './setupVeramo';
 import { setupVeramo } from './setupVeramo';
+import { convertKeysToJwkSecp256k1 } from './convertKeysToJwkSecp256k1';
 
 export const getSchemaName = (uuid: string) => 't_' + uuid.split('-')[0];
 
@@ -89,7 +90,7 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
       if (!key) throw new Error('fail to retrieve key');
 
       // Veramo's did:key is in format of publicKeyHex and privateKeyHex
-      const keyJwk = convertKeyPairsToJwkEd22519(key.publicKeyHex, key.privateKeyHex);
+      const keyJwk = convertKeysToJwkSecp256k1(key.publicKeyHex, key.privateKeyHex);
       const jwks = { keys: [keyJwk.privateKeyJwk] };
 
       // step 3: get or create Provider
