@@ -61,37 +61,33 @@ let openIdConfig: any;
 let code_verifier: string;
 
 // Test data
-const verifiable_presentations = {
-  credential_types: [
-    {
-      type: 'https://tenant.vii.mattr.global/educationalCredentialAwarded',
-      claims: {
-        email: null,
-        name: null,
-        'https://tenant.vii.mattr.global/educationalCredentialAwarded': null,
-      },
-    },
-  ],
-};
+// Important Rules:
+// 1. Both userInfo's and id_token's claims will prompt for Authorize; no matter "essential" or not
+// 2. the claim will be ordered by userInfo, and then id_token
+// 3. claims must be whitelisted in Oidc-Provider configuration
+// 4. default openid claims, e.g. auth_time, will NOT prompt
+// 5. Except "email", "profile", "address", "phone" scopes; other claims are grouped under "openid_credential"
+// 6. userInfo's and id_token's will be de-dup
 const claims = {
   userinfo: {
-    email: null,
+    email: { essential: true },
     name: null,
-    // 'https://tenant.vii.mattr.global/educationalCredentialAwarded': null,
+    'https://tenant.vii.mattr.global/educationalCredentialAwarded': { essential: true },
   },
   id_token: {
-    // acr: null,
-    email: null,
-    name: null,
-    // 'https://tenant.vii.mattr.global/educationalCredentialAwarded': null,
+    auth_time: { essential: true },
+    email: { essential: true },
+    'https://tenant.vii.mattr.global/educationalCredentialAwarded': { essential: true },
   },
 };
 const redirect_uri = 'https://jwt.io';
 const credential_format = 'w3cvc-jwt';
-const code_challenge_method = 'plain';
-const scope = 'openid profile email';
+const code_challenge_method = 'S256';
+// will prompt for scope grant
+const scope = 'openid openid_credential';
 const response_type = 'code';
-const alg = { alg: 'ES256K' };
+const alg = 'ES256K';
+const id_token_signed_response_alg = 'ES256K';
 const mapping = {
   jsonLdTerm: 'educationalCredentialAwarded',
   oidcClaim: 'https://tenant.vii.mattr.global/educationalCredentialAwarded',
@@ -223,7 +219,6 @@ describe('Authz unit test', () => {
         expect(isOidcIssuer(body?.data)).toBeTruthy();
         expect(status).toEqual(Status.CREATED);
         issuerId = body?.data?.id;
-        console.log('Oidc-issuer', body.data);
       }));
 
   it('should register oidc client', async () =>
@@ -238,7 +233,7 @@ describe('Authz unit test', () => {
         grant_types: ['authorization_code'],
         token_endpoint_auth_method: 'client_secret_post',
         // must be 'RS256' or 'PS256', in order to use "state" params
-        id_token_signed_response_alg: 'ES256K',
+        id_token_signed_response_alg,
         application_type: 'web',
       })
       .expect(({ body, status }) => {
@@ -285,11 +280,11 @@ describe('Authz unit test', () => {
         credential_format,
         code_challenge,
         code_challenge_method,
-        did: 'did:web:issuer.example.com',
+        // did: 'did:web:issuer.example.com',
         claims,
       },
       { issuer: clientId, signer },
-      alg
+      { alg }
     );
 
     return request(express)
@@ -306,14 +301,14 @@ describe('Authz unit test', () => {
       .set('host', 'issuer.example.com')
       .set('Context-Type', 'application/x-www-form-urlencoded')
       .set('X-Forwarded-Proto', 'https')
-      .expect(
-        (result) => console.warn(result)
-        // return error="invalid_request_object"
-        // expect(header.location).toContain(
-        //   'https://jwt.io?error=invalid_request_object&error_description=could%20not%20validate%20Request%20Object'
-        // )
+      .expect(({ header }) =>
+        expect(header.location).toContain(
+          'https://jwt.io?error=invalid_request_object&error_description=could%20not%20validate%20Request%20Object'
+        )
       );
   });
+
+  // Todo: tests, if the ClaimMapping is changed, oidc-provider reflects the changed configuration
 
   // see https://mattrglobal.github.io/oidc-client-bound-assertions-spec
   it('should kick off Credential Request', async () => {
@@ -322,15 +317,14 @@ describe('Authz unit test', () => {
     code_verifier = generators.codeVerifier();
     const code_challenge = generators.codeChallenge(code_verifier);
 
-    console.log('====code_verifier: ', code_verifier);
+    console.log('*** code_verifier *** ', code_verifier);
 
     // retrieve key pair for newly created Oidc-client
     const clientRepo = getConnection(tenant.id).getRepository(OidcClient);
     const oidcClient = await clientRepo.findOne(clientId);
     const identifierRepo = getConnection(tenant.id).getRepository(Identifier);
     const identifier = await identifierRepo.findOne(oidcClient.did, { relations: ['keys'] });
-    const { publicKeyHex, privateKeyHex } = identifier.keys[0];
-    const { publicKeyJwk } = convertKeysToJwkSecp256k1(publicKeyHex);
+    const { privateKeyHex } = identifier.keys[0];
 
     const signer = didJWT.ES256KSigner(privateKeyHex);
     const signedRequest = await didJWT.createJWT(
@@ -345,12 +339,17 @@ describe('Authz unit test', () => {
         credential_format,
         code_challenge,
         code_challenge_method,
-        sub_jwk: JSON.stringify(publicKeyJwk),
         claims,
+        // Warning. sub_jwk is not directly preferred, coz the Oid-provider treats request-params as string
+        // https://github.com/panva/node-oidc-provider/blob/main/lib/actions/authorization/process_request_object.js
+        // It does not matter; coz Oidc client has public key, and request_object need not provide it.
+        // sub_jwk: JSON.stringify(publicKeyJwk),
+        // Reserved. did is not used neither.
+        did: 'did:web:issuer.example.com',
       },
       // see https://github.com/decentralized-identity/did-jwt/blob/master/docs/guides/index.md
       { issuer: clientId, signer, expiresIn: 86400 }, // 24 hrs
-      alg
+      { alg }
     );
 
     return request(express)

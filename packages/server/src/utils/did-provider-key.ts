@@ -10,6 +10,9 @@ type IContext = IAgentContext<IKeyManager>;
 
 /**
  * change to did:key based on Secp256k1
+ * NOTE: did-key of Veramo supports only Ed25519. Unfortunately, oidc-provider use Nodejs V14.x crypto module,
+ * which does not support "createPrivateKey" for Ed25519. Hence, switch to Secp256K1, so that NodeJs v14 crypto
+ * module works again.
  * @see https://w3c-ccg.github.io/did-method-key/#introduction
  * @see https://github.com/uport-project/veramo/blob/aabddb436b8b4dd78378da4704ba00147d074cdb/packages/did-provider-key/src/key-did-provider.ts
  */

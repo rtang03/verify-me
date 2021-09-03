@@ -1,7 +1,7 @@
 /**
- * list of clam under Oidc default "Profile" scope
+ * list of clam under Oidc default "Profile" scope. Not required for now.
  */
-const OIDC_PROFILE_CLAIM_MAPPINGS = {
+export const OIDC_PROFILE_CLAIM_MAPPINGS = {
   address: {
     jsonLdTerm: 'address',
     oidcClaim: 'address',
@@ -80,6 +80,13 @@ const OIDC_PROFILE_CLAIM_MAPPINGS = {
   },
 };
 
+const CUSTOM_CLAIMS = {
+  openid_configuration_url: {
+    jsonLdTerm: 'openidConfigurationUrl',
+    oidcClaim: 'openid_configuration_url',
+  },
+};
+
 export type ClaimMapping = { jsonLdTerm: string; oidcClaim: string };
 
 export const getClaimMappings: (mappings: ClaimMapping[]) => {
@@ -89,7 +96,7 @@ export const getClaimMappings: (mappings: ClaimMapping[]) => {
   const mappingsObject = mappings.reduce((prev, curr) => ({ ...prev, [curr.oidcClaim]: curr }), {});
 
   // Note: the default "profile" claim can be override.
-  const combined = { ...OIDC_PROFILE_CLAIM_MAPPINGS, ...mappingsObject };
+  const combined = { ...CUSTOM_CLAIMS, ...mappingsObject };
 
   return {
     supportedClaims: Object.keys(combined),

@@ -96,6 +96,7 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
       // step 3: get or create Provider
       const uri = `https://${hostname}/oidc/issuers/${issuerId}`;
 
+      /* To be refactored
       // if creating new OidcProvider, retrieve OidcIssuer's claimMapping
       let mappings: ClaimMapping[] = [];
       if (!oidcProivders[tenantId]) {
@@ -110,6 +111,22 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
 
       // create or get OidcProvider
       oidcProivders[tenantId] ??= new Provider(
+        uri,
+        createOidcProviderConfig(tenantId, issuerId, jwks, mappings)
+      );
+       */
+
+      // New code: will fetch Oidc-issuer's claimMappings. And, will assign new provider
+      let mappings: ClaimMapping[] = [];
+      const oidcIssuerRepo = await getConnection(tenantId).getRepository(OidcIssuer);
+      try {
+        const issuer = await oidcIssuerRepo.findOne(issuerId);
+        mappings = issuer?.claimMappings || [];
+      } catch (err) {
+        console.error(err);
+      }
+      // TODO: not 100% sure, if there is no memory leaked, for creating provider each time
+      oidcProivders[tenantId] = new Provider(
         uri,
         createOidcProviderConfig(tenantId, issuerId, jwks, mappings)
       );

@@ -9,17 +9,18 @@ export const createOidcProviderConfig = (
   connectionName: string,
   issuerId: string,
   jwks: { keys: JWK[] },
+  // claimMappings includes user-defined claims; not including "email", "address", "phone", "profile"
   claimMappings: ClaimMapping[]
 ) => {
   const { supportedClaims } = getClaimMappings(claimMappings);
-  const claims = supportedClaims.reduce((prev, curr) => ({ ...prev, [curr]: null }), {});
 
   return <Configuration>{
     jwks,
     acrValues: ['0'],
     adapter: createOidcAdapter(connectionName),
+    // IMPORTANT: whitelist claims, which will prompt for "Authorize"
     claims: {
-      ...claims,
+      openid_credential: supportedClaims,
       address: ['address'],
       email: ['email', 'email_verified'],
       phone: ['phone_number', 'phone_number_verified'],
@@ -41,7 +42,7 @@ export const createOidcProviderConfig = (
       ],
       openid: ['sub'],
     },
-    conformIdTokenClaims: false,
+    conformIdTokenClaims: true,
     cookies: {
       keys: ['some secret key', 'and also the old rotated away some time ago', 'and one more'],
     },
@@ -71,7 +72,7 @@ export const createOidcProviderConfig = (
       //     },
       //   },
       //   codeChallenge: 'wZWSwx5VuSr4bntqXF6IMSaoAEfIxwVpomrqz_bxDgw',
-      //   codeChallengeMethod: 'plain',
+      //   codeChallengeMethod: 'S256',
       //   nonce: 'nZ-SFtH1ave5FrHTQqWvPyU5Rjpdbuf607YUbHLLSIY',
       //   redirectUri: 'https://jwt.io',
       //   scope: 'openid',
@@ -82,6 +83,8 @@ export const createOidcProviderConfig = (
       //   jti: 'X-_r8qFHubzBswg55BBzA8Gbx_puyziQwo93n8nqWAD',
       // };
 
+      // retrieve VP from grantId
+
       return {
         accountId: sub,
         claims: async (use, scope, claims, rejected) => {
@@ -89,12 +92,9 @@ export const createOidcProviderConfig = (
           debug('findAccount/scope: %s', scope);
           debug('findAccount/claims: %O', claims);
 
+          // construct id_token or userInfo by appending VP
           return {
             sub,
-            // acr: '0',
-            // email: 'any@example.com',
-            // name: 'tester',
-            // 'https://tenant.vii.mattr.global/educationalCredentialAwarded': 'student',
           };
         },
       };
@@ -140,19 +140,16 @@ export const createOidcProviderConfig = (
       'code id_token token',
       // 'none',
     ],
-    // Notes: there will be no missing-scope checking
-    scopes: ['openid', 'profile', 'email', 'address'],
+    scopes: ['openid', 'offline_access', 'openid_credential', 'profile', 'email', 'address'],
     // see full example for discovery: https://learn.mattr.global/api-reference/v1.0.1#operation/issuerWellKnownOidcConfig
     // standard params: https://openid.net/specs/openid-connect-discovery-1_0.html
     discovery: {
-      // issuer expressing support for did
       dids_supported: true,
       did_methods_supported: ['did:"web'],
       credential_supported: true,
       credential_formats_supports: ['jwt'], // ['jwt', 'w3cvc-jsonld'],
       credential_claims_supported: supportedClaims,
       credential_name: 'University Credential',
-      // credential_endpoint: `https://issuer.example.com/oidc/issuers/${issuerId}/credential`,
       request_parameter_supported: true,
       require_signed_request_object: true,
     },

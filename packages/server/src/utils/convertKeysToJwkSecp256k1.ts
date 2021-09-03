@@ -1,6 +1,11 @@
 import type { JWK } from 'jose/jwk/parse';
 import * as u8a from 'uint8arrays';
 
+/**
+ * @see https://stackoverflow.com/questions/56846930/how-to-convert-raw-representations-of-ecdh-key-pair-into-a-json-web-key
+ * @param publicKeyHex
+ * @param privateKeyHex
+ */
 export const convertKeysToJwkSecp256k1: (
   publicKeyHex: string,
   privateKeyHex?: string

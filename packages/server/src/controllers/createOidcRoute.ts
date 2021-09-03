@@ -88,7 +88,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
   // the endpoint is invoked after the authenticated user is redirected from /callback?code=xxxxx
   // "code" is ready to exchange tokens
   router.get(
-    '/issuers/:issuer_id/interaction/:jti/login',
+    '/issuers/:issuer_id/interaction/:uid/login',
     setNoCache,
     async (req: RequestWithVhost, res, next) => {
       try {
@@ -153,7 +153,6 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         body.append('code', code);
         body.append('redirect_uri', issuer.federatedProvider.callbackUrl);
 
-        // TODO: this fetch will give the tls warning, need fixing
         const response = await fetch(url, { method: 'POST', body });
 
         if (response.status === Status.OK) {
@@ -205,7 +204,13 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
             // decoded payload (i.e. id_token) will be passed, via "result" to next interaction.
             id_token = payload;
-            result = { login: { accountId: payload.sub, acr: '0' }, id_token };
+
+            // ‼️ id_token from federated Idp is appended to interaction result
+            result = {
+              login: { accountId: payload.sub, acr: '0' },
+              id_token,
+              id_tokenJwt: tokens.id_token,
+            };
           } catch (err) {
             console.error(err);
             result = {
@@ -245,7 +250,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
   // kick off interaction
   router.get(
-    '/issuers/:issuer_id/interaction/:jti',
+    '/issuers/:issuer_id/interaction/:uid',
     setNoCache,
     async (req: RequestWithVhost, res, next) => {
       try {
@@ -275,10 +280,10 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         if (!openIdConfig) return next(new Error('missing openid-configuration'));
 
         // Different prompt will have different details / params
-        // "login" will redirect to federatedProvider
-        // "consent"
+        // "login" will redirect to federatedProvider's login page
+        // "consent" renders Access / Deny page
         if (prompt.name === 'login') {
-          // Debug:  details returns
+          // Debug: details returns
           // details = {
           //   grantId: null,
           //   iat: 1630164728,
@@ -350,11 +355,12 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           //   },
           //   lastSubmission: {
           //     login: { accountId: 'auth0|6059aed4aa7803006a20d824', acr: '0' },
+          //     id_tokenJwt: 'xxxx',
           //     id_token: {
           //       'https://tenant.vii.mattr.global/educationalCredentialAwarded': 'Certificate Name',
           //       nickname: 'tangross',
           //       name: 'tangross@hotmail.com',
-          //       picture: 'xxxx'
+          //       picture: 'omit here'
           //       updated_at: '2021-08-28T05:54:47.837Z',
           //       email: 'tangross@hotmail.com',
           //       email_verified: true,
@@ -363,6 +369,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           //       aud: 'cGExcP4cy3eljzlhghBhToRP46bP3bLY',
           //       iat: 1630310664,
           //       exp: 1630346664,
+          //       nonce: 'Cag4DLJVFPz2grV3yDmTKFZdeGlzX8S8loh63njDXyg'
           //     },
           //   },
           //   params: {
@@ -375,9 +382,8 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           //     scope: 'openid openid_credential',
           //     state: 'W0T4OS4-DYqDaZ0x0SwzKfc2z8g65o3pt2GSgPaBJqc',
           //     claims:
-          //       '{"userinfo":{"given_name":{"essential":true},"nickname":null,"email":{"essential":true},"email_verified":{"essential":true},"picture":null},"id_token":{"gender":null,"birthdate":{"essential":true},"acr":{"values":["urn:mace:incommon:iap:silver"]}}}',
-          //     sub_jwk:
-          //       '{"kty":"OKP","crv":"Ed25519","alg":"EdDSA","kid":"b8cd08b3bd9f5724bea975994e12a71fd87c0f2d1524274839310cc6e9217420","x":"uM0Is72fVyS-qXWZThKnH9h8Dy0VJCdIOTEMxukhdCA"}',
+          //       '{"userinfo":{"email":{"essential":true},"name":null,"https://tenant.vii.mattr.global/educationalCredentialAwarded":{"essential":true}},"id_token":{"auth_time":{"essential":true},"email":{"essential":true},"https://tenant.vii.mattr.global/educationalCredentialAwarded":{"essential":true}}}',
+          //     did: 'did:web:issuer.example.com'
           //     credential_format: 'w3cvc-jwt',
           //   },
           //   session: {
@@ -389,9 +395,36 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           //   jti: 'vQbw7zkWSKBUSNYzNTTcE',
           // };
 
-          /**
-           * Authorize will render screen to Grant Access, after login successfully
-           */
+          // Check the id_token obtained from federated oidc provider, fulfilling the claim request
+          // if not fulfilled, will finish interaction
+          const federatedIdToken = details.lastSubmission?.id_token;
+          const federatedIdTokenJwt = details.lastSubmission?.id_tokenJwt;
+          const requiredOIDCClaims = prompt.details.missingOIDCClaims as string[];
+          const isFullfilled = requiredOIDCClaims
+            .map((claim) => !!federatedIdToken[claim])
+            .reduce((prev, curr) => prev && curr, true);
+
+          debug('federated id_token is %s', isFullfilled ? 'valid' : 'invalid');
+
+          if (!isFullfilled) {
+            return await oidc.interactionFinished(
+              req,
+              res,
+              {
+                error: 'access_denied',
+                error_description: 'federated id_token invalid',
+              },
+              { mergeWithLastSubmission: false }
+            );
+          }
+
+          // fullfilled claims is passed to interaction.ejs. After confirmation, the requested claim
+          // is passed to endpoint "/issuers/:issuer_id/interaction/:uid/confirm"
+          // Optionally, interaction.ejs may display the fullfilled claim values; when confirming
+          const fulfilledClaim = {};
+          requiredOIDCClaims.forEach((claim) => (fulfilledClaim[claim] = federatedIdToken[claim]));
+
+          // Authorize will render screen to Grant Access, after login successfully
           res.render('interaction', {
             client,
             uid,
@@ -399,6 +432,8 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
             params,
             title: 'Authorize',
             issuerId,
+            fulfilledClaim,
+            federatedIdTokenJwt,
           });
         }
       } catch (err) {
@@ -418,77 +453,116 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           req.tenantId,
           issuerId
         );
+        const federatedIdToken = req.body?.id_token;
         const interactionDetails = await oidc.interactionDetails(req, res);
-        // returnTo:
-        //   'https://issuer.example.com/oidc/issuers/bb41301f-0fc6-406d-ac34-3afeb003769e/auth/h_2x-LM_dtOMWwMbaMT0z',
-        // prompt: {
-        //   name: 'consent',
-        //     reasons: [ 'op_scopes_missing', 'op_claims_missing' ],
-        //     details: { missingOIDCScope: [Array], missingOIDCClaims: [Array] }
-        // },
-        // params: {
-        //   client_id: '2843faca-8911-45ac-b605-f15c5556b88e',
-        //     code_challenge: '1234567890123456789012345678901234567890123456',
-        //     code_challenge_method: 'plain',
-        //     nonce: 'foobar',
+
+        debug('POST /oidc/issuers/:issuer_id/interaction/%s/confirm', interactionDetails.jti);
+        debug('======%O', interactionDetails);
+
+        // interactionDetails returns
+        // interactionDetails = {
+        //   grantId: null,
+        //   iat: 1630653824,
+        //   exp: 1630657424,
+        //   returnTo:
+        //     'https://issuer.example.com/oidc/issuers/ObjEGmwtFV-8Ys35WBiF5/auth/1yfJD8vAPfQ1SYptnqgU0',
+        //   prompt: {
+        //     name: 'consent',
+        //     reasons: ['op_scopes_missing', 'op_claims_missing'],
+        //     details: { missingOIDCScope: [Array], missingOIDCClaims: [Array] },
+        //   },
+        //   params: {
+        //     client_id: 'V1StGXR8_Z5jdHi6B-myT',
+        //     code_challenge: 'WP_HSK7UQ-bRh6Y9r0Tre4GGTJf7QJjCh8rT23aQY1Q',
+        //     code_challenge_method: 'S256',
+        //     nonce: 'Cag4DLJVFPz2grV3yDmTKFZdeGlzX8S8loh63njDXyg',
         //     redirect_uri: 'https://jwt.io',
-        //     response_type: 'code id_token token',
-        //     scope: 'openid email profile',
-        //     claims: '{ "userinfo": { "email": { "essential": true } }, "id_token": { "email": { "essential": true } } }',
-        //     did: 'did:web:issuer.example.com'
-        // },
-        debug('POST /oidc/issuers/:issuer_id/interaction/%s/confirm', interactionDetails.uid);
-        debug('%O', interactionDetails);
+        //     response_type: 'code',
+        //     scope: 'openid openid_credential',
+        //     state: '-JUd7rFDHh64G-qTqjM3eF3TyfbFRznfg2m5ip3kt_M',
+        //     claims:
+        //       '{"userinfo":{"email":{"essential":true},"name":null,"https://tenant.vii.mattr.global/educationalCredentialAwarded":{"essential":true}},"id_token":{"auth_time":{"essential":true},"email":{"essential":true},"https://tenant.vii.mattr.global/educationalCredentialAwarded":{"essential":true}}}',
+        //     did: 'did:web:issuer.example.com',
+        //     credential_format: 'w3cvc-jwt',
+        //   },
+        //   session: {
+        //     accountId: 'auth0|6059aed4aa7803006a20d824',
+        //     uid: 'zOsjJfiW2vMu-c74Kg8mw',
+        //     cookie: 'grzUuDczPaJ9En8-tq3FO',
+        //     acr: '0',
+        //   },
+        //   kind: 'Interaction',
+        //   jti: '1yfJD8vAPfQ1SYptnqgU0',
+        // };
 
         const {
           prompt: { name, details },
           params,
           session: { accountId },
         } = interactionDetails;
+        const clientId = params.client_id as string;
+        let { grantId } = interactionDetails;
 
         assert.strictEqual(name, 'consent');
 
-        let { grantId } = interactionDetails;
-        let grant;
+        // find Oidc-issuer
+        const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
+        const issuer = await issuerRepo.findOne(issuerId, {
+          relations: ['credential', 'federatedProvider'],
+        });
 
-        if (grantId) {
-          // we'll be modifying existing grant in existing session
-          grant = await oidc.Grant.find(grantId);
-        } else {
-          // we're establishing a new grant
-          grant = new oidc.Grant({
-            accountId,
-            clientId: params.client_id as string,
-          });
-        }
+        // fetch OpenId Configuration
+        const openIdConfigUrl = issuer?.federatedProvider?.url;
+        const openIdConfig = openIdConfigUrl && (await fetchOpenIdConfiguration(openIdConfigUrl));
 
-        if (details.missingOIDCScope) {
+        // validate JWT against federated oidc provider
+        // user-submitted consent requires validation
+        const jwks = createRemoteJWKSet(new URL(openIdConfig[CONIG.JWKS]));
+        const { payload } = await jwtVerify(federatedIdToken, jwks, {
+          issuer: issuer.federatedProvider.url + '/',
+          audience: issuer.federatedProvider.clientId,
+        });
+
+        // Get or create grantId
+        const grant = grantId
+          ? await oidc.Grant.find(grantId)
+          : new oidc.Grant({ accountId, clientId });
+
+        // use grant.rejectOIDCScope to reject a subset or the whole thing
+        details.missingOIDCScope &&
           grant.addOIDCScope((details.missingOIDCScope as string[]).join(' '));
-          // use grant.rejectOIDCScope to reject a subset or the whole thing
-        }
-        if (details.missingOIDCClaims) {
-          grant.addOIDCClaims(details.missingOIDCClaims as any);
-          // use grant.rejectOIDCClaims to reject a subset or the whole thing
-        }
-        if (details.missingResourceScopes) {
-          // eslint-disable-next-line no-restricted-syntax
-          for (const [indicator, scopes] of Object.entries(details.missingResourceScopes)) {
-            grant.addResourceScope(indicator, scopes.join(' '));
-            // use grant.rejectResourceScope to reject a subset or the whole thing
-          }
-        }
+
+        // use grant.rejectOIDCClaims to reject a subset or the whole thing
+        details.missingOIDCClaims && grant.addOIDCClaims(details.missingOIDCClaims as string[]);
+
+        // ❕Reserved only. ResourcesScopes is not enabled
+        // Please don't delete commented code. Maybe useful later.
+        // if (details.missingResourceScopes) {
+        //   // eslint-disable-next-line no-restricted-syntax
+        //   for (const [indicator, scopes] of Object.entries(details.missingResourceScopes)) {
+        //     grant.addResourceScope(indicator, scopes.join(' '));
+        //     // use grant.rejectResourceScope to reject a subset or the whole thing
+        //   }
+        // }
 
         grantId = await grant.save();
 
         const consent: any = {};
-        if (!interactionDetails.grantId) {
-          // we don't have to pass grantId to consent, we're just modifying existing one
-          consent.grantId = grantId;
-        }
+
+        // we don't have to pass grantId to consent, we're just modifying existing one
+        if (!interactionDetails.grantId) consent.grantId = grantId;
 
         const result = { consent };
 
-        // todo: issuer verifiable credential here
+        // add claim Mapping here
+        // const claimMappings = [
+        //   { jsonLdTerm: 'address', oidcClaim: 'address' },
+        //   { jsonLdTerm: 'email', oidcClaim: 'email' },
+        //   { jsonLdTerm: 'emailVerified', oidcClaim: 'email_verified' },
+        //   { jsonLdTerm: 'phoneNumber', oidcClaim: 'phone_number' },
+        // ];
+
+        // create VP using grantId
 
         await oidc.interactionFinished(req, res, result, { mergeWithLastSubmission: true });
       } catch (err) {
@@ -525,49 +599,6 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
   // ⁉️ TODO: DOUBLE CHECK ME, IF I AM AT THE RIGHT POSITION
   router.use('/issuers', createOidcIssuerRoute(tenantManger));
-
-  /**
-   * @see https://mattrglobal.github.io/oidc-client-bound-assertions-spec/#name-credential-endpoint-request
-   */
-  router.post('/issuers/:id/credential', async (req: RequestWithVhost, res) => {
-    const issuerId = req.params.id;
-    const credentailRequest: string | undefined = req.body?.request;
-    const clientId = req.body?.client_id as string;
-
-    // TODO Verifiy access token
-
-    if (!credentailRequest)
-      return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'request not found' });
-
-    let payload: unknown;
-    try {
-      // decode signed-jwt-request-obj
-      // payload = jwt_decode(credentailRequest);
-
-      // todo: below is incorrect
-
-      const publicKey = createPublicKey(fs.readFileSync('./certs/host.pem'));
-      const { payload, protectedHeader }: JWTVerifyResult = await jwtVerify(
-        credentailRequest,
-        publicKey,
-        {
-          issuer: `urn:wallet:${clientId}`,
-          audience: `urn:issuer:${issuerId}`,
-        }
-      );
-
-      console.log(payload);
-
-      // if (isCredentialRequestPayload(payload)) {
-      //   // check signature
-      //   console.log(payload);
-      // }
-      // TODO: Dummy code
-      res.send(Status.OK).send({ data: 'ok' });
-    } catch (error) {
-      console.warn(error);
-    }
-  });
 
   /**
    * 📌 IMPORTANT: Oidc-provider is added to each Oidc-issuer
