@@ -72,3 +72,7 @@ openssl req -new -x509 -nodes -sha1 -days 3650 -key host.key > host.crt
 - https://openid.net/specs/openid-connect-self-issued-v2-1_0.html
 - https://mattrglobal.github.io/oidc-client-bound-assertions-spec/
 - https://openid.net/specs/openid-connect-4-verifiable-presentations-1_0.html
+- https://www.w3.org/TR/vc-data-model/
+- https://mattrglobal.github.io/oidc-client-bound-assertions-spec/#name-credential-endpoint-request
+- https://fapi.openid.net/2021/04/14/guest-blog-financial-grade-api-fapi-explained-by-an-implementer-updated/
+- https://openid.net/specs/openid-financial-api-jarm.html

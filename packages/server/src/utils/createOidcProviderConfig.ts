@@ -40,7 +40,7 @@ export const createOidcProviderConfig = (
         'website',
         'zoneinfo',
       ],
-      openid: ['sub'],
+      openid: ['sub', 'moredata'],
     },
     conformIdTokenClaims: true,
     cookies: {
@@ -95,6 +95,7 @@ export const createOidcProviderConfig = (
           // construct id_token or userInfo by appending VP
           return {
             sub,
+            moredata: 'ok',
           };
         },
       };
@@ -112,6 +113,13 @@ export const createOidcProviderConfig = (
         requireUriRegistration: false,
         requireSignedRequestObject: true,
       },
+      fapi: { enabled: true, profile: '1.0 Final' },
+      // oidc-provider NOTICE: The following draft features are enabled and their implemented version not acknowledged
+      // oidc-provider NOTICE:   - JWT Secured Authorization Response Mode for OAuth 2.0 - Implementer's Draft 01 (This is an OIDF FAPI WG Implementer's Draft. URL: https://openid.net/specs/openid-financial-api-jarm-ID1.html. Acknowledging this feature's implemented version can be done with the string 'implementers-draft-01')
+      // oidc-provider NOTICE: Breaking changes between draft version updates may occur and these will be published as MINOR semver oidc-provider updates.
+      // oidc-provider NOTICE: You may disable this notice and these potentially breaking updates by acknowledging the current draft version. See https://github.com/panva/node-oidc-provider/tree/v7.6.0/docs/README.md#features
+      jwtResponseModes: { ack: 'implementers-draft-01', enabled: true },
+      jwtUserinfo: { enabled: true },
     },
     interactions: {
       // ❓TODO: change from interaction.uid to interaction.jti ..... NOT sure if this correct. Need revisit
@@ -127,7 +135,7 @@ export const createOidcProviderConfig = (
       DeviceCode: 600 /* 10 minutes in seconds */,
     },
     pkce: {
-      methods: ['S256', 'plain'],
+      methods: ['S256'],
       pkceRequired: (ctx, client) => false,
     },
     // NOTE: id_token may be REMOVE. Should use access_token to fetch /credential endpoint instead.
@@ -135,9 +143,9 @@ export const createOidcProviderConfig = (
       'code',
       'code token',
       'id_token',
-      'id_token token',
       'code id_token',
       'code id_token token',
+      // 'id_token token',
       // 'none',
     ],
     scopes: ['openid', 'offline_access', 'openid_credential', 'profile', 'email', 'address'],
@@ -156,6 +164,9 @@ export const createOidcProviderConfig = (
     enabledJWA: {
       requestObjectSigningAlgValues: ['ES256K'],
       idTokenSigningAlgValues: ['ES256K'],
+      authorizationSigningAlgValues: ['ES256K'],
+      userinfoSigningAlgValues: ['ES256K'],
     },
+    tokenEndpointAuthMethods: ['client_secret_jwt', 'client_secret_post', 'private_key_jwt'],
   };
 };

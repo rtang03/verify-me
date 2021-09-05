@@ -104,6 +104,10 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
         data.jwks = identifier && {
           keys: [convertKeysToJwkSecp256k1(identifier.controllerKeyId).publicKeyJwk],
         };
+        // Note: using JARM, response_mode is "jwt". Client metadata requires "authorization_signed_response_alg"
+        // The keystore above uses Secp256K1, provided by custom "did:key"; authorization_signed_response_alg must be "ES256K".
+        // Therefore, hardcode here. If later allowing different did key method for Client. Below code needs refactoring.
+        data.authorization_signed_response_alg = 'ES256K';
       }
 
       const result = this.type === TCLIENT ? data : parseResult(data as OidcPayload);

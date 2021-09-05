@@ -1,18 +1,21 @@
 import assert from 'assert';
-import { createPublicKey } from 'crypto';
-import fs from 'fs';
 import { URLSearchParams } from 'url';
 import util from 'util';
+import { VerifiableCredential, VerifiablePresentation } from '@veramo/core';
+import type {
+  ICreateVerifiableCredentialArgs,
+  ICreateVerifiablePresentationArgs,
+} from '@veramo/credential-w3c';
 import Debug from 'debug';
 import { NextFunction, Request, Response, Router } from 'express';
 import Status from 'http-status';
 import { createRemoteJWKSet } from 'jose/jwks/remote';
-import { jwtVerify, JWTVerifyResult } from 'jose/jwt/verify';
+import { jwtVerify } from 'jose/jwt/verify';
 import { Provider } from 'oidc-provider';
 import { getConnection } from 'typeorm';
 import { OidcIssuer, Tenant } from '../entities';
 import type { TenantManager } from '../types';
-import { CONIG, fetchOpenIdConfiguration } from '../utils';
+import { CONIG, fetchOpenIdConfiguration, OIDC_PROFILE_CLAIM_MAPPINGS } from '../utils';
 import { createOidcClientRoute } from './createOidcClientRoute';
 import { createOidcIssuerRoute } from './createOidcIssuerRoute';
 
@@ -401,7 +404,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
           const federatedIdTokenJwt = details.lastSubmission?.id_tokenJwt;
           const requiredOIDCClaims = prompt.details.missingOIDCClaims as string[];
           const isFullfilled = requiredOIDCClaims
-            .map((claim) => !!federatedIdToken[claim])
+            .map((claim) => !!federatedIdToken?.[claim])
             .reduce((prev, curr) => prev && curr, true);
 
           debug('federated id_token is %s', isFullfilled ? 'valid' : 'invalid');
@@ -510,6 +513,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         const issuer = await issuerRepo.findOne(issuerId, {
           relations: ['credential', 'federatedProvider'],
         });
+        const claimMappings = issuer.claimMappings;
 
         // fetch OpenId Configuration
         const openIdConfigUrl = issuer?.federatedProvider?.url;
@@ -518,10 +522,11 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         // validate JWT against federated oidc provider
         // user-submitted consent requires validation
         const jwks = createRemoteJWKSet(new URL(openIdConfig[CONIG.JWKS]));
-        const { payload } = await jwtVerify(federatedIdToken, jwks, {
+        const verified = await jwtVerify(federatedIdToken, jwks, {
           issuer: issuer.federatedProvider.url + '/',
           audience: issuer.federatedProvider.clientId,
         });
+        const federatedIdTokenClaims = verified.payload;
 
         // Get or create grantId
         const grant = grantId
@@ -554,16 +559,68 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
         const result = { consent };
 
-        // add claim Mapping here
-        // const claimMappings = [
-        //   { jsonLdTerm: 'address', oidcClaim: 'address' },
-        //   { jsonLdTerm: 'email', oidcClaim: 'email' },
-        //   { jsonLdTerm: 'emailVerified', oidcClaim: 'email_verified' },
-        //   { jsonLdTerm: 'phoneNumber', oidcClaim: 'phone_number' },
-        // ];
+        // Convert from OidcClaim + user-defined claim, into JsonLdTerm
+        // It attempts to follow JsonLd format, so that later can perform context validation
+        const mapFromOidcClaimToJsonLdTerm = [
+          ...OIDC_PROFILE_CLAIM_MAPPINGS,
+          ...claimMappings,
+        ].reduce((obj, { oidcClaim, jsonLdTerm }) => ({ ...obj, [oidcClaim]: jsonLdTerm }), {});
+        const requestedClaims = (details.missingOIDCClaims as string[])
+          .map((oidcClaim) => [oidcClaim, federatedIdTokenClaims[oidcClaim]] as [string, string])
+          .map(([oidcClaim, value]) => [mapFromOidcClaimToJsonLdTerm[oidcClaim], value])
+          .reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {});
 
-        // create VP using grantId
+        // create VC using grantId
+        const slug = req.vhost[0];
+        const agent = tenantManger.getAgents()[slug];
+        const createVCArgs: ICreateVerifiableCredentialArgs = {
+          credential: {
+            id: grantId,
+            // TODO: fix custom context
+            '@context': [
+              'https://www.w3.org/2018/credentials/v1',
+              'https://www.w3.org/2018/credentials/examples/v1',
+            ],
+            type: ['VerifiableCredential', 'Profile'],
+            issuer: { id: issuer.did },
+            credentialSubject: {
+              // TODO: fix it. It should be a variable
+              id: 'did:web:issuer.example.com:users:apple',
+              ...requestedClaims,
+            },
+          },
+          proofFormat: 'jwt',
+          save: true,
+        };
+        const vc: VerifiableCredential = await agent.execute(
+          'createVerifiableCredential',
+          createVCArgs
+        );
 
+        debug('VC being saved, %O', vc);
+
+        /*
+        // create VP
+        const createVPArgs: ICreateVerifiablePresentationArgs = {
+          presentation: {
+            '@context': ['https://www.w3.org/2018/credentials/v1'],
+            type: ['VerifiablePresentation'],
+            id: grantId,
+            verifiableCredential: [vc],
+            holder: 'holder did',
+            verifier: 'verifier did',
+          },
+          save: true,
+          proofFormat: 'jwt',
+        };
+        const vp: VerifiablePresentation = await agent.execute(
+          'createVerifiablePresentation',
+          createVPArgs
+        );
+
+        debug('VP being saved, %O', vp);
+
+         */
         await oidc.interactionFinished(req, res, result, { mergeWithLastSubmission: true });
       } catch (err) {
         next(err);

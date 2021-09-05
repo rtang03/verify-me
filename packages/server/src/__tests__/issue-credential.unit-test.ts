@@ -14,7 +14,6 @@ import {
   isOidcIssuer,
   isTenant,
   generators,
-  convertKeysToJwkSecp256k1,
 } from '../utils';
 import { fakedES256KKeys } from './__utils__/fakeKeys';
 
@@ -71,12 +70,14 @@ let code_verifier: string;
 const claims = {
   userinfo: {
     email: { essential: true },
+    email_verified: null,
     name: null,
     'https://tenant.vii.mattr.global/educationalCredentialAwarded': { essential: true },
   },
   id_token: {
     auth_time: { essential: true },
     email: { essential: true },
+    email_verified: null,
     'https://tenant.vii.mattr.global/educationalCredentialAwarded': { essential: true },
   },
 };
@@ -92,6 +93,7 @@ const mapping = {
   jsonLdTerm: 'educationalCredentialAwarded',
   oidcClaim: 'https://tenant.vii.mattr.global/educationalCredentialAwarded',
 };
+const response_mode = 'jwt';
 
 beforeAll(async () => {
   try {
@@ -327,6 +329,7 @@ describe('Authz unit test', () => {
     const { privateKeyHex } = identifier.keys[0];
 
     const signer = didJWT.ES256KSigner(privateKeyHex);
+    // see https://github.com/decentralized-identity/did-jwt/blob/master/docs/guides/index.md
     const signedRequest = await didJWT.createJWT(
       {
         aud: `https://issuer.example.com/oidc/issuers/${issuerId}`,
@@ -339,6 +342,7 @@ describe('Authz unit test', () => {
         credential_format,
         code_challenge,
         code_challenge_method,
+        response_mode,
         claims,
         // Warning. sub_jwk is not directly preferred, coz the Oid-provider treats request-params as string
         // https://github.com/panva/node-oidc-provider/blob/main/lib/actions/authorization/process_request_object.js
@@ -346,9 +350,11 @@ describe('Authz unit test', () => {
         // sub_jwk: JSON.stringify(publicKeyJwk),
         // Reserved. did is not used neither.
         did: 'did:web:issuer.example.com',
+        nbf: ~~(Date.now() / 1000),
       },
-      // see https://github.com/decentralized-identity/did-jwt/blob/master/docs/guides/index.md
-      { issuer: clientId, signer, expiresIn: 86400 }, // 24 hrs
+      // "fapi advanced" require the request object to contain an exp claim that has a lifetime of
+      // no longer than 60 minutes after the nbf claim
+      { issuer: clientId, signer, expiresIn: 3600 },
       { alg }
     );
 
@@ -371,5 +377,20 @@ describe('Authz unit test', () => {
         console.log(headers);
         console.log(body);
       });
+
+    // JARM will return signed response as below
+    // https://jwt.io/?response=eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QiLCJraWQiOiIwNDgwODJhYWViYWU2NDJjY2RhYWIzMWExNTRlN2QwYTZkNGUyMjYwMThkZmNhZTkyZDA0YTQ5ZjAxYmMzZTIzNTRlNTc0YmY5Y2JhYjNiMjVlZjM3ZjFmZWZkNDRiYzE2MzlkOWFiOWMyZGMzYTFkM2YyNzEzM2IxNmVlYzExOGRhIn0.eyJjb2RlIjoicjFhR2ttbHRaV1M3RDlqdHB5NVB6ak9IRkJWTUdvNk4wVzFEdjQyU3JkSyIsInN0YXRlIjoicEllODV0MEZVRHBhOVZaQ012anR5N29OUXN6aFowWWkyakw0NDRGNnRhcyIsImF1ZCI6IlYxU3RHWFI4X1o1amRIaTZCLW15VCIsImV4cCI6MTYzMDgxMzc5MCwiaXNzIjoiaHR0cHM6Ly9pc3N1ZXIuZXhhbXBsZS5jb20vb2lkYy9pc3N1ZXJzL09iakVHbXd0RlYtOFlzMzVXQmlGNSJ9.SniYaEDtYAGj04JPKNT_buCMtwMRJU-Y7MMOkYmmdLLIxR0L1MmFFMnq6h6GZIG3F_TV0Oj-6T_frYo-wjguvg
+    // const header = {
+    //   alg: 'ES256K',
+    //   typ: 'JWT',
+    //   kid: '048082aaebae642ccdaab31a154e7d0a6d4e226018dfcae92d04a49f01bc3e2354e574bf9cbab3b25ef37f1fefd44bc1639d9ab9c2dc3a1d3f27133b16eec118da',
+    // };
+    // const payload = {
+    //   code: 'r1aGkmltZWS7D9jtpy5PzjOHFBVMGo6N0W1Dv42SrdK',
+    //   state: 'pIe85t0FUDpa9VZCMvjty7oNQszhZ0Yi2jL444F6tas',
+    //   aud: 'V1StGXR8_Z5jdHi6B-myT',
+    //   exp: 1630813790,
+    //   iss: 'https://issuer.example.com/oidc/issuers/ObjEGmwtFV-8Ys35WBiF5',
+    // };
   });
 });

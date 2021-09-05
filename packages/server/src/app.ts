@@ -1,3 +1,5 @@
+import { SecureContextOptions, TlsOptions } from 'tls';
+
 require('dotenv').config();
 import fs from 'fs';
 import http from 'http';
@@ -64,9 +66,10 @@ const commonConnectionOptions: ConnectionOptions = {
     process.exit(1);
   }
 
-  const options = {
+  const options: TlsOptions | SecureContextOptions = {
     key: fs.readFileSync('certs/host.key'),
     cert: fs.readFileSync('certs/host.pem'),
+    minVersion: 'TLSv1.2',
   };
 
   // https redirect
