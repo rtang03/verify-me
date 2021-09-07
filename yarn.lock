@@ -4009,7 +4009,7 @@ bs-logger@0.x:
   dependencies:
     fast-json-stable-stringify "2.x"
 
-bs58@4.0.1, bs58@^4.0.1:
+bs58@4.0.1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/bs58/-/bs58-4.0.1.tgz#be161e76c354f6f788ae4071f63f34e8c4f0a42a"
   integrity sha1-vhYedsNU9veIrkBx9j806MTwpCo=
@@ -9712,10 +9712,10 @@ object.values@^1.1.3, object.values@^1.1.4:
     define-properties "^1.1.3"
     es-abstract "^1.18.2"
 
-oidc-provider@^7.6.0:
-  version "7.6.0"
-  resolved "https://registry.yarnpkg.com/oidc-provider/-/oidc-provider-7.6.0.tgz#fd782092ca510f3dd030900683ed34b766504d85"
-  integrity sha512-seBCtQ30+Y6SxhXpl+EYxsRCHiHlOLtt8rfmGtJA6OjfpFs1bO0ph+FBmXtkZK/2chkaYf3r2NO2REjzUGzdvw==
+oidc-provider@~7.7.0:
+  version "7.7.0"
+  resolved "https://registry.yarnpkg.com/oidc-provider/-/oidc-provider-7.7.0.tgz#789bf52b8373bee15fd3464dd1c620981e62d1c0"
+  integrity sha512-SyqKP7ggRHbLbRXNiYZNmHiGWJ4vVv1SToSsr171miCHwYH4zhtJ6VoE9f14G9W1YryVIah2XQXAq5m/3h5o8A==
   dependencies:
     "@koa/cors" "^3.1.0"
     cacheable-lookup "^6.0.0"

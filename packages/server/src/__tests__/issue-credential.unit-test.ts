@@ -15,6 +15,7 @@ import {
   isTenant,
   generators,
 } from '../utils';
+import { holderDIDKey, holderPublicKeyJwk } from './__utils__/did-key';
 import { fakedES256KKeys } from './__utils__/fakeKeys';
 
 /**
@@ -94,6 +95,7 @@ const mapping = {
   oidcClaim: 'https://tenant.vii.mattr.global/educationalCredentialAwarded',
 };
 const response_mode = 'jwt';
+const holder = holderDIDKey.did;
 
 beforeAll(async () => {
   try {
@@ -270,6 +272,7 @@ describe('Authz unit test', () => {
     const code_challenge = generators.codeChallenge(code_verifier);
     const { privateKeyHex } = fakedES256KKeys;
     const signer = didJWT.ES256KSigner(privateKeyHex);
+    // NOTE: nbf and exp are mandatory, to fulfill FAPI
     const signedRequest = await didJWT.createJWT(
       {
         aud: `https://issuer.example.com/oidc/issuers/${issuerId}`,
@@ -282,10 +285,10 @@ describe('Authz unit test', () => {
         credential_format,
         code_challenge,
         code_challenge_method,
-        // did: 'did:web:issuer.example.com',
         claims,
+        nbf: ~~(Date.now() / 1000),
       },
-      { issuer: clientId, signer },
+      { issuer: clientId, signer, expiresIn: 3600 },
       { alg }
     );
 
@@ -299,15 +302,19 @@ describe('Authz unit test', () => {
         state,
         code_challenge,
         request: signedRequest,
+        response_mode,
       })
       .set('host', 'issuer.example.com')
       .set('Context-Type', 'application/x-www-form-urlencoded')
       .set('X-Forwarded-Proto', 'https')
-      .expect(({ header }) =>
-        expect(header.location).toContain(
-          'https://jwt.io?error=invalid_request_object&error_description=could%20not%20validate%20Request%20Object'
-        )
-      );
+      .expect(async ({ header }) => {
+        console.log(header);
+        const jwt = header.location.split('response=')?.[1];
+        expect(typeof jwt).toEqual('string');
+        const jwtJson = await didJWT.decodeJWT(jwt);
+        expect(jwtJson.payload.error).toEqual('invalid_request_object');
+        expect(jwtJson.payload.error_description).toEqual('could not validate Request Object');
+      });
   });
 
   // Todo: tests, if the ClaimMapping is changed, oidc-provider reflects the changed configuration
@@ -325,10 +332,12 @@ describe('Authz unit test', () => {
     const clientRepo = getConnection(tenant.id).getRepository(OidcClient);
     const oidcClient = await clientRepo.findOne(clientId);
     const identifierRepo = getConnection(tenant.id).getRepository(Identifier);
+
+    // keys of Oidc-client, which signs the request object
     const identifier = await identifierRepo.findOne(oidcClient.did, { relations: ['keys'] });
     const { privateKeyHex } = identifier.keys[0];
-
     const signer = didJWT.ES256KSigner(privateKeyHex);
+
     // see https://github.com/decentralized-identity/did-jwt/blob/master/docs/guides/index.md
     const signedRequest = await didJWT.createJWT(
       {
@@ -344,13 +353,14 @@ describe('Authz unit test', () => {
         code_challenge_method,
         response_mode,
         claims,
-        // Warning. sub_jwk is not directly preferred, coz the Oid-provider treats request-params as string
-        // https://github.com/panva/node-oidc-provider/blob/main/lib/actions/authorization/process_request_object.js
-        // It does not matter; coz Oidc client has public key, and request_object need not provide it.
-        // sub_jwk: JSON.stringify(publicKeyJwk),
-        // Reserved. did is not used neither.
-        did: 'did:web:issuer.example.com',
         nbf: ~~(Date.now() / 1000),
+        did: holder,
+        // ‼️‼️ VERY IMPORTANT: "sub" defines the key material the Credential Holder is requesting the credential to be bound to
+        // BUT it is *NOT* used for signed the request object. The OidcAdapter will use OidcClient's keystore, to validate the
+        // signed request object; hence the signer is OidcClient's private key; not the requester's did:key
+        // Note: thee Oid-provider treats request-params as string
+        // https://github.com/panva/node-oidc-provider/blob/4f52a4cf62d0e2282a8f6a1759725b8633135b83/lib/actions/authorization/process_request_object.js#L98
+        sub_jwk: JSON.stringify(holderPublicKeyJwk),
       },
       // "fapi advanced" require the request object to contain an exp claim that has a lifetime of
       // no longer than 60 minutes after the nbf claim

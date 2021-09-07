@@ -1,17 +1,14 @@
 import assert from 'assert';
 import { URLSearchParams } from 'url';
 import util from 'util';
-import { VerifiableCredential, VerifiablePresentation } from '@veramo/core';
-import type {
-  ICreateVerifiableCredentialArgs,
-  ICreateVerifiablePresentationArgs,
-} from '@veramo/credential-w3c';
+import { VerifiableCredential } from '@veramo/core';
+import type { ICreateVerifiableCredentialArgs } from '@veramo/credential-w3c';
 import Debug from 'debug';
 import { NextFunction, Request, Response, Router } from 'express';
 import Status from 'http-status';
 import { createRemoteJWKSet } from 'jose/jwks/remote';
 import { jwtVerify } from 'jose/jwt/verify';
-import { Provider } from 'oidc-provider';
+import { JWK, Provider } from 'oidc-provider';
 import { getConnection } from 'typeorm';
 import { OidcIssuer, Tenant } from '../entities';
 import type { TenantManager } from '../types';
@@ -135,11 +132,6 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         //     '{"kty":"OKP","crv":"Ed25519","alg":"EdDSA","kid":"f68e25c94fb09c7f748d82d9dfe844a0ca6a9ed58771f14a4d5ff889f8ee2180","x":"9o4lyU-wnH90jYLZ3-hEoMpqntWHcfFKTV_4ifjuIYA"}',
         //   credential_format: 'w3cvc-jwt',
         // };
-
-        if (state !== uid) {
-          // this handles replay attack
-          console.error('This is invalid request, should throw');
-        }
 
         // fetch OpenId Configuration
         const openIdConfigUrl = issuer?.federatedProvider?.url;
@@ -505,6 +497,8 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         } = interactionDetails;
         const clientId = params.client_id as string;
         let { grantId } = interactionDetails;
+        const requesterDid = params.did as string;
+        const jwk: JWK = JSON.parse(params.sub_jwk as string);
 
         assert.strictEqual(name, 'consent');
 
@@ -576,7 +570,6 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         const createVCArgs: ICreateVerifiableCredentialArgs = {
           credential: {
             id: grantId,
-            // TODO: fix custom context
             '@context': [
               'https://www.w3.org/2018/credentials/v1',
               'https://www.w3.org/2018/credentials/examples/v1',
@@ -584,8 +577,8 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
             type: ['VerifiableCredential', 'Profile'],
             issuer: { id: issuer.did },
             credentialSubject: {
-              // TODO: fix it. It should be a variable
-              id: 'did:web:issuer.example.com:users:apple',
+              id: requesterDid,
+              jwk,
               ...requestedClaims,
             },
           },
@@ -599,28 +592,28 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
         debug('VC being saved, %O', vc);
 
-        /*
         // create VP
-        const createVPArgs: ICreateVerifiablePresentationArgs = {
-          presentation: {
-            '@context': ['https://www.w3.org/2018/credentials/v1'],
-            type: ['VerifiablePresentation'],
-            id: grantId,
-            verifiableCredential: [vc],
-            holder: 'holder did',
-            verifier: 'verifier did',
-          },
-          save: true,
-          proofFormat: 'jwt',
-        };
-        const vp: VerifiablePresentation = await agent.execute(
-          'createVerifiablePresentation',
-          createVPArgs
-        );
+        // const createVPArgs: ICreateVerifiablePresentationArgs = {
+        //   presentation: {
+        //     '@context': ['https://www.w3.org/2018/credentials/v1'],
+        //     type: ['VerifiablePresentation'],
+        //     // TODO: revisit me, if using grantId or jti or uid
+        //     // OidcAdapter use presentation id, to retrieve VP, to construct id_token and/or userInfo
+        //     id: grantId,
+        //     verifiableCredential: [vc],
+        //     holder: requesterDid,
+        //     // TODO: revisit me later
+        //     // verifier: ['NOT applicable']
+        //   },
+        //   save: true,
+        //   proofFormat: 'jwt',
+        // };
+        // const vp: VerifiablePresentation = await agent.execute(
+        //   'createVerifiablePresentation',
+        //   createVPArgs
+        // );
+        // debug('VP being saved, %O', vp);
 
-        debug('VP being saved, %O', vp);
-
-         */
         await oidc.interactionFinished(req, res, result, { mergeWithLastSubmission: true });
       } catch (err) {
         next(err);

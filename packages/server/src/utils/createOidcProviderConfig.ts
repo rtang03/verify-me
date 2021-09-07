@@ -1,7 +1,9 @@
 import Debug from 'debug';
 import type { Configuration, JWK } from 'oidc-provider';
+import { getConnection } from 'typeorm';
 import { createOidcAdapter } from './createOidcAdapter';
 import { ClaimMapping, getClaimMappings } from './oidcProfileClaimMappings';
+import { Credential } from '@veramo/data-store';
 
 const debug = Debug('utils:createOidcProviderConfig');
 
@@ -40,7 +42,7 @@ export const createOidcProviderConfig = (
         'website',
         'zoneinfo',
       ],
-      openid: ['sub', 'moredata'],
+      openid: ['sub', 'verifiable_credential', 'sub_jwk'],
     },
     conformIdTokenClaims: true,
     cookies: {
@@ -75,7 +77,7 @@ export const createOidcProviderConfig = (
       //   codeChallengeMethod: 'S256',
       //   nonce: 'nZ-SFtH1ave5FrHTQqWvPyU5Rjpdbuf607YUbHLLSIY',
       //   redirectUri: 'https://jwt.io',
-      //   scope: 'openid',
+      //   scope: 'openid openid_credential',
       //   sessionUid: 'W8r424nGw_fAoEBlGYGWO',
       //   clientId: 'V1StGXR8_Z5jdHi6B-myT',
       //   expiresWithSession: true,
@@ -83,20 +85,27 @@ export const createOidcProviderConfig = (
       //   jti: 'X-_r8qFHubzBswg55BBzA8Gbx_puyziQwo93n8nqWAD',
       // };
 
-      // retrieve VP from grantId
-
       return {
         accountId: sub,
         claims: async (use, scope, claims, rejected) => {
-          debug('findAccount/use: %s', use);
-          debug('findAccount/scope: %s', scope);
-          debug('findAccount/claims: %O', claims);
-
           // construct id_token or userInfo by appending VP
-          return {
-            sub,
-            moredata: 'ok',
-          };
+          // see https://openid.net/specs/openid-connect-4-verifiable-presentations-1_0.html
+
+          // retrieve VC
+          const credentialRepo = await getConnection(connectionName).getRepository(Credential);
+          const credential = await credentialRepo.findOne(
+            { id: token.grantId },
+            { relations: ['subject'] }
+          );
+
+          if (!credential) throw new Error('fail to create id_token / userinfo; no cred found');
+
+          const result = { sub: credential.subject?.did };
+          scope.includes('openid_credential') &&
+            credential &&
+            (result['verifiable_credential'] = (credential as any)._raw);
+
+          return result;
         },
       };
     },
@@ -136,7 +145,7 @@ export const createOidcProviderConfig = (
     },
     pkce: {
       methods: ['S256'],
-      pkceRequired: (ctx, client) => false,
+      pkceRequired: (ctx, client) => true,
     },
     // NOTE: id_token may be REMOVE. Should use access_token to fetch /credential endpoint instead.
     responseTypes: [
@@ -153,10 +162,11 @@ export const createOidcProviderConfig = (
     // standard params: https://openid.net/specs/openid-connect-discovery-1_0.html
     discovery: {
       dids_supported: true,
-      did_methods_supported: ['did:"web'],
+      did_methods_supported: ['did:web'],
       credential_supported: true,
       credential_formats_supports: ['jwt'], // ['jwt', 'w3cvc-jsonld'],
       credential_claims_supported: supportedClaims,
+      // TODO: fix me
       credential_name: 'University Credential',
       request_parameter_supported: true,
       require_signed_request_object: true,

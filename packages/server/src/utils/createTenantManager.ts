@@ -20,12 +20,11 @@ import {
   OidcPayload,
 } from '../entities';
 import type { TenantManager, TenantStatus } from '../types';
-// import { convertKeyPairsToJwkEd22519 } from './convertKeyPairToJwkEd22519';
+import { convertKeysToJwkSecp256k1 } from './convertKeysToJwkSecp256k1';
 import { createOidcProviderConfig } from './createOidcProviderConfig';
 import type { ClaimMapping } from './oidcProfileClaimMappings';
 import type { TTAgent } from './setupVeramo';
 import { setupVeramo } from './setupVeramo';
-import { convertKeysToJwkSecp256k1 } from './convertKeysToJwkSecp256k1';
 
 export const getSchemaName = (uuid: string) => 't_' + uuid.split('-')[0];
 
