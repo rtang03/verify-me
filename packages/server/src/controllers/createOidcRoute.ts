@@ -148,7 +148,11 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         body.append('code', code);
         body.append('redirect_uri', issuer.federatedProvider.callbackUrl);
 
-        const response = await fetch(url, { method: 'POST', body });
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body,
+        });
 
         if (response.status === Status.OK) {
           const tokens: { access_token: string; id_token: string } = await response.json();

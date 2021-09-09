@@ -14,7 +14,7 @@
     "start:prod": "node dist/app",
     "test:veramo": "jest --forceExit --detectOpenHandles veramo.unit-test",
     "test:oidc-issuer": "DEBUG=utils:* jest --forceExit --forceExit --detectOpenHandles oidcIssuer.unit-test",
-    "test:issue-credential-flow": "DEBUG=utils:* jest --forceExit --detectOpenHandles issue-credential.unit-test",
+    "test:issue-credential-flow": "DEBUG=utils:* NODE_TLS_REJECT_UNAUTHORIZED=\"0\" jest --forceExit --detectOpenHandles issue-credential.unit-test",
     "gen-rs256": "ts-node ./src/utils/generate-keys.ts",
     "gentest": "ts-node ./src/utils/testkeys.ts"
   },

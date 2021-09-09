@@ -1,8 +1,14 @@
 require('dotenv').config({ path: './.env' });
+import fs from 'fs';
+import http from 'http';
+import https from 'https';
+import qs from 'querystring';
+import { SecureContextOptions, TlsOptions } from 'tls';
 import { Identifier } from '@veramo/data-store';
 import didJWT from 'did-jwt';
 import { Express } from 'express';
 import Status from 'http-status';
+import fetch from 'node-fetch';
 import request from 'supertest';
 import { Connection, ConnectionOptions, getRepository, getConnection } from 'typeorm';
 import { Accounts, OidcClient, Sessions, Tenant, Users } from '../entities';
@@ -25,6 +31,7 @@ import { fakedES256KKeys } from './__utils__/fakeKeys';
 const ENV_VAR = {
   HOST: process.env.HOST || '0.0.0.0',
   PORT: parseInt(process.env.PORT, 10) || 3002,
+  SPORT: parseInt(process.env.SPORT, 10) || 3002,
   DB_HOST: process.env.TYPEORM_HOST,
   DB_PORT: parseInt(process.env.TYPEORM_PORT, 10),
   DB_USERNAME: process.env.TYPEORM_USERNAME,
@@ -96,6 +103,7 @@ const mapping = {
 };
 const response_mode = 'jwt';
 const holder = holderDIDKey.did;
+const federatedIdpUrl = 'https://dashslab.us.auth0.com';
 
 beforeAll(async () => {
   try {
@@ -130,6 +138,26 @@ beforeAll(async () => {
       console.error('🚫  app is undefined');
       process.exit(1);
     }
+
+    const options: TlsOptions | SecureContextOptions = {
+      key: fs.readFileSync('certs/host.key'),
+      cert: fs.readFileSync('certs/host.pem'),
+      minVersion: 'TLSv1.2',
+      rejectUnauthorized: false,
+    };
+
+    https.createServer(options, express).listen(ENV_VAR.SPORT, () => {
+      console.log(`🚀  rest server started at port: https://${ENV_VAR.HOST}:${ENV_VAR.SPORT}`);
+    });
+
+    http
+      .createServer((req, res) => {
+        res.writeHead(301, { Location: 'https://' + req.headers['host'] + req.url });
+        res.end();
+      })
+      .listen(ENV_VAR.PORT, () => {
+        console.log(`🚀  rest server started at port: http://${ENV_VAR.HOST}:${ENV_VAR.PORT}`);
+      });
   } catch (e) {
     console.error(e);
     process.exit(1);
@@ -212,7 +240,7 @@ describe('Authz unit test', () => {
           type: 'AlumniCredential',
         },
         federatedProvider: {
-          url: 'https://dashslab.us.auth0.com',
+          url: federatedIdpUrl,
           scope: ['openid', 'profile', 'email'],
           clientId: ENV_VAR.AUTH0_CLIENT_ID,
           clientSecret: ENV_VAR.AUTH0_CLIENT_SECRET,
@@ -308,7 +336,6 @@ describe('Authz unit test', () => {
       .set('Context-Type', 'application/x-www-form-urlencoded')
       .set('X-Forwarded-Proto', 'https')
       .expect(async ({ header }) => {
-        console.log(header);
         const jwt = header.location.split('response=')?.[1];
         expect(typeof jwt).toEqual('string');
         const jwtJson = await didJWT.decodeJWT(jwt);
@@ -317,7 +344,9 @@ describe('Authz unit test', () => {
       });
   });
 
-  // Todo: tests, if the ClaimMapping is changed, oidc-provider reflects the changed configuration
+  // More tests,
+  // 1. if the ClaimMapping is changed, oidc-provider reflects the changed configuration
+  // 2. if the expiresIn works
 
   // see https://mattrglobal.github.io/oidc-client-bound-assertions-spec
   it('should kick off Credential Request', async () => {
@@ -368,25 +397,61 @@ describe('Authz unit test', () => {
       { alg }
     );
 
-    return request(express)
-      .get(`/oidc/issuers/${issuerId}/auth`)
-      .query({
-        response_type,
-        client_id: clientId,
-        redirect_uri,
-        scope,
-        state,
-        code_challenge,
-        request: signedRequest,
-      })
-      .set('host', 'issuer.example.com')
-      .set('Context-Type', 'application/x-www-form-urlencoded')
-      .set('X-Forwarded-Proto', 'https')
-      .redirects(1)
-      .expect(({ headers, body }) => {
-        console.log(headers);
-        console.log(body);
-      });
+    const query = qs.stringify({
+      response_type,
+      client_id: clientId,
+      redirect_uri,
+      scope,
+      state,
+      code_challenge,
+      request: signedRequest,
+    });
+    const response = await fetch(
+      `https://issuer.example.com/oidc/issuers/${issuerId}/auth?${query}`,
+      { redirect: 'manual' }
+    );
+    const location = (response?.headers as any).raw()?.location;
+    const cookies = (response.headers as any).raw()?.['set-cookie'] as string[];
+    const cookie = cookies
+      .map((cookie) => cookie.split('path')[0])
+      .reduce((prev, curr) => prev + curr, '');
+
+    const response2 = await fetch(`${location}?${query}`, {
+      headers: { cookie, redirect: 'manual', follow: 0 },
+    });
+    console.log(response2.status);
+    console.log(response2.headers);
+    const json = await response2.text();
+    console.log(json);
+
+    // await request(express)
+    //   .get(`/oidc/issuers/${issuerId}/auth`)
+    //   .query({
+    //     response_type,
+    //     client_id: clientId,
+    //     redirect_uri,
+    //     scope,
+    //     state,
+    //     code_challenge,
+    //     request: signedRequest,
+    //   })
+    //   .set('host', 'issuer.example.com')
+    //   .set('Content-Type', 'application/x-www-form-urlencoded')
+    //   .set('X-Forwarded-Proto', 'https')
+    //   .redirects(0)
+    //   .expect(({ headers }) => {
+    //     location = headers.location;
+    //     // location: '/oidc/issuers/ObjEGmwtFV-8Ys35WBiF5/interaction/gS7vBo2Qzjx1VAM40cptk',
+    //   });
+    //
+    // await request(express)
+    //   .get(location)
+    //   .set('host', 'issuer.example.com')
+    //   .set('X-Forwarded-Proto', 'https')
+    //   .expect((result) => {
+    //     console.log(result);
+    //     // console.log(headers);
+    //   });
 
     // JARM will return signed response as below
     // https://jwt.io/?response=eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QiLCJraWQiOiIwNDgwODJhYWViYWU2NDJjY2RhYWIzMWExNTRlN2QwYTZkNGUyMjYwMThkZmNhZTkyZDA0YTQ5ZjAxYmMzZTIzNTRlNTc0YmY5Y2JhYjNiMjVlZjM3ZjFmZWZkNDRiYzE2MzlkOWFiOWMyZGMzYTFkM2YyNzEzM2IxNmVlYzExOGRhIn0.eyJjb2RlIjoicjFhR2ttbHRaV1M3RDlqdHB5NVB6ak9IRkJWTUdvNk4wVzFEdjQyU3JkSyIsInN0YXRlIjoicEllODV0MEZVRHBhOVZaQ012anR5N29OUXN6aFowWWkyakw0NDRGNnRhcyIsImF1ZCI6IlYxU3RHWFI4X1o1amRIaTZCLW15VCIsImV4cCI6MTYzMDgxMzc5MCwiaXNzIjoiaHR0cHM6Ly9pc3N1ZXIuZXhhbXBsZS5jb20vb2lkYy9pc3N1ZXJzL09iakVHbXd0RlYtOFlzMzVXQmlGNSJ9.SniYaEDtYAGj04JPKNT_buCMtwMRJU-Y7MMOkYmmdLLIxR0L1MmFFMnq6h6GZIG3F_TV0Oj-6T_frYo-wjguvg
