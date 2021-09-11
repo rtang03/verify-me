@@ -1,11 +1,10 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es5",
+    "target": "es2018",
     "sourceMap": true,
-    "noUnusedLocals": false
+    "noUnusedLocals": false,
+    "esModuleInterop": true
   },
-  "exclude": [
-    "node_modules", "dist"
-  ]
+  "exclude": ["node_modules", "dist"]
 }

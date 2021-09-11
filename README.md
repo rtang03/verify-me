@@ -76,3 +76,5 @@ openssl req -new -x509 -nodes -sha1 -days 3650 -key host.key > host.crt
 - https://mattrglobal.github.io/oidc-client-bound-assertions-spec/#name-credential-endpoint-request
 - https://fapi.openid.net/2021/04/14/guest-blog-financial-grade-api-fapi-explained-by-an-implementer-updated/
 - https://openid.net/specs/openid-financial-api-jarm.html
+- https://github.com/cypress-io/cypress-and-jest-typescript-example
+- 

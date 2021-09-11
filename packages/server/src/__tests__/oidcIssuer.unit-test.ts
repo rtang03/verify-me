@@ -359,7 +359,7 @@ describe('Oidc Issuer Tests', () => {
       .set('authorization', `Bearer`)
       // .set('X-Forwarded-Proto', 'https')
       .expect(({ body, status }) => {
-        expect(body?.error).toContain('invalid input syntax for uuid');
+        expect(body?.error).toContain('Invalid issuer id');
         expect(status).toEqual(Status.BAD_REQUEST);
       }));
 
@@ -384,8 +384,9 @@ describe('Oidc Issuer Tests', () => {
       .set('host', 'issuer.example.com')
       .set('authorization', `Bearer`)
       .expect(({ body, status }) => {
-        expect(body?.message).toContain('invalid input syntax for uuid');
-        expect(status).toEqual(Status.BAD_REQUEST);
+        expect(body.status).toEqual('NOT_FOUND');
+        expect(body.data).toEqual(notFoundData);
+        expect(status).toEqual(Status.NOT_FOUND);
       }));
 
   // OK
@@ -482,8 +483,9 @@ describe('Oidc Issuer Tests', () => {
       .set('host', 'issuer.example.com')
       .set('authorization', `Bearer`)
       .expect(({ body, status }) => {
-        expect(body?.message).toContain('invalid input syntax for uuid');
-        expect(status).toEqual(Status.BAD_REQUEST);
+        expect(body.status).toEqual('NOT_FOUND');
+        expect(body.data).toEqual(notFoundData);
+        expect(status).toEqual(Status.NOT_FOUND);
       }));
 
   // OK

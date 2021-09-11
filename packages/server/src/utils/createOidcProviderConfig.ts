@@ -1,9 +1,9 @@
+import { Credential } from '@veramo/data-store';
 import Debug from 'debug';
 import type { Configuration, JWK } from 'oidc-provider';
 import { getConnection } from 'typeorm';
 import { createOidcAdapter } from './createOidcAdapter';
 import { ClaimMapping, getClaimMappings } from './oidcProfileClaimMappings';
-import { Credential } from '@veramo/data-store';
 
 const debug = Debug('utils:createOidcProviderConfig');
 
@@ -115,6 +115,8 @@ export const createOidcProviderConfig = (
       registration: { enabled: false }, // use Oidc-client POST endpoint instead
       revocation: { enabled: true }, // defaults to false
       userinfo: { enabled: true },
+      // TODO: seems not working
+      jwtUserinfo: { enabled: true },
       requestObjects: {
         mode: 'lax',
         request: true,
@@ -123,12 +125,55 @@ export const createOidcProviderConfig = (
         requireSignedRequestObject: true,
       },
       fapi: { enabled: true, profile: '1.0 Final' },
-      // oidc-provider NOTICE: The following draft features are enabled and their implemented version not acknowledged
-      // oidc-provider NOTICE:   - JWT Secured Authorization Response Mode for OAuth 2.0 - Implementer's Draft 01 (This is an OIDF FAPI WG Implementer's Draft. URL: https://openid.net/specs/openid-financial-api-jarm-ID1.html. Acknowledging this feature's implemented version can be done with the string 'implementers-draft-01')
-      // oidc-provider NOTICE: Breaking changes between draft version updates may occur and these will be published as MINOR semver oidc-provider updates.
-      // oidc-provider NOTICE: You may disable this notice and these potentially breaking updates by acknowledging the current draft version. See https://github.com/panva/node-oidc-provider/tree/v7.6.0/docs/README.md#features
+      // oidc-provider NOTICE: - JWT Secured Authorization Response Mode for OAuth 2.0 - Implementer's Draft 01 (This is an OIDF FAPI WG Implementer's Draft. URL: https://openid.net/specs/openid-financial-api-jarm-ID1.html.
       jwtResponseModes: { ack: 'implementers-draft-01', enabled: true },
-      jwtUserinfo: { enabled: true },
+      // https://github.com/panva/node-oidc-provider/tree/main/docs#featuresciba
+      ciba: {
+        deliveryModes: ['poll'],
+        enabled: true,
+        // Helper function used to process the login_hint parameter and return the accountId value to use for processsing the request.
+        processLoginHint: async (ctx, loginHint) => {
+          // @param ctx - koa request context
+          // @param loginHint - string value of the login_hint parameter
+          throw new Error('features.ciba.processLoginHint not implemented');
+        },
+        // Helper function used to process the login_hint_token parameter and return the accountId value to use for processsing the request
+        processLoginHintToken: async (ctx, loginHintToken) => {
+          // @param ctx - koa request context
+          // @param loginHintToken - string value of the login_hint_token parameter
+          throw new Error('features.ciba.processLoginHintToken not implemented');
+        },
+        // Helper function used to trigger the authentication and authorization on end-user's Authentication Device. It is called after accepting the backchannel authentication request but before sending client back the response.
+        // When the end-user authenticates use provider.backchannelResult() to finish the Consumption Device login process.
+        triggerAuthenticationDevice: async (ctx, request, account, client) => {
+          // @param ctx - koa request context
+          // @param request - the BackchannelAuthenticationRequest instance
+          // @param account - the account object retrieved by findAccount
+          // @param client - the Client instance
+          throw new Error('features.ciba.triggerAuthenticationDevice not implemented');
+        },
+        // Helper function used to process the binding_message parameter and throw if its not following the authorization server's policy.
+        validateBindingMessage: async (ctx, bindingMessage) => {
+          // @param ctx - koa request context
+          // @param bindingMessage - string value of the binding_message parameter, when not provided it is undefined
+          if (bindingMessage && !/^[a-zA-Z0-9-._+/!?#]{1,20}$/.exec(bindingMessage)) {
+            throw new Error(
+              'the binding_message value, when provided, needs to be 1 - 20 characters in length and use only a basic set of characters (matching the regex: ^[a-zA-Z0-9-._+/!?#]{1,20}$ )'
+            );
+            // throw new errors.InvalidBindingMessage(
+            //   'the binding_message value, when provided, needs to be 1 - 20 characters in length and use only a basic set of characters (matching the regex: ^[a-zA-Z0-9-._+/!?#]{1,20}$ )'
+            // );
+          }
+        },
+        // Helper function used to verify the user_code parameter value is present when required and verify its value.
+        verifyUserCode: async (ctx, userCode) => {
+          // @param ctx - koa request context
+          // @param account -
+          // @param userCode - string value of the user_code parameter, when not provided it is undefined
+          throw new Error('features.ciba.verifyUserCode not implemented');
+        },
+      },
+      backchannelLogout: { enabled: false },
     },
     interactions: {
       // ❓TODO: change from interaction.uid to interaction.jti ..... NOT sure if this correct. Need revisit

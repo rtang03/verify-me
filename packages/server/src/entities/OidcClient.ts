@@ -38,5 +38,12 @@ export class OidcClient {
   @Column({ nullable: true })
   did: string;
 
+  @Column({ nullable: true })
+  jwks_uri: string;
+
+  // poll | ping
+  @Column({ nullable: true })
+  backchannel_token_delivery_mode: string;
+
   [key: string]: unknown;
 }

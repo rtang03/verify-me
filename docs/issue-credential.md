@@ -5,20 +5,23 @@ to be stored in wallet, for later use.
 
 ```plantuml
 title: Issue credential using oidc bridge
+== Prepare Cred Req ==
 User->Browser: fetch website
 Browser->RP: fetch client website
 RP-->Browser: website
 Browser->RP: request credential offer
 RP->Oidc_issuer: prepare
+Oidc_issuer->Oidc_issuer: retrieve privkey\nfor signing request
 Oidc_issuer-->RP: credential offer
 RP-->Browser: qr code\nref to credential offer
+== IdentityWallet Communication ==
 Browser->Wallet: scan
-== Construct credential request ==
 Wallet->User: show available offer
 User-->Wallet: confirm to kick off interaction
 Wallet->Wallet: code_challenge\nnonce\nstate
 Wallet->Wallet: create ephemeral DID
-Wallet->Oidc_issuer: retrieve credential-request
+Wallet->Oidc_issuer: request credential-request
+Oidc_issuer->Oidc_issuer: sign credential-request
 Oidc_issuer-->Wallet: credential-request
 == Authorize ==
 Wallet->Oidc_issuer: send credential-request\nto /auth

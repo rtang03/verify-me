@@ -103,4 +103,6 @@ dist
 .tern-port
 
 dist/
-jwks.json
+
+# temporary cypress in here is not final
+cypress

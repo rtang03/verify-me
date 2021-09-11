@@ -11,3 +11,5 @@ export const generators = {
   nonce: random,
   state: random,
 };
+
+export default generators;

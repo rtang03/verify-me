@@ -1,14 +1,8 @@
 require('dotenv').config({ path: './.env' });
-import fs from 'fs';
-import http from 'http';
-import https from 'https';
-import qs from 'querystring';
-import { SecureContextOptions, TlsOptions } from 'tls';
 import { Identifier } from '@veramo/data-store';
 import didJWT from 'did-jwt';
 import { Express } from 'express';
 import Status from 'http-status';
-import fetch from 'node-fetch';
 import request from 'supertest';
 import { Connection, ConnectionOptions, getRepository, getConnection } from 'typeorm';
 import { Accounts, OidcClient, Sessions, Tenant, Users } from '../entities';
@@ -31,7 +25,6 @@ import { fakedES256KKeys } from './__utils__/fakeKeys';
 const ENV_VAR = {
   HOST: process.env.HOST || '0.0.0.0',
   PORT: parseInt(process.env.PORT, 10) || 3002,
-  SPORT: parseInt(process.env.SPORT, 10) || 3002,
   DB_HOST: process.env.TYPEORM_HOST,
   DB_PORT: parseInt(process.env.TYPEORM_PORT, 10),
   DB_USERNAME: process.env.TYPEORM_USERNAME,
@@ -138,27 +131,6 @@ beforeAll(async () => {
       console.error('🚫  app is undefined');
       process.exit(1);
     }
-
-    // SHOULD REMOVE
-    // const options: TlsOptions | SecureContextOptions = {
-    //   key: fs.readFileSync('certs/host.key'),
-    //   cert: fs.readFileSync('certs/host.pem'),
-    //   minVersion: 'TLSv1.2',
-    //   rejectUnauthorized: false,
-    // };
-    // https.createServer(options, express).listen(ENV_VAR.SPORT, () => {
-    //   console.log(`🚀  rest server started at port: https://${ENV_VAR.HOST}:${ENV_VAR.SPORT}`);
-    // });
-    //
-    // http
-    //   .createServer((req, res) => {
-    //     res.writeHead(301, { Location: 'https://' + req.headers['host'] + req.url });
-    //     res.end();
-    //   })
-    //   .listen(ENV_VAR.PORT, () => {
-    //     console.log(`🚀  rest server started at port: http://${ENV_VAR.HOST}:${ENV_VAR.PORT}`);
-    //   });
-    // END SHOULD REMOVE
   } catch (e) {
     console.error(e);
     process.exit(1);
@@ -263,8 +235,9 @@ describe('Authz unit test', () => {
         client_name: 'Oidc client for wallet',
         redirect_uris: ['https://jwt.io'],
         response_types: ['code'],
-        grant_types: ['authorization_code'],
-        token_endpoint_auth_method: 'client_secret_post',
+        grant_types: ['urn:openid:params:grant-type:ciba'],
+        token_endpoint_auth_method: 'private_key_jwt',
+        // token_endpoint_auth_method: 'client_secret_post',
         // must be 'RS256' or 'PS256', in order to use "state" params
         id_token_signed_response_alg,
         application_type: 'web',
@@ -289,7 +262,7 @@ describe('Authz unit test', () => {
       .expect(({ body, status }) => {
         expect(body.subject_types_supported).toEqual(['public']);
         expect(status).toEqual(Status.OK);
-        // openIdConfig = body;
+        openIdConfig = body;
       }));
 
   // Each oidc-client is bound with one did:key.
@@ -398,42 +371,7 @@ describe('Authz unit test', () => {
       { alg }
     );
 
-    /**
-     * TODO: Below code section are NOT complete. Will revisit later.
-     * FINDING: 1. could not proceed. "express" returns 404 when interactions continue;
-     * not knowing if it can be resolved. 2. Auth0's login screen is able to detect
-     * the user agent is not browser, and reject it.
-     * Even 1 can be resolved, unlikely for 3. Seems that cannot run unit test against Auth0.
-     * But above bootstrapping step are Pre-requisite, for running cypress e2e test.
-     */
-
-    // SHOULD REMOVE
-    // const query = qs.stringify({
-    //   response_type,
-    //   client_id: clientId,
-    //   redirect_uri,
-    //   scope,
-    //   state,
-    //   code_challenge,
-    //   request: signedRequest,
-    // });
-    // const response = await fetch(
-    //   `https://issuer.example.com/oidc/issuers/${issuerId}/auth?${query}`,
-    //   { redirect: 'manual' }
-    // );
-    // const location = (response?.headers as any).raw()?.location;
-    // const cookies = (response.headers as any).raw()?.['set-cookie'] as string[];
-    // const cookie = cookies
-    //   .map((cookie) => cookie.split('path')[0])
-    //   .reduce((prev, curr) => prev + curr, '');
-    //
-    // const response2 = await fetch(`${location}?${query}`, {
-    //   headers: { cookie, redirect: 'manual', follow: 0 },
-    // });
-    // const json = await response2.text();
-    // END OF SHOULD REMOVE
-
-    await request(express)
+    return request(express)
       .get(`/oidc/issuers/${issuerId}/auth`)
       .query({
         response_type,
@@ -445,12 +383,28 @@ describe('Authz unit test', () => {
         request: signedRequest,
       })
       .set('host', 'issuer.example.com')
-      .set('Content-Type', 'application/x-www-form-urlencoded')
+      .set('Context-Type', 'application/x-www-form-urlencoded')
       .set('X-Forwarded-Proto', 'https')
       .redirects(0)
-      .expect(({ headers }) => {
-        location = headers.location;
-        // location: '/oidc/issuers/ObjEGmwtFV-8Ys35WBiF5/interaction/gS7vBo2Qzjx1VAM40cptk',
+      .expect((result) => {
+        console.log(result);
+        // console.log(headers);
+        // console.log(body);
       });
+
+    // JARM will return signed response as below
+    // https://jwt.io/?response=eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QiLCJraWQiOiIwNDgwODJhYWViYWU2NDJjY2RhYWIzMWExNTRlN2QwYTZkNGUyMjYwMThkZmNhZTkyZDA0YTQ5ZjAxYmMzZTIzNTRlNTc0YmY5Y2JhYjNiMjVlZjM3ZjFmZWZkNDRiYzE2MzlkOWFiOWMyZGMzYTFkM2YyNzEzM2IxNmVlYzExOGRhIn0.eyJjb2RlIjoicjFhR2ttbHRaV1M3RDlqdHB5NVB6ak9IRkJWTUdvNk4wVzFEdjQyU3JkSyIsInN0YXRlIjoicEllODV0MEZVRHBhOVZaQ012anR5N29OUXN6aFowWWkyakw0NDRGNnRhcyIsImF1ZCI6IlYxU3RHWFI4X1o1amRIaTZCLW15VCIsImV4cCI6MTYzMDgxMzc5MCwiaXNzIjoiaHR0cHM6Ly9pc3N1ZXIuZXhhbXBsZS5jb20vb2lkYy9pc3N1ZXJzL09iakVHbXd0RlYtOFlzMzVXQmlGNSJ9.SniYaEDtYAGj04JPKNT_buCMtwMRJU-Y7MMOkYmmdLLIxR0L1MmFFMnq6h6GZIG3F_TV0Oj-6T_frYo-wjguvg
+    // const header = {
+    //   alg: 'ES256K',
+    //   typ: 'JWT',
+    //   kid: '048082aaebae642ccdaab31a154e7d0a6d4e226018dfcae92d04a49f01bc3e2354e574bf9cbab3b25ef37f1fefd44bc1639d9ab9c2dc3a1d3f27133b16eec118da',
+    // };
+    // const payload = {
+    //   code: 'r1aGkmltZWS7D9jtpy5PzjOHFBVMGo6N0W1Dv42SrdK',
+    //   state: 'pIe85t0FUDpa9VZCMvjty7oNQszhZ0Yi2jL444F6tas',
+    //   aud: 'V1StGXR8_Z5jdHi6B-myT',
+    //   exp: 1630813790,
+    //   iss: 'https://issuer.example.com/oidc/issuers/ObjEGmwtFV-8Ys35WBiF5',
+    // };
   });
 });
