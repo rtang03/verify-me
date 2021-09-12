@@ -129,8 +129,8 @@ export const createOidcProviderConfig = (
       jwtResponseModes: { ack: 'implementers-draft-01', enabled: true },
       // https://github.com/panva/node-oidc-provider/tree/main/docs#featuresciba
       ciba: {
-        deliveryModes: ['poll'],
-        enabled: true,
+        deliveryModes: ['poll', 'ping'],
+        enabled: false,
         // Helper function used to process the login_hint parameter and return the accountId value to use for processsing the request.
         processLoginHint: async (ctx, loginHint) => {
           // @param ctx - koa request context
@@ -143,7 +143,8 @@ export const createOidcProviderConfig = (
           // @param loginHintToken - string value of the login_hint_token parameter
           throw new Error('features.ciba.processLoginHintToken not implemented');
         },
-        // Helper function used to trigger the authentication and authorization on end-user's Authentication Device. It is called after accepting the backchannel authentication request but before sending client back the response.
+        // Helper function used to trigger the authentication and authorization on end-user's Authentication Device. It is called after
+        // accepting the backchannel authentication request but before sending client back the response.
         // When the end-user authenticates use provider.backchannelResult() to finish the Consumption Device login process.
         triggerAuthenticationDevice: async (ctx, request, account, client) => {
           // @param ctx - koa request context
@@ -168,7 +169,6 @@ export const createOidcProviderConfig = (
         // Helper function used to verify the user_code parameter value is present when required and verify its value.
         verifyUserCode: async (ctx, userCode) => {
           // @param ctx - koa request context
-          // @param account -
           // @param userCode - string value of the user_code parameter, when not provided it is undefined
           throw new Error('features.ciba.verifyUserCode not implemented');
         },
@@ -211,10 +211,11 @@ export const createOidcProviderConfig = (
       credential_supported: true,
       credential_formats_supports: ['jwt'], // ['jwt', 'w3cvc-jsonld'],
       credential_claims_supported: supportedClaims,
-      // TODO: fix me
-      credential_name: 'University Credential',
       request_parameter_supported: true,
       require_signed_request_object: true,
+      // backchannel_user_code_parameter_supported: false,
+      // backchannel_token_delivery_modes_supported: ['poll'],
+      // backchannel_authentication_request_signing_alg_values_supported: ['ES256K'],
     },
     enabledJWA: {
       requestObjectSigningAlgValues: ['ES256K'],

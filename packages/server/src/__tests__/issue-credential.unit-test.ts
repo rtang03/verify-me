@@ -448,9 +448,13 @@ describe('Authz unit test', () => {
       .set('Content-Type', 'application/x-www-form-urlencoded')
       .set('X-Forwarded-Proto', 'https')
       .redirects(0)
-      .expect(({ headers }) => {
-        location = headers.location;
+      .expect(({ text, headers }) => {
+        console.log(text);
+        console.log(headers.location);
+        // location = headers.location;
         // location: '/oidc/issuers/ObjEGmwtFV-8Ys35WBiF5/interaction/gS7vBo2Qzjx1VAM40cptk',
+        // text will return
+        // 'Redirecting to <a href="/oidc/issuers/ObjEGmwtFV-8Ys35WBiF5/interaction/lC8LRZw7_VLtSf_l1uoy-">/oidc/issuers/ObjEGmwtFV-8Ys35WBiF5/interaction/lC8LRZw7_VLtSf_l1uoy-</a>."
       });
   });
 });

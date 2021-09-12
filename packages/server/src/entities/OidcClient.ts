@@ -1,4 +1,9 @@
-import type { ClientAuthMethod, ResponseType, SigningAlgorithmWithNone } from 'oidc-provider';
+import type {
+  CIBADeliveryMode,
+  ClientAuthMethod,
+  ResponseType,
+  SigningAlgorithmWithNone,
+} from 'oidc-provider';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 // https://openid.net/specs/openid-connect-registration-1_0.html
@@ -17,10 +22,10 @@ export class OidcClient {
   @Column({ type: 'varchar', length: 255, nullable: true })
   client_name: string;
 
-  @Column({ type: 'simple-array', nullable: false })
-  redirect_uris: string[];
+  @Column({ type: 'simple-array', nullable: true })
+  redirect_uris?: string[];
 
-  @Column({ type: 'simple-array', nullable: false })
+  @Column({ type: 'simple-array', nullable: true })
   response_types: ResponseType[];
 
   @Column({ type: 'simple-array', nullable: false })
@@ -38,12 +43,18 @@ export class OidcClient {
   @Column({ nullable: true })
   did: string;
 
-  @Column({ nullable: true })
-  jwks_uri: string;
+  // @Column({ nullable: true })
+  // jwks_uri?: string;
 
   // poll | ping
   @Column({ nullable: true })
-  backchannel_token_delivery_mode: string;
+  backchannel_token_delivery_mode?: CIBADeliveryMode;
+
+  @Column({ nullable: true })
+  backchannel_client_notification_endpoint?: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  backchannel_authentication_request_signing_alg?: SigningAlgorithmWithNone;
 
   [key: string]: unknown;
 }

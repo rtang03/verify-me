@@ -14,7 +14,7 @@
     "esModuleInterop": true,
     "noUnusedLocals": false,
     "resolveJsonModule": true,
-    "noEmit": true,
+    "noEmit": false,
   },
   "exclude": ["node_modules", "cypress"]
 }

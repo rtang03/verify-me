@@ -1,4 +1,5 @@
 require('dotenv').config({ path: './.env' });
+import qs from 'querystring';
 import { Identifier } from '@veramo/data-store';
 import didJWT from 'did-jwt';
 import { Express } from 'express';
@@ -233,14 +234,14 @@ describe('Authz unit test', () => {
       .set('authorization', `Bearer`)
       .send(<CreateOidcIssuerClientArgs>{
         client_name: 'Oidc client for wallet',
-        redirect_uris: ['https://jwt.io'],
-        response_types: ['code'],
         grant_types: ['urn:openid:params:grant-type:ciba'],
         token_endpoint_auth_method: 'private_key_jwt',
-        // token_endpoint_auth_method: 'client_secret_post',
-        // must be 'RS256' or 'PS256', in order to use "state" params
-        id_token_signed_response_alg,
         application_type: 'web',
+        backchannel_token_delivery_mode: 'poll',
+        // for use in ping / push callback
+        // backchannel_client_notification_endpoint: '',
+        backchannel_authentication_request_signing_alg: 'ES256K',
+        backchannel_user_code_parameter: true,
       })
       .expect(({ body, status }) => {
         expect(isOidcClient(body?.data)).toBeTruthy();
@@ -344,53 +345,74 @@ describe('Authz unit test', () => {
     // see https://github.com/decentralized-identity/did-jwt/blob/master/docs/guides/index.md
     const signedRequest = await didJWT.createJWT(
       {
+        client_notification_token: '8d67dc78-7faa-4d41-aabd-67707b374255',
+        // login_hint_token: '',
+        // id_token_hint: '',
+        login_hint: holder,
+        binding_message: 'abcdef',
+        user_code: '123456',
+        requested_expiry: '3600',
+        jti: '4LTCqACC2ESC5BWCnN3j58EnA',
         aud: `https://issuer.example.com/oidc/issuers/${issuerId}`,
         response_type,
         scope,
-        state,
-        redirect_uri,
-        client_id: clientId,
-        nonce,
-        credential_format,
-        code_challenge,
-        code_challenge_method,
-        response_mode,
-        claims,
+        // state,
+        // redirect_uri,
+        // client_id: clientId,
+        // nonce,
+        // credential_format,
+        // code_challenge,
+        // code_challenge_method,
+        // response_mode,
+        // claims,
         nbf: ~~(Date.now() / 1000),
         did: holder,
-        // ‼️‼️ VERY IMPORTANT: "sub" defines the key material the Credential Holder is requesting the credential to be bound to
-        // BUT it is *NOT* used for signed the request object. The OidcAdapter will use OidcClient's keystore, to validate the
-        // signed request object; hence the signer is OidcClient's private key; not the requester's did:key
-        // Note: thee Oid-provider treats request-params as string
-        // https://github.com/panva/node-oidc-provider/blob/4f52a4cf62d0e2282a8f6a1759725b8633135b83/lib/actions/authorization/process_request_object.js#L98
         sub_jwk: JSON.stringify(holderPublicKeyJwk),
       },
-      // "fapi advanced" require the request object to contain an exp claim that has a lifetime of
-      // no longer than 60 minutes after the nbf claim
       { issuer: clientId, signer, expiresIn: 3600 },
       { alg }
     );
 
-    return request(express)
-      .get(`/oidc/issuers/${issuerId}/auth`)
-      .query({
-        response_type,
-        client_id: clientId,
-        redirect_uri,
-        scope,
-        state,
-        code_challenge,
-        request: signedRequest,
-      })
-      .set('host', 'issuer.example.com')
-      .set('Context-Type', 'application/x-www-form-urlencoded')
-      .set('X-Forwarded-Proto', 'https')
-      .redirects(0)
-      .expect((result) => {
-        console.log(result);
-        // console.log(headers);
-        // console.log(body);
-      });
+    // const client_assertion = {
+    //   iss: 's6BhdRkqt3',
+    //   sub: 's6BhdRkqt3',
+    //   aud: 'https://server.example.com',
+    //   jti: 'cc_1Xsssf-2i8o2gPzIJk1',
+    //   iat: 1537819486,
+    //   exp: 1537819777,
+    // };
+
+    const query = qs.stringify({
+      request: signedRequest,
+      client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+      client_assertion:
+        'eyJraWQiOiJsdGFjZXNidyIsImFsZyI6IkVTMjU2In0.eyJpc3MiOiJzNkJoZFJrcXQzIiwic3ViIjoiczZCaGRSa3F0MyIsImF1ZCI6Imh0dHB' +
+        'zOi8vc2VydmVyLmV4YW1wbGUuY29tIiwianRpIjoiY2NfMVhzc3NmLTJpOG8yZ1B6SUprMSIsImlhdCI6MTUzNzgxOTQ4NiwiZXhwIjoxNTM3ODE5Nzc3fQ.PWb_VMzU' +
+        'IbD_aaO5xYpygnAlhRIjzoc6kxg4NixDuD1DVpkKVSBbBweqgbDLV-awkDtuWnyFyUpHqg83AUV5TA',
+    });
+
+    return (
+      request(express)
+        .post(`/oidc/issuers/${issuerId}/bc-auth`)
+        // .query({
+        //   response_type,
+        //   client_id: clientId,
+        //   redirect_uri,
+        //   scope,
+        //   state,
+        //   code_challenge,
+        //   request: signedRequest,
+        // })
+        .set('host', 'issuer.example.com')
+        .set('Context-Type', 'application/x-www-form-urlencoded')
+        .set('X-Forwarded-Proto', 'https')
+        .send(query)
+        .expect((result) => {
+          console.log(result);
+          // console.log(headers);
+          // console.log(body);
+        })
+    );
 
     // JARM will return signed response as below
     // https://jwt.io/?response=eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QiLCJraWQiOiIwNDgwODJhYWViYWU2NDJjY2RhYWIzMWExNTRlN2QwYTZkNGUyMjYwMThkZmNhZTkyZDA0YTQ5ZjAxYmMzZTIzNTRlNTc0YmY5Y2JhYjNiMjVlZjM3ZjFmZWZkNDRiYzE2MzlkOWFiOWMyZGMzYTFkM2YyNzEzM2IxNmVlYzExOGRhIn0.eyJjb2RlIjoicjFhR2ttbHRaV1M3RDlqdHB5NVB6ak9IRkJWTUdvNk4wVzFEdjQyU3JkSyIsInN0YXRlIjoicEllODV0MEZVRHBhOVZaQ012anR5N29OUXN6aFowWWkyakw0NDRGNnRhcyIsImF1ZCI6IlYxU3RHWFI4X1o1amRIaTZCLW15VCIsImV4cCI6MTYzMDgxMzc5MCwiaXNzIjoiaHR0cHM6Ly9pc3N1ZXIuZXhhbXBsZS5jb20vb2lkYy9pc3N1ZXJzL09iakVHbXd0RlYtOFlzMzVXQmlGNSJ9.SniYaEDtYAGj04JPKNT_buCMtwMRJU-Y7MMOkYmmdLLIxR0L1MmFFMnq6h6GZIG3F_TV0Oj-6T_frYo-wjguvg

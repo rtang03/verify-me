@@ -1,7 +1,7 @@
 import assert from 'assert';
 import { URLSearchParams } from 'url';
 import util from 'util';
-import { VerifiableCredential } from '@veramo/core';
+import { IIdentifier, VerifiableCredential } from '@veramo/core';
 import type { ICreateVerifiableCredentialArgs } from '@veramo/credential-w3c';
 import Debug from 'debug';
 import { NextFunction, Request, Response, Router } from 'express';
@@ -10,11 +10,17 @@ import { createRemoteJWKSet } from 'jose/jwks/remote';
 import { jwtVerify } from 'jose/jwt/verify';
 import { JWK, Provider } from 'oidc-provider';
 import { getConnection } from 'typeorm';
-import { OidcIssuer, Tenant } from '../entities';
+import { OidcClient, OidcIssuer, Tenant } from '../entities';
 import type { TenantManager } from '../types';
-import { CONIG, fetchOpenIdConfiguration, OIDC_PROFILE_CLAIM_MAPPINGS } from '../utils';
+import {
+  CONIG,
+  convertKeysToJwkSecp256k1,
+  fetchOpenIdConfiguration,
+  OIDC_PROFILE_CLAIM_MAPPINGS,
+} from '../utils';
 import { createOidcClientRoute } from './createOidcClientRoute';
 import { createOidcIssuerRoute } from './createOidcIssuerRoute';
+import { Identifier } from '@veramo/data-store';
 
 interface RequestWithVhost extends Request {
   vhost?: any;
@@ -63,6 +69,35 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     '/issuers/:issuer_id/clients',
     issuerIdMiddleware,
     createOidcClientRoute(tenantManger)
+  );
+
+  // public key for oidc client
+  router.get(
+    '/issuers/:issuer_id/clients/:client_id/jwks',
+    async (req: RequestWithVhost, res, next) => {
+      debug('GET /issuers/:issuer_id/clients/:client_id/jwks');
+
+      const issuer_id = req.params.issuer_id;
+      const client_id = req.params.client_id;
+
+      try {
+        const clientRepo = getConnection(req.tenantId).getRepository(OidcClient);
+        const identifierRepo = getConnection(req.tenantId).getRepository(Identifier);
+        const client = await clientRepo.findOne({ where: { client_id, issuer_id } });
+
+        if (!client) return res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND' });
+
+        const identifier: IIdentifier = await identifierRepo.findOne(client.did);
+        const jwks = identifier && {
+          keys: [convertKeysToJwkSecp256k1(identifier.controllerKeyId).publicKeyJwk],
+        };
+        return jwks
+          ? res.status(Status.OK).send(jwks)
+          : res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND' });
+      } catch (err) {
+        next(err);
+      }
+    }
   );
 
   // oidc client registration, using default endpoint "oidc/issuers/:id/reg"

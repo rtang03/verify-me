@@ -101,6 +101,7 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
       // add keystore (public key) to each client
       if (this.type === TCLIENT) {
         const identifier: IIdentifier = await identifierRepo.findOne(data.did);
+        // Note: it adds keystore, in order for OP to sign the id_token
         data.jwks = identifier && {
           keys: [convertKeysToJwkSecp256k1(identifier.controllerKeyId).publicKeyJwk],
         };
