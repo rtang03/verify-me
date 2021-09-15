@@ -11,6 +11,9 @@ export class OidcIssuer {
   @JoinColumn()
   federatedProvider: OidcFederatedProvider;
 
+  // TODO: need refactoring, OidcCredential defines type of Credential offered by this issuers
+  // maybe, the "issuerDid" of OidcCredential should be equal to "did".
+  // Currently, this field is NOT related to id_token issuance
   @OneToOne(() => OidcCredential, { cascade: true })
   @JoinColumn()
   credential: OidcCredential;

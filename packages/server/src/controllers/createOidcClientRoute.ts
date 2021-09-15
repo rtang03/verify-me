@@ -1,31 +1,38 @@
 import { randomBytes } from 'crypto';
 import type { IDIDManagerGetOrCreateArgs, IIdentifier } from '@veramo/core';
 import Debug from 'debug';
-import type { Request } from 'express';
 import Status from 'http-status';
 import { nanoid } from 'nanoid';
+import type { SigningAlgorithmWithNone } from 'oidc-provider';
 import { getConnection } from 'typeorm';
 import { OidcClient } from '../entities';
-import type { Paginated } from '../types';
+import type { Paginated, RequestWithVhost } from '../types';
 import type { TenantManager } from '../types';
-import { createRestRoute, isCreateOidcIssuerClientArgs } from '../utils';
-import { SigningAlgorithmWithNone } from 'oidc-provider';
-
-interface RequestWithVhost extends Request {
-  vhost?: any;
-  tenantId?: string;
-  issuerId?: string;
-}
+import {
+  createRestRoute,
+  isCreateOidcIssuerClientArgs,
+  isCreateOidcVerifierClientArgs,
+} from '../utils';
 
 const debug = Debug('utils:createOidcClientRoute');
 
-export const createOidcClientRoute = (tenantManger: TenantManager) =>
+export const createOidcClientRoute = (
+  tenantManger: TenantManager,
+  clientType: 'verifier' | 'issuer' = 'issuer'
+) =>
   createRestRoute({
     GET: async (req: RequestWithVhost, res) => {
-      const issuerId = req.issuerId;
-      const clientId = req.params.id;
+      const issuerId = clientType === 'issuer' ? req.issuerId : undefined;
+      const verifierId = clientType === 'verifier' ? req.verifierId : undefined;
+
+      const client_id = req.params.id;
       const clientRepo = getConnection(req.tenantId).getRepository(OidcClient);
-      const items = await clientRepo.find({ where: { issuerId, client_id: clientId } });
+
+      const items = await clientRepo.find(
+        clientType === 'issuer'
+          ? { where: { issuerId, client_id } }
+          : { where: { verifierId, client_id } }
+      );
 
       const data = <Paginated<OidcClient>>{
         total: items.length,
@@ -38,10 +45,13 @@ export const createOidcClientRoute = (tenantManger: TenantManager) =>
       else res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND', data });
     },
     GET_ALL: async (req: RequestWithVhost, res, skip, take) => {
-      const issuerId = req.issuerId;
+      const issuerId = clientType === 'issuer' ? req.issuerId : undefined;
+      const verifierId = clientType === 'verifier' ? req.verifierId : undefined;
+
+      const where = clientType === 'issuer' ? { issuerId } : { verifierId };
+
       const clientRepo = getConnection(req.tenantId).getRepository(OidcClient);
-      const where = { where: { issuerId } };
-      const [items, total] = await clientRepo.findAndCount({ skip, take, ...where });
+      const [items, total] = await clientRepo.findAndCount({ skip, take, where });
       const hasMore = skip + take < total;
       const cursor = hasMore ? skip + take : total;
       const data = <Paginated<OidcClient>>{
@@ -55,37 +65,57 @@ export const createOidcClientRoute = (tenantManger: TenantManager) =>
       else res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND', data });
     },
     POST: async (req: RequestWithVhost, res) => {
-      const issuerId = req.issuerId;
+      const issuerId = clientType === 'issuer' ? req.issuerId : undefined;
+      const verifierId = clientType === 'verifier' ? req.verifierId : undefined;
+
       const body: unknown = req.body;
 
       // NOTE: When running Jest, we need a FIXED Oidc-issuer Id, so that the federated oidc provider is
       // configured with fixed "allowed Callback url"
       const isRunningJest = process.env.NODE_ENV === 'test';
       const id = isRunningJest ? process.env.JEST_FIXED_OIDC_CLIENT_ID : nanoid();
+      const clientRepo = getConnection(req.tenantId).getRepository(OidcClient);
 
-      if (isCreateOidcIssuerClientArgs(body)) {
-        const clientRepo = getConnection(req.tenantId).getRepository(OidcClient);
+      // Note: Add did to new Oidc-client here, using Veramo agent
+      // Hence, we do NOT use OneOnOne JoinColumn in OidcClient with auto cascade
+      const slug = req.vhost[0];
+      const agent = tenantManger.getAgents()[slug];
+      const isValidArgs =
+        clientType === 'issuer'
+          ? isCreateOidcIssuerClientArgs(body)
+          : isCreateOidcVerifierClientArgs(body);
 
-        // Note: Add did to new Oidc-client here, using Veramo agent
-        // Hence, we do NOT use OneOnOne JoinColumn in OidcClient with auto cascade
-        const slug = req.vhost[0];
-        const agent = tenantManger.getAgents()[slug];
+      if (!isValidArgs)
+        return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'invalid argument' });
 
-        // hardcoded key generation method
-        const agentArgs: IDIDManagerGetOrCreateArgs = {
-          alias: id, // oidc-client 's id
-          provider: 'did:key',
-          kms: 'local',
-        };
-        const identifier: IIdentifier = await agent.execute('didManagerGetOrCreate', agentArgs);
+      // Key Generation
+      const agentArgs: IDIDManagerGetOrCreateArgs = {
+        alias: id,
+        provider: 'did:key',
+        kms: 'local',
+      };
+      const identifier: IIdentifier = await agent.execute('didManagerGetOrCreate', agentArgs);
 
-        debug('oidc-client did, %O', identifier);
+      debug('oidc-client did, %O', identifier);
 
-        if (!identifier)
-          return res
-            .status(Status.BAD_REQUEST)
-            .send({ status: 'ERROR', error: 'fail to create did' });
+      if (!identifier)
+        return res
+          .status(Status.BAD_REQUEST)
+          .send({ status: 'ERROR', error: 'fail to create did' });
+      // End of Key Generation
 
+      const client = new OidcClient();
+
+      /* client_id */
+      client.client_id = id;
+
+      /* did */
+      client.did = identifier.did;
+
+      /* auto-gen client_secret */
+      client.client_secret = randomBytes(12).toString('hex');
+
+      if (clientType === 'issuer' && isCreateOidcIssuerClientArgs(body)) {
         const {
           grant_types,
           client_name,
@@ -94,36 +124,20 @@ export const createOidcClientRoute = (tenantManger: TenantManager) =>
           response_types,
           id_token_signed_response_alg,
           application_type,
-          backchannel_token_delivery_mode,
-          backchannel_client_notification_endpoint,
-          backchannel_authentication_request_signing_alg,
         } = body;
-
-        const client = new OidcClient();
-        // A. Common fields
-        /* client_id */
-        client.client_id = id;
-
-        // GrantTypes determines the param requirement:
-        // ['authorization_code'] or
-        // ['urn:openid:params:grant-type:ciba'] or
-        // ['authorization_code','urn:openid:params:grant-type:ciba']
 
         /* grant_types */
         client.grant_types = grant_types;
-
-        const isAuthCodeFlow = grant_types.includes('authorization_code');
-        const isCibaFlow = grant_types.includes('urn:openid:params:grant-type:ciba');
+        if (!grant_types.includes('authorization_code'))
+          return res
+            .status(Status.BAD_REQUEST)
+            .send({ status: 'ERROR', error: 'only authorization_code is supported' });
 
         /* client_name */
         client_name && (client.client_name = client_name);
 
-        // B. Common mandatory fields
         /* issuerId */
         client.issuerId = issuerId;
-
-        /* auto-gen client_secret */
-        client.client_secret = randomBytes(12).toString('hex');
 
         /* token_endpoint_auth_method */
         if (!token_endpoint_auth_method) throw new Error('token_endpoint_auth_method is mandatory');
@@ -133,76 +147,106 @@ export const createOidcClientRoute = (tenantManger: TenantManager) =>
         if (!['web', 'native'].includes(application_type)) throw new Error('invalid value');
         client.application_type = application_type;
 
-        // OidcClient is bound to Did (and also its key)
-        /* did */
-        client.did = identifier.did;
-
-        // jwks_uri can jwks cannot coexist. Decide later which one should I use?
+        // TODO: jwks_uri can jwks cannot coexist. Decide later which one should I use?
         /* jwks_uri */
         // client.jwks_uri = `https://${req.hostname}/oidc/issuers/${issuerId}/clients/${id}/jwks`;
 
-        // C. (1) client metadata for auth_code flow
-        if (isAuthCodeFlow) {
-          /* mandatory: redirect_uris */
-          if (!redirect_uris) throw new Error('redirect_uris is mandatory');
-          client.redirect_uris = redirect_uris;
+        /* redirect_uris */
+        if (!redirect_uris) throw new Error('redirect_uris is mandatory');
+        client.redirect_uris = redirect_uris;
 
-          /* mandatory: response_types */
-          if (!response_types) throw new Error('response_types is mandatory');
-          client.response_types = response_types;
+        /* response_types */
+        if (!response_types) throw new Error('response_types is mandatory');
+        client.response_types = response_types;
 
-          /* mandatory: id_token_signed_response_alg */
-          if (!id_token_signed_response_alg)
-            throw new Error('id_token_signed_response_alg is mandatory');
-          client.id_token_signed_response_alg = id_token_signed_response_alg;
+        /* id_token_signed_response_alg */
+        if (!id_token_signed_response_alg)
+          throw new Error('id_token_signed_response_alg is mandatory');
+        client.id_token_signed_response_alg = id_token_signed_response_alg;
+      } else if (isCreateOidcVerifierClientArgs(body)) {
+        const {
+          grant_types,
+          client_name,
+          token_endpoint_auth_method,
+          application_type,
+          id_token_signed_response_alg,
+          backchannel_token_delivery_mode,
+          backchannel_client_notification_endpoint,
+          backchannel_authentication_request_signing_alg,
+        } = body;
 
-          client.backchannel_user_code_parameter = null;
-        }
+        /* grant_types */
+        client.grant_types = grant_types;
+        if (!grant_types.includes('urn:openid:params:grant-type:ciba'))
+          return res.status(Status.BAD_REQUEST).send({
+            status: 'ERROR',
+            error: 'only urn:openid:params:grant-type:ciba is supported',
+          });
 
-        // C. (2) Backchannel client
-        if (isCibaFlow) {
-          /* mandatory: backchannel_token_delivery_mode */
-          if (!backchannel_token_delivery_mode)
-            throw new Error('backchannel_token_delivery_mode is mandatory');
+        /* client_name */
+        client_name && (client.client_name = client_name);
 
-          if (!['ping', 'poll'].includes(backchannel_token_delivery_mode))
-            throw new Error('only ping or poll allowed');
-          client.backchannel_token_delivery_mode = backchannel_token_delivery_mode;
+        /* verifierId */
+        client.verifierId = verifierId;
 
-          /* optional: backchannel_client_notification_endpoint */
-          backchannel_client_notification_endpoint &&
-            (client.backchannel_client_notification_endpoint =
-              backchannel_client_notification_endpoint);
+        /* token_endpoint_auth_method */
+        if (!token_endpoint_auth_method) throw new Error('token_endpoint_auth_method is mandatory');
+        client.token_endpoint_auth_method = token_endpoint_auth_method;
 
-          /* optional: backchannel_authentication_request_signing_alg */
-          if (!['ES256K'].includes(backchannel_authentication_request_signing_alg))
-            throw new Error('only ES245K is suppported');
-          client.backchannel_authentication_request_signing_alg =
-            (backchannel_authentication_request_signing_alg ||
-              'ES256K') as SigningAlgorithmWithNone;
+        /* application_type */
+        if (!['web', 'native'].includes(application_type)) throw new Error('invalid value');
+        client.application_type = application_type;
 
-          /* optional: backchannel_user_code_parameter */
-          // typeof backchannel_user_code_parameter === 'boolean' &&
-          //   (client.backchannel_user_code_parameter = backchannel_user_code_parameter);
-        }
+        /* backchannel_token_delivery_mode */
+        if (!backchannel_token_delivery_mode)
+          throw new Error('backchannel_token_delivery_mode is mandatory');
 
-        const data = await clientRepo.save(client);
+        if (!['ping', 'poll'].includes(backchannel_token_delivery_mode))
+          throw new Error('only ping or poll allowed');
+        client.backchannel_token_delivery_mode = backchannel_token_delivery_mode;
 
-        debug('POST /oidc/issuers/:id/clients, %O', data);
+        /* backchannel_client_notification_endpoint */
+        backchannel_client_notification_endpoint &&
+          (client.backchannel_client_notification_endpoint =
+            backchannel_client_notification_endpoint);
 
-        res.status(Status.CREATED).send({ status: 'OK', data });
-      } else res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'invalid argument' });
+        /* backchannel_authentication_request_signing_alg */
+        if (!['ES256K'].includes(backchannel_authentication_request_signing_alg))
+          throw new Error('only ES245K is suppported');
+        client.backchannel_authentication_request_signing_alg =
+          (backchannel_authentication_request_signing_alg || 'ES256K') as SigningAlgorithmWithNone;
+
+        /* optional: backchannel_user_code_parameter */
+        // typeof backchannel_user_code_parameter === 'boolean' &&
+        //   (client.backchannel_user_code_parameter = backchannel_user_code_parameter);
+        /* id_token_signed_response_alg */
+        if (!id_token_signed_response_alg)
+          throw new Error('id_token_signed_response_alg is mandatory');
+        client.id_token_signed_response_alg = id_token_signed_response_alg;
+      }
+
+      const data = await clientRepo.save(client);
+
+      debug('POST /oidc/issuers/:id/clients, %O', data);
+
+      res.status(Status.CREATED).send({ status: 'OK', data });
     },
     DELETE: async (req: RequestWithVhost, res) => {
-      const issuerId = req.issuerId;
-      const clientId = req.params.id;
+      const issuerId = clientType === 'issuer' ? req.issuerId : undefined;
+      const verifierId = clientType === 'verifier' ? req.verifierId : undefined;
+
+      const client_id = req.params.id;
       const clientRepo = getConnection(req.tenantId).getRepository(OidcClient);
 
       // ensure the client belongings to this issuer
-      const client = await clientRepo.findOne({ where: { issuerId, client_id: clientId } });
+      const client = await clientRepo.findOne(
+        clientType === 'issuer'
+          ? { where: { issuerId, client_id } }
+          : { where: { verifierId, client_id } }
+      );
 
       if (client) {
-        const data = await clientRepo.delete(clientId);
+        const data = await clientRepo.delete(client_id);
         res.status(Status.OK).send({ status: 'OK', data });
       } else
         res
@@ -210,11 +254,18 @@ export const createOidcClientRoute = (tenantManger: TenantManager) =>
           .send({ status: 'ERROR', error: 'clientId and issuerId mismatch' });
     },
     PUT: async (req: RequestWithVhost, res) => {
-      const issuerId = req.issuerId;
-      const clientId = req.params.id;
+      const issuerId = clientType === 'issuer' ? req.issuerId : undefined;
+      const verifierId = clientType === 'verifier' ? req.verifierId : undefined;
+
+      const client_id = req.params.id;
       const body = req.body;
       const clientRepo = getConnection(req.tenantId).getRepository(OidcClient);
-      const client = await clientRepo.findOne({ where: { issuerId, client_id: clientId } });
+
+      const client = await clientRepo.findOne(
+        clientType === 'issuer'
+          ? { where: { issuerId, client_id } }
+          : { where: { verifierId, client_id } }
+      );
 
       // TODO: need some validation here
       // e.g. add typeguard "isUpdateOidcClientArg"

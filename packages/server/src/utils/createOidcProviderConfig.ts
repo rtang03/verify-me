@@ -7,14 +7,36 @@ import { ClaimMapping, getClaimMappings } from './oidcProfileClaimMappings';
 
 const debug = Debug('utils:createOidcProviderConfig');
 
-export const createOidcProviderConfig = (
-  connectionName: string,
-  issuerId: string,
-  jwks: { keys: JWK[] },
+// Provider Configuration for Issuer and Verifier are different.
+// Issuer: authorization_code
+// Verifier: ciba
+export const createOidcProviderConfig = (option: {
+  connectionName: string;
+  issuerId?: string;
+  verifierId?: string;
+  jwks: { keys: JWK[] };
   // claimMappings includes user-defined claims; not including "email", "address", "phone", "profile"
-  claimMappings: ClaimMapping[]
-) => {
+  claimMappings: ClaimMapping[];
+  isIssuerOrVerifier: 'issuer' | 'verifier';
+}) => {
+  const { connectionName, isIssuerOrVerifier, claimMappings, issuerId, verifierId, jwks } = option;
   const { supportedClaims } = getClaimMappings(claimMappings);
+  const isCiba = isIssuerOrVerifier === 'verifier';
+  const commonConfiguration = {
+    dids_supported: true,
+    credential_formats_supports: ['jwt'], // ['jwt', 'w3cvc-jsonld'],
+    credential_claims_supported: supportedClaims,
+    request_parameter_supported: true,
+    require_signed_request_object: true,
+  };
+  const discovery = isCiba
+    ? {
+        ...commonConfiguration,
+        backchannel_user_code_parameter_supported: false,
+        backchannel_token_delivery_modes_supported: ['poll'],
+        backchannel_authentication_request_signing_alg_values_supported: ['ES256K'],
+      }
+    : commonConfiguration;
 
   return <Configuration>{
     jwks,
@@ -130,7 +152,7 @@ export const createOidcProviderConfig = (
       // https://github.com/panva/node-oidc-provider/tree/main/docs#featuresciba
       ciba: {
         deliveryModes: ['poll', 'ping'],
-        enabled: false,
+        enabled: isCiba,
         // Helper function used to process the login_hint parameter and return the accountId value to use for processsing the request.
         processLoginHint: async (ctx, loginHint) => {
           // @param ctx - koa request context
@@ -177,7 +199,10 @@ export const createOidcProviderConfig = (
     },
     interactions: {
       // ❓TODO: change from interaction.uid to interaction.jti ..... NOT sure if this correct. Need revisit
-      url: (ctx, interaction) => `/oidc/issuers/${issuerId}/interaction/${interaction.jti}`,
+      url: (ctx, interaction) =>
+        isIssuerOrVerifier === 'issuer'
+          ? `/oidc/issuers/${issuerId}/interaction/${interaction.jti}`
+          : `/oidc/verifiers/${verifierId}/interaction/${interaction.jti}`,
     },
     ttl: {
       AccessToken: 86400,
@@ -193,30 +218,11 @@ export const createOidcProviderConfig = (
       pkceRequired: (ctx, client) => true,
     },
     // NOTE: id_token may be REMOVE. Should use access_token to fetch /credential endpoint instead.
-    responseTypes: [
-      'code',
-      'code token',
-      'id_token',
-      'code id_token',
-      'code id_token token',
-      // 'id_token token',
-      // 'none',
-    ],
-    scopes: ['openid', 'offline_access', 'openid_credential', 'profile', 'email', 'address'],
+    responseTypes: ['code', 'code token', 'id_token', 'code id_token', 'code id_token token'],
+    scopes: ['openid' /* 'offline_access'*/, 'openid_credential', 'profile', 'email', 'address'],
     // see full example for discovery: https://learn.mattr.global/api-reference/v1.0.1#operation/issuerWellKnownOidcConfig
     // standard params: https://openid.net/specs/openid-connect-discovery-1_0.html
-    discovery: {
-      dids_supported: true,
-      did_methods_supported: ['did:web'],
-      credential_supported: true,
-      credential_formats_supports: ['jwt'], // ['jwt', 'w3cvc-jsonld'],
-      credential_claims_supported: supportedClaims,
-      request_parameter_supported: true,
-      require_signed_request_object: true,
-      // backchannel_user_code_parameter_supported: false,
-      // backchannel_token_delivery_modes_supported: ['poll'],
-      // backchannel_authentication_request_signing_alg_values_supported: ['ES256K'],
-    },
+    discovery,
     enabledJWA: {
       requestObjectSigningAlgValues: ['ES256K'],
       idTokenSigningAlgValues: ['ES256K'],
@@ -224,5 +230,6 @@ export const createOidcProviderConfig = (
       userinfoSigningAlgValues: ['ES256K'],
     },
     tokenEndpointAuthMethods: ['client_secret_jwt', 'client_secret_post', 'private_key_jwt'],
+    response_modes_supported: ['form_post', 'jwt'],
   };
 };

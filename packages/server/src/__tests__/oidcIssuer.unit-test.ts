@@ -10,7 +10,7 @@ import type {
   CreateOidcIssuerClientArgs,
   Paginated,
 } from '../types';
-import { createHttpServer, isOidcClient, isOidcIssuer, isTenant } from '../utils';
+import { createHttpServer, isOidcIssuerClient, isOidcIssuer, isTenant } from '../utils';
 
 /**
  * Tests with Oidc-Issuers CRUD
@@ -460,7 +460,7 @@ describe('Oidc Issuer Tests', () => {
         application_type: 'web',
       })
       .expect(({ body, status }) => {
-        expect(isOidcClient(body?.data)).toBeTruthy();
+        expect(isOidcIssuerClient(body?.data)).toBeTruthy();
         expect(status).toEqual(Status.CREATED);
         clientId = body?.data?.client_id;
       }));
@@ -496,7 +496,7 @@ describe('Oidc Issuer Tests', () => {
       .set('authorization', `Bearer`)
       .expect(({ body, status }) => {
         expect(body?.data?.total).toEqual(1);
-        expect(isOidcClient(body?.data?.items?.[0])).toBeTruthy();
+        expect(isOidcIssuerClient(body?.data?.items?.[0])).toBeTruthy();
         expect(body?.data?.items?.[0].client_id).toEqual(clientId);
         expect(status).toEqual(Status.OK);
       }));
@@ -520,7 +520,7 @@ describe('Oidc Issuer Tests', () => {
       .set('authorization', `Bearer`)
       .expect(({ body, status }) => {
         expect(body?.data?.total).toEqual(1);
-        expect(isOidcClient(body?.data?.items?.[0])).toBeTruthy();
+        expect(isOidcIssuerClient(body?.data?.items?.[0])).toBeTruthy();
         expect(body?.data?.items?.[0].client_id).toEqual(clientId);
         expect(status).toEqual(Status.OK);
       }));

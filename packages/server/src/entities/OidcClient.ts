@@ -12,9 +12,11 @@ export class OidcClient {
   @PrimaryColumn()
   client_id: string;
 
-  // TODO: verifiy the use of this field
-  @Column({ type: 'varchar', length: 255, nullable: false })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   issuerId: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  verifierId: string;
 
   @Column({ type: 'varchar', length: 255, nullable: false })
   client_secret: string;

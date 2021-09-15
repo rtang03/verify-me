@@ -1,14 +1,12 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class OidcVerifier {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn()
   id: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
-  verifierDid: string;
-
-  @Column({ type: 'varchar', length: 255, nullable: false })
+  // TODO: Not knowing if I need this field. Double check it later
+  @Column({ nullable: true })
   presentationTemplateId: string;
 
   @Column({ type: 'simple-json', nullable: false })
@@ -16,4 +14,9 @@ export class OidcVerifier {
     jsonLdTerm: string;
     oidcClaim: string;
   }>;
+
+  // Note: intentionally, not picking OneToOne JoinColumn, because the corresponding did is created
+  // using veramo agent method, instead of direct psql-insert
+  @Column({ nullable: true })
+  did: string;
 }

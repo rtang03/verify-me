@@ -1,18 +1,11 @@
 import type { IDIDManagerGetOrCreateArgs, IIdentifier } from '@veramo/core';
 import Debug from 'debug';
-import type { Request } from 'express';
 import Status from 'http-status';
 import { nanoid } from 'nanoid';
 import { getConnection } from 'typeorm';
 import { OidcCredential, OidcFederatedProvider, OidcIssuer } from '../entities';
-import type { Paginated, TenantManager } from '../types';
+import type { Paginated, RequestWithVhost, TenantManager } from '../types';
 import { createRestRoute, isCreateOidcIssuerArgs } from '../utils';
-
-interface RequestWithVhost extends Request {
-  vhost?: any;
-  tenantId?: string;
-  issuerId?: string;
-}
 
 const debug = Debug('utils:createOidcIssuerRoute');
 
@@ -38,7 +31,6 @@ export const createOidcIssuerRoute = (tenantManger: TenantManager) =>
     },
     GET_ALL: async (req: RequestWithVhost, res, skip, take) => {
       const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
-
       const [items, total] = await issuerRepo.findAndCount({
         skip,
         take,

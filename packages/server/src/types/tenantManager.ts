@@ -9,11 +9,13 @@ export type TenantStatus = {
 };
 
 export type TenantManager = {
-  createOrGetOidcProvider: (
-    hostname: string,
-    tenantId: string,
-    issuerId: string
-  ) => Promise<Provider>;
+  createOrGetOidcProvider: (option: {
+    hostname: string;
+    tenantId: string;
+    issuerId?: string;
+    verifierId?: string;
+    isIssuerOrVerifier: 'issuer' | 'verifier';
+  }) => Promise<Provider>;
   activate: (tenantId: string) => Promise<boolean>;
   connectAllDatabases: () => Promise<void>;
   deactivate: (tenantId: string) => Promise<boolean>;

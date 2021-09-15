@@ -16,7 +16,7 @@ import type { CreateOidcIssuerArgs, CreateOidcIssuerClientArgs } from '../types'
 import {
   createHttpServer,
   getClaimMappings,
-  isOidcClient,
+  isOidcIssuerClient,
   isOidcIssuer,
   isTenant,
   generators,
@@ -234,6 +234,7 @@ describe('Authz unit test', () => {
       .set('authorization', `Bearer`)
       .send(<CreateOidcIssuerArgs>{
         credential: {
+          // TODO: revisit what is the right value of issuerDid
           issuerDid: 'did:web:issuer.example.com',
           name: 'federated_credential',
           description: 'unit test',
@@ -270,7 +271,7 @@ describe('Authz unit test', () => {
         application_type: 'web',
       })
       .expect(({ body, status }) => {
-        expect(isOidcClient(body?.data)).toBeTruthy();
+        expect(isOidcIssuerClient(body?.data)).toBeTruthy();
         expect(status).toEqual(Status.CREATED);
         clientId = body?.data?.client_id;
       }));

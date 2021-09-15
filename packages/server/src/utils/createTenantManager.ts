@@ -67,7 +67,13 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
   const tenantRepo = getConnection('default').getRepository(Tenant);
 
   return {
-    createOrGetOidcProvider: async (hostname, tenantId, issuerId) => {
+    createOrGetOidcProvider: async ({
+      hostname,
+      tenantId,
+      issuerId,
+      verifierId,
+      isIssuerOrVerifier,
+    }) => {
       // step 1: Add did to new Tenant; which generate key pair, for use by Oidc provider's jwks_uri
       const slug = hostname.split('.')[0];
       const agent = agents[slug];
@@ -93,42 +99,36 @@ export const createTenantManager: (commonConnection: Connection) => TenantManage
       const jwks = { keys: [keyJwk.privateKeyJwk] };
 
       // step 3: get or create Provider
-      const uri = `https://${hostname}/oidc/issuers/${issuerId}`;
-
-      /* To be refactored
-      // if creating new OidcProvider, retrieve OidcIssuer's claimMapping
-      let mappings: ClaimMapping[] = [];
-      if (!oidcProivders[tenantId]) {
-        const oidcIssuerRepo = await getConnection(tenantId).getRepository(OidcIssuer);
-        try {
-          const issuer = await oidcIssuerRepo.findOne(issuerId);
-          mappings = issuer?.claimMappings || [];
-        } catch (err) {
-          console.error(err);
-        }
-      }
-
-      // create or get OidcProvider
-      oidcProivders[tenantId] ??= new Provider(
-        uri,
-        createOidcProviderConfig(tenantId, issuerId, jwks, mappings)
-      );
-       */
+      const path = `${isIssuerOrVerifier}s`;
+      const uri =
+        isIssuerOrVerifier === 'issuer'
+          ? `https://${hostname}/oidc/${path}/${issuerId}`
+          : `https://${hostname}/oidc/${path}/${verifierId}`;
 
       // New code: will fetch Oidc-issuer's claimMappings. And, will assign new provider
-      let mappings: ClaimMapping[] = [];
-      const oidcIssuerRepo = await getConnection(tenantId).getRepository(OidcIssuer);
+      let claimMappings: ClaimMapping[] = [];
       try {
-        const issuer = await oidcIssuerRepo.findOne(issuerId);
-        mappings = issuer?.claimMappings || [];
+        const issuerRepo = getConnection(tenantId).getRepository(OidcIssuer);
+        const verifierRepo = getConnection(tenantId).getRepository(OidcVerifier);
+        const result =
+          isIssuerOrVerifier === 'issuer'
+            ? await issuerRepo.findOne(issuerId)
+            : await verifierRepo.findOne(verifierId);
+        claimMappings &&= result.claimMappings;
       } catch (err) {
         console.error(err);
+        console.warn('no claims are mapped');
       }
+
       // TODO: not 100% sure, if there is no memory leaked, for creating provider each time
-      oidcProivders[tenantId] = new Provider(
-        uri,
-        createOidcProviderConfig(tenantId, issuerId, jwks, mappings)
-      );
+      // it hanndles situtation: after claimMapping is updated, openid-configuration is reflected.
+      const baseOption = { connectionName: tenantId, jwks, claimMappings, isIssuerOrVerifier };
+      const providerOption =
+        isIssuerOrVerifier === 'issuer'
+          ? { ...baseOption, issuerId }
+          : { ...baseOption, verifierId };
+
+      oidcProivders[tenantId] = new Provider(uri, createOidcProviderConfig(providerOption));
 
       // see https://github.com/panva/node-oidc-provider/tree/main/docs#trusting-tls-offloading-proxies
       oidcProivders[tenantId].proxy = true;

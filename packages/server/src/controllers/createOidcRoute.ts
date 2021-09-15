@@ -1,17 +1,18 @@
 import assert from 'assert';
 import { URLSearchParams } from 'url';
 import util from 'util';
-import { IIdentifier, VerifiableCredential } from '@veramo/core';
+import type { IIdentifier, VerifiableCredential } from '@veramo/core';
 import type { ICreateVerifiableCredentialArgs } from '@veramo/credential-w3c';
+import { Identifier } from '@veramo/data-store';
 import Debug from 'debug';
 import { NextFunction, Request, Response, Router } from 'express';
 import Status from 'http-status';
 import { createRemoteJWKSet } from 'jose/jwks/remote';
 import { jwtVerify } from 'jose/jwt/verify';
-import { JWK, Provider } from 'oidc-provider';
+import type { JWK } from 'oidc-provider';
 import { getConnection } from 'typeorm';
-import { OidcClient, OidcIssuer, Tenant } from '../entities';
-import type { TenantManager } from '../types';
+import { OidcClient, OidcIssuer, OidcVerifier, Tenant } from '../entities';
+import type { RequestWithVhost, TenantManager } from '../types';
 import {
   CONIG,
   convertKeysToJwkSecp256k1,
@@ -20,23 +21,9 @@ import {
 } from '../utils';
 import { createOidcClientRoute } from './createOidcClientRoute';
 import { createOidcIssuerRoute } from './createOidcIssuerRoute';
-import { Identifier } from '@veramo/data-store';
-
-interface RequestWithVhost extends Request {
-  vhost?: any;
-  issuerId?: string;
-  tenantId?: string;
-  issuer?: OidcIssuer;
-  openIdConfig?: any;
-  oidcProvider?: Provider;
-}
+import { createOidcVerifierRoute } from './createOidcVerifierRoute';
 
 const debug = Debug('utils:createOidcRoute');
-
-const issuerIdMiddleware = async (req: RequestWithVhost, res: Response, next: NextFunction) => {
-  req.issuerId = req.params.issuer_id;
-  next();
-};
 
 const setNoCache = (req: Request, res: Response, next: NextFunction) => {
   res.set('Pragma', 'no-cache');
@@ -64,11 +51,19 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     next();
   });
 
+  /*******************
+   * SECTION: ISSUERS
+   ******************/
+  const withIssuerId = async (req: RequestWithVhost, res: Response, next: NextFunction) => {
+    req.issuerId = req.params.issuer_id;
+    next();
+  };
+
   // REST for oidc-issuer's client
   router.use(
     '/issuers/:issuer_id/clients',
-    issuerIdMiddleware,
-    createOidcClientRoute(tenantManger)
+    withIssuerId,
+    createOidcClientRoute(tenantManger, 'issuer')
   );
 
   // public key for oidc client
@@ -77,13 +72,13 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     async (req: RequestWithVhost, res, next) => {
       debug('GET /issuers/:issuer_id/clients/:client_id/jwks');
 
-      const issuer_id = req.params.issuer_id;
+      const issuerId = req.params.issuer_id;
       const client_id = req.params.client_id;
 
       try {
         const clientRepo = getConnection(req.tenantId).getRepository(OidcClient);
         const identifierRepo = getConnection(req.tenantId).getRepository(Identifier);
-        const client = await clientRepo.findOne({ where: { client_id, issuer_id } });
+        const client = await clientRepo.findOne({ where: { client_id, issuerId } });
 
         if (!client) return res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND' });
 
@@ -101,7 +96,11 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
   );
 
   // oidc client registration, using default endpoint "oidc/issuers/:id/reg"
-  router.use('/issuers/:issuer_id/reg', issuerIdMiddleware, createOidcClientRoute(tenantManger));
+  router.use(
+    '/issuers/:issuer_id/reg',
+    withIssuerId,
+    createOidcClientRoute(tenantManger, 'issuer')
+  );
 
   // federated OIDC provide callback here, to exchange token
   // this endpoint will FURTHER redirect to /issuers/interaction/:uid/login
@@ -130,11 +129,12 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
         const issuerId = req.params.issuer_id;
         const code = req.query.code as string;
         const state = req.query.state;
-        const oidc = await tenantManger.createOrGetOidcProvider(
-          req.hostname,
-          req.tenantId,
-          issuerId
-        );
+        const oidc = await tenantManger.createOrGetOidcProvider({
+          hostname: req.hostname,
+          tenantId: req.tenantId,
+          issuerId,
+          isIssuerOrVerifier: 'issuer',
+        });
 
         // find Oidc-issuer
         const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
@@ -289,11 +289,12 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     async (req: RequestWithVhost, res, next) => {
       try {
         const issuerId = req.params.issuer_id;
-        const oidc = await tenantManger.createOrGetOidcProvider(
-          req.hostname,
-          req.tenantId,
-          issuerId
-        );
+        const oidc = await tenantManger.createOrGetOidcProvider({
+          hostname: req.hostname,
+          tenantId: req.tenantId,
+          issuerId,
+          isIssuerOrVerifier: 'issuer',
+        });
         const issuerRepo = getConnection(req.tenantId).getRepository(OidcIssuer);
         const issuer = await issuerRepo.findOne(issuerId, {
           relations: ['credential', 'federatedProvider'],
@@ -482,11 +483,12 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     async (req: RequestWithVhost, res, next) => {
       try {
         const issuerId = req.params.issuer_id;
-        const oidc = await tenantManger.createOrGetOidcProvider(
-          req.hostname,
-          req.tenantId,
-          issuerId
-        );
+        const oidc = await tenantManger.createOrGetOidcProvider({
+          hostname: req.hostname,
+          tenantId: req.tenantId,
+          issuerId,
+          isIssuerOrVerifier: 'issuer',
+        });
         const federatedIdToken = req.body?.id_token;
         const interactionDetails = await oidc.interactionDetails(req, res);
 
@@ -666,11 +668,12 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     async (req: RequestWithVhost, res, next) => {
       try {
         const issuerId = req.params.issuer_id;
-        const oidc = await tenantManger.createOrGetOidcProvider(
-          req.hostname,
-          req.tenantId,
-          issuerId
-        );
+        const oidc = await tenantManger.createOrGetOidcProvider({
+          hostname: req.hostname,
+          tenantId: req.tenantId,
+          issuerId,
+          isIssuerOrVerifier: 'issuer',
+        });
         const interactionDetails = await oidc.interactionDetails(req, res);
 
         debug('POST /oidc/issuers/:issuer_id/interaction/%s/abort', interactionDetails.uid);
@@ -699,19 +702,108 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
     try {
       const issuer = await issuerRepo.findOne(issuerId);
 
-      if (!issuer) return res.status(Status.BAD_REQUEST).send({ error: 'Invalid issuer id' });
+      if (!issuer)
+        return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'Invalid issuer id' });
     } catch (error) {
       console.warn(error);
       return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: error.message });
     }
 
-    const oidc = await tenantManger.createOrGetOidcProvider(req.hostname, req.tenantId, issuerId);
+    const oidc = await tenantManger.createOrGetOidcProvider({
+      hostname: req.hostname,
+      tenantId: req.tenantId,
+      issuerId,
+      isIssuerOrVerifier: 'issuer',
+    });
 
     debug('Start at /oidc/issuers/:issuer_id, %s', issuerId);
 
     return oidc
       ? oidc.callback()(req, res)
-      : res.status(Status.BAD_REQUEST).send({ error: 'Oidc provider not found' });
+      : res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'Oidc provider not found' });
+  });
+
+  /*******************
+   * SECTION: VERIFIER
+   ******************/
+  const withVerifierId = async (req: RequestWithVhost, res: Response, next: NextFunction) => {
+    req.verifierId = req.params.verifier_id;
+    next();
+  };
+
+  // REST for oidc-issuer's client
+  router.use(
+    '/verifiers/:verifier_id/clients',
+    withVerifierId,
+    createOidcClientRoute(tenantManger, 'verifier')
+  );
+
+  // public key for oidc client
+  router.get(
+    '/verifiers/:verifier_id/clients/:client_id/jwks',
+    async (req: RequestWithVhost, res, next) => {
+      debug('GET /verifiers/:verifier_id/clients/:client_id/jwks');
+
+      const verifierId = req.params.verifier_id;
+      const client_id = req.params.client_id;
+
+      try {
+        const clientRepo = getConnection(req.tenantId).getRepository(OidcClient);
+        const identifierRepo = getConnection(req.tenantId).getRepository(Identifier);
+        const client = await clientRepo.findOne({ where: { client_id, verifierId } });
+
+        if (!client) return res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND' });
+
+        const identifier: IIdentifier = await identifierRepo.findOne(client.did);
+        const jwks = identifier && {
+          keys: [convertKeysToJwkSecp256k1(identifier.controllerKeyId).publicKeyJwk],
+        };
+        return jwks
+          ? res.status(Status.OK).send(jwks)
+          : res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND' });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // oidc client registration, using default endpoint "oidc/verifiers/:id/reg"
+  router.use(
+    '/verifiers/:verifier_id/reg',
+    withVerifierId,
+    createOidcClientRoute(tenantManger, 'verifier')
+  );
+
+  router.use('/verifiers', createOidcVerifierRoute(tenantManger));
+
+  router.use('/verifiers/:id', async (req: RequestWithVhost, res) => {
+    const verifierId = req.params.id;
+    const verifierRepo = getConnection(req.tenantId).getRepository(OidcVerifier);
+
+    try {
+      const verifier = await verifierRepo.findOne(verifierId);
+
+      if (!verifier)
+        return res
+          .status(Status.BAD_REQUEST)
+          .send({ status: 'ERROR', error: 'Invalid verifier id' });
+    } catch (error) {
+      console.warn(error);
+      return res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: error.message });
+    }
+
+    const oidc = await tenantManger.createOrGetOidcProvider({
+      hostname: req.hostname,
+      tenantId: req.tenantId,
+      verifierId,
+      isIssuerOrVerifier: 'verifier',
+    });
+
+    debug('Start at /oidc/verifiers/:verifier_id, %s', verifierId);
+
+    return oidc
+      ? oidc.callback()(req, res)
+      : res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'Oidc provider not found' });
   });
 
   return router;
