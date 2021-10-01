@@ -52,6 +52,9 @@ export class OidcClient {
   @Column({ nullable: true })
   backchannel_token_delivery_mode?: CIBADeliveryMode;
 
+  // only used with ping mode. Poll does not require it
+  // todo: let explore which mode(s) should be enabled
+  // see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.9
   @Column({ nullable: true })
   backchannel_client_notification_endpoint?: string;
 

@@ -109,6 +109,13 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
         // The keystore above uses Secp256K1, provided by custom "did:key"; authorization_signed_response_alg must be "ES256K".
         // Therefore, hardcode here. If later allowing different did key method for Client. Below code needs refactoring.
         data.authorization_signed_response_alg = 'ES256K';
+
+        // TODO: refactor me later
+        !data.backchannel_client_notification_endpoint &&
+          delete data.backchannel_client_notification_endpoint;
+
+        !data.backchannel_authentication_request_signing_alg &&
+          delete data.backchannel_authentication_request_signing_alg;
       }
 
       const result = this.type === TCLIENT ? data : parseResult(data as OidcPayload);

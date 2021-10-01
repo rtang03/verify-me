@@ -1,4 +1,7 @@
 require('dotenv').config({ path: './.env' });
+import qs from 'querystring';
+import { Identifier } from '@veramo/data-store';
+import didJWT from 'did-jwt';
 import { Express } from 'express';
 import Status from 'http-status';
 import request from 'supertest';
@@ -11,6 +14,7 @@ import {
   isTenant,
   isOidcVerifier,
   isOidcVerifierClient,
+  generators,
 } from '../utils';
 import { holderDIDKey, holderPublicKeyJwk } from './__utils__/did-key';
 import { fakedES256KKeys } from './__utils__/fakeKeys';
@@ -70,9 +74,7 @@ const claims = {
     'https://tenant.vii.mattr.global/educationalCredentialAwarded': { essential: true },
   },
 };
-const code_challenge_method = 'S256';
 // will prompt for scope grant
-const scope = 'openid openid_credential';
 const response_type = 'code';
 const alg = 'ES256K';
 const id_token_signed_response_alg = 'ES256K';
@@ -80,10 +82,13 @@ const mapping = {
   jsonLdTerm: 'educationalCredentialAwarded',
   oidcClaim: 'https://tenant.vii.mattr.global/educationalCredentialAwarded',
 };
-const response_mode = 'jwt';
-const holder = holderDIDKey.did;
-const federatedIdpUrl = 'https://dashslab.us.auth0.com';
 const slug = 'verifier';
+const scope = 'openid';
+const login_hint = 'I am dgPXxUz_6fWIQBD8XmiSy';
+const binding_message = 'W4SCT';
+const client_assertion_type = 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer';
+const token_endpoint_auth_method = 'client_secret_post';
+// const token_endpoint_auth_method = 'private_key_jwt';
 
 beforeAll(async () => {
   try {
@@ -210,12 +215,13 @@ describe('Authz unit test', () => {
     const payload = <CreateOidcVerifierClientArgs>{
       client_name: 'Oidc client for wallet',
       grant_types: ['urn:openid:params:grant-type:ciba'],
-      token_endpoint_auth_method: 'private_key_jwt',
+      token_endpoint_auth_method,
       id_token_signed_response_alg,
       application_type: 'web',
       backchannel_token_delivery_mode: 'poll',
-      backchannel_authentication_request_signing_alg: 'ES256K',
+      // backchannel_authentication_request_signing_alg: 'ES256K',
       backchannel_user_code_parameter: true,
+      redirect_uris: ['https://jwt.io'],
     };
 
     return request(express)
@@ -227,6 +233,7 @@ describe('Authz unit test', () => {
         expect(isOidcVerifierClient(body?.data)).toBeTruthy();
         expect(status).toEqual(Status.CREATED);
         clientId = body?.data?.client_id;
+        console.log(body?.data);
       });
   });
 
@@ -244,7 +251,61 @@ describe('Authz unit test', () => {
         openIdConfig = body;
       }));
 
-  // it('should kick off Credential Request', async () => {
-  //   return true;
-  // });
+  it('should kick off Credential Request', async () => {
+    const clientRepo = getConnection(tenant.id).getRepository(OidcClient);
+    const oidcClient = await clientRepo.findOne(clientId);
+    const identifierRepo = getConnection(tenant.id).getRepository(Identifier);
+    const identifier = await identifierRepo.findOne(oidcClient.did, { relations: ['keys'] });
+    const { privateKeyHex } = identifier.keys[0];
+    const signer = didJWT.ES256KSigner(privateKeyHex);
+
+    const clientAssertion = await didJWT.createJWT(
+      {
+        sub: clientId,
+        aud: openIdConfig.token_endpoint,
+        jti: generators.nonce(),
+        iat: ~~(Date.now() / 1000),
+        nbf: ~~(Date.now() / 1000),
+      },
+      { issuer: clientId, signer, expiresIn: 86400 },
+      { alg }
+    );
+
+    console.log('****** clientAssertion', clientAssertion);
+
+    const signedRequest = await didJWT.createJWT(
+      {
+        aud: openIdConfig.issuer,
+        iat: ~~(Date.now() / 1000),
+        nbf: ~~(Date.now() / 1000),
+        jti: generators.nonce(),
+        scope,
+        login_hint,
+        binding_message,
+        claims,
+        // client_notifiication_token: ''
+      },
+      // when expires is greater than 1hr, will return this error "Request Object 'exp' claim too far from 'nbf' claim"
+      { issuer: clientId, signer, expiresIn: 3600 },
+      { alg }
+    );
+
+    const query = qs.stringify({
+      request: signedRequest,
+      client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+      client_assertion: clientAssertion,
+    });
+
+    console.log('****** signedRequest', signedRequest);
+
+    // return request(express)
+    //   .post(`/oidc/verifiers/${verifierId}/backchannel`)
+    //   .set('host', 'verifier.example.com')
+    //   .set('Content-Type', 'application/x-www-form-urlencoded')
+    //   .set('X-Forwarded-Proto', 'https')
+    //   .send(query)
+    //   .expect((result) => {
+    //     console.log(result.body);
+    //   });
+  });
 });

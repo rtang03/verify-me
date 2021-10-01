@@ -1,7 +1,6 @@
 import {
   CIBADeliveryMode,
   ClientAuthMethod,
-  ResponseType,
   SigningAlgorithmWithNone,
 } from 'oidc-provider';
 
@@ -13,6 +12,7 @@ export type CreateOidcVerifierClientArgs = {
   application_type?: 'web' | 'native';
   backchannel_token_delivery_mode?: CIBADeliveryMode;
   backchannel_client_notification_endpoint?: string;
-  backchannel_authentication_request_signing_alg?: string;
+  // backchannel_authentication_request_signing_alg?: string;
   jwks_uri?: string;
+  redirect_uris: string[];
 };

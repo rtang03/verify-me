@@ -1,5 +1,8 @@
 import { Column, Entity, PrimaryGeneratedColumn, Index } from 'typeorm';
 
+/**
+ * To be used by Next_Auth
+ */
 @Entity()
 export class Accounts {
   @PrimaryGeneratedColumn()

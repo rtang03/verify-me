@@ -1,9 +1,8 @@
-import fs from 'fs';
 import { resolve } from 'path';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import errorHandler from 'errorhandler';
-import express, { Express, json, urlencoded } from 'express';
+import express, { Express, json } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { Connection, ConnectionOptions, createConnection, getConnection } from 'typeorm';
@@ -64,7 +63,6 @@ export const createHttpServer: (option: {
     app.set('views', resolve(__dirname, '..', '..', 'views'));
     app.use(json());
     app.use(cookieParser());
-    app.use(urlencoded({ extended: true }));
     app.use(morgan('dev'));
     app.use(helmet());
     baseUrl && app.use(cors({ origin: baseUrl }));

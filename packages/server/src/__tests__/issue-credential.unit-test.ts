@@ -266,7 +266,6 @@ describe('Authz unit test', () => {
         response_types: ['code'],
         grant_types: ['authorization_code'],
         token_endpoint_auth_method: 'client_secret_post',
-        // must be 'RS256' or 'PS256', in order to use "state" params
         id_token_signed_response_alg,
         application_type: 'web',
       })
@@ -446,7 +445,6 @@ describe('Authz unit test', () => {
         request: signedRequest,
       })
       .set('host', 'issuer.example.com')
-      .set('Content-Type', 'application/x-www-form-urlencoded')
       .set('X-Forwarded-Proto', 'https')
       .redirects(0)
       .expect(({ text, headers }) => {

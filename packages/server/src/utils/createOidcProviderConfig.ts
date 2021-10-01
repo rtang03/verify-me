@@ -72,6 +72,7 @@ export const createOidcProviderConfig = (option: {
     },
     // NOTE: did is not currently used. Can remove. The did is retrived from Oidc-client record, instead of signed request object
     extraParams: ['did', 'sub_jwk', 'credential_format'],
+    // Function used to load an account and retrieve its available claims.
     // see https://github.com/panva/node-oidc-provider/tree/main/docs#findaccount
     findAccount: async (ctx, sub, token) => {
       // DEBUG: token should look like
@@ -122,12 +123,13 @@ export const createOidcProviderConfig = (option: {
 
           if (!credential) throw new Error('fail to create id_token / userinfo; no cred found');
 
-          const result = { sub: credential.subject?.did };
+          // replace original sub to "did:key:z7r8....."
+          const id_tokenOrUserInfo = { sub: credential.subject?.did };
           scope.includes('openid_credential') &&
             credential &&
-            (result['verifiable_credential'] = (credential as any)._raw);
+            (id_tokenOrUserInfo['verifiable_credential'] = (credential as any)._raw);
 
-          return result;
+          return id_tokenOrUserInfo;
         },
       };
     },
@@ -153,32 +155,15 @@ export const createOidcProviderConfig = (option: {
       ciba: {
         deliveryModes: ['poll', 'ping'],
         enabled: isCiba,
-        // Helper function used to process the login_hint parameter and return the accountId value to use for processsing the request.
-        processLoginHint: async (ctx, loginHint) => {
-          // @param ctx - koa request context
-          // @param loginHint - string value of the login_hint parameter
-          throw new Error('features.ciba.processLoginHint not implemented');
-        },
-        // Helper function used to process the login_hint_token parameter and return the accountId value to use for processsing the request
-        processLoginHintToken: async (ctx, loginHintToken) => {
-          // @param ctx - koa request context
-          // @param loginHintToken - string value of the login_hint_token parameter
-          throw new Error('features.ciba.processLoginHintToken not implemented');
-        },
-        // Helper function used to trigger the authentication and authorization on end-user's Authentication Device. It is called after
-        // accepting the backchannel authentication request but before sending client back the response.
-        // When the end-user authenticates use provider.backchannelResult() to finish the Consumption Device login process.
-        triggerAuthenticationDevice: async (ctx, request, account, client) => {
-          // @param ctx - koa request context
-          // @param request - the BackchannelAuthenticationRequest instance
-          // @param account - the account object retrieved by findAccount
-          // @param client - the Client instance
-          throw new Error('features.ciba.triggerAuthenticationDevice not implemented');
+        validateRequestContext: async (ctx, requestContext) => {
+          // currently, requestContext is undefined. Not knowing how it is used.
+          return;
         },
         // Helper function used to process the binding_message parameter and throw if its not following the authorization server's policy.
         validateBindingMessage: async (ctx, bindingMessage) => {
           // @param ctx - koa request context
           // @param bindingMessage - string value of the binding_message parameter, when not provided it is undefined
+
           if (bindingMessage && !/^[a-zA-Z0-9-._+/!?#]{1,20}$/.exec(bindingMessage)) {
             throw new Error(
               'the binding_message value, when provided, needs to be 1 - 20 characters in length and use only a basic set of characters (matching the regex: ^[a-zA-Z0-9-._+/!?#]{1,20}$ )'
@@ -188,11 +173,104 @@ export const createOidcProviderConfig = (option: {
             // );
           }
         },
+        // Helper function used to process the login_hint parameter and return the accountId value to use for processsing the request.
+        // A hint regarding the end-user for whom authentication is being requested. The value may contain an email address, phone number,
+        // account number, subject identifier, username, etc., which identifies the end-user to the OP. The value may be directly
+        // collected from the user by the Client before requesting authentication at the OP, for example, but may also be obtained by other means.
+        processLoginHint: async (ctx, loginHint) => {
+          // @param ctx - koa request context
+          // @param loginHint - string value of the login_hint parameter
+          // auth0|6059aed4aa7803006a20d824 or DID ???
+          return 'auth0|6059aed4aa7803006a20d824';
+        },
+        // Helper function used to process the login_hint_token parameter and return the accountId value to use for processsing the request
+        // processLoginHintToken: async (ctx, loginHintToken) => {
+        //   // @param ctx - koa request context
+        //   // @param loginHintToken - string value of the login_hint_token parameter
+        //   throw new Error('features.ciba.processLoginHintToken not implemented');
+        // },
         // Helper function used to verify the user_code parameter value is present when required and verify its value.
         verifyUserCode: async (ctx, userCode) => {
           // @param ctx - koa request context
           // @param userCode - string value of the user_code parameter, when not provided it is undefined
-          throw new Error('features.ciba.verifyUserCode not implemented');
+
+          // userCode returns
+          // { accountId: 'abcdefg', claims: [AsyncFunction: claims] }
+
+          // throw new Error('features.ciba.verifyUserCode not implemented');
+          return;
+        },
+        // Helper function used to trigger the authentication and authorization on end-user's Authentication Device. It is called after
+        // accepting the backchannel authentication request but before sending client back the response.
+        // When the end-user authenticates use provider.backchannelResult() to finish the Consumption Device login process.
+        triggerAuthenticationDevice: async (ctx, request, account, client) => {
+          // @param ctx - koa request context
+          // @param request - the BackchannelAuthenticationRequest instance
+          // @param account - the account object retrieved by findAccount
+          // @param client - the Client instance
+
+          // e.g.
+          // const request: BackchannelAuthenticationRequest = {
+          //   accountId: 'auth0|6059aed4aa7803006a20d824',
+          //   claims: {
+          //     userinfo: {
+          //       email: [Object],
+          //       email_verified: null,
+          //       name: null,
+          //       'https://tenant.vii.mattr.global/educationalCredentialAwarded': [Object]
+          //     },
+          //     id_token: {
+          //       auth_time: [Object],
+          //       email: [Object],
+          //       email_verified: null,
+          //       'https://tenant.vii.mattr.global/educationalCredentialAwarded': [Object]
+          //     }
+          //   },
+          //   nonce: undefined,
+          //   params: {
+          //     login_hint: 'I am dgPXxUz_6fWIQBD8XmiSy',
+          //     scope: 'openid',
+          //     claims: '{"userinfo":{"email":{"essential":true},"email_verified":null,"name":null,"https://tenant.vii.mattr.global/educationalCredentialAwarded":{"essential":true}},"id_token":{"auth_time":{"essential":true},"email":{"essential":true},"email_verified":null,"https://tenant.vii.mattr.global/educationalCredentialAwarded":{"essential":true}}}',
+          //     binding_message: 'W4SCT'
+          //   },
+          //   scope: 'openid',
+          //   kind: 'BackchannelAuthenticationRequest',
+          //   jti: '3Kn3OsgW_4VVxhsaXK5JT_cFmT5lUWfc_YPKOuScV_r',
+          //   clientId: 'V1StGXR8_Z5jdHi6B-myT',
+          //   expiresIn: 3600
+          // }
+          // account = {
+          //   accountId: 'auth0|6059aed4aa7803006a20d824',
+          //   claims: [AsyncFunction: claims]
+          // }
+          // client = {
+          //   applicationType: 'web',
+          //   grantTypes: ['urn:openid:params:grant-type:ciba'],
+          //   idTokenSignedResponseAlg: 'ES256K',
+          //   postLogoutRedirectUris: [],
+          //   requireAuthTime: false,
+          //   responseTypes: [],
+          //   subjectType: 'public',
+          //   tokenEndpointAuthMethod: 'client_secret_post',
+          //   revocationEndpointAuthMethod: 'client_secret_post',
+          //   requireSignedRequestObject: true,
+          //   authorizationSignedResponseAlg: 'ES256K',
+          //   backchannelUserCodeParameter: false,
+          //   clientId: 'V1StGXR8_Z5jdHi6B-myT',
+          //   clientName: 'Oidc client for wallet',
+          //   clientSecret: '123456123456123456123456',
+          //   jwks: { keys: [[Object]] },
+          //   redirectUris: ['https://jwt.io'],
+          //   backchannelTokenDeliveryMode: 'poll',
+          // };
+
+          // throw new Error('features.ciba.triggerAuthenticationDevice not implemented');
+          return;
+          // auth_req_id is equal to jti, of signed request object
+          // {
+          //   "expires_in": 3600,
+          //   "auth_req_id": "ZM45o9RWfREj_MxEs_Vg9iheHl2bj2EFegEiyEmx2Wo"
+          // }
         },
       },
       backchannelLogout: { enabled: false },
@@ -212,6 +290,7 @@ export const createOidcProviderConfig = (option: {
       Session: 1209600 /* 14 days in seconds */,
       IdToken: 7200 /* 2 hour in seconds */,
       DeviceCode: 600 /* 10 minutes in seconds */,
+      BackchannelAuthenticationRequest: 3600,
     },
     pkce: {
       methods: ['S256'],
@@ -228,6 +307,7 @@ export const createOidcProviderConfig = (option: {
       idTokenSigningAlgValues: ['ES256K'],
       authorizationSigningAlgValues: ['ES256K'],
       userinfoSigningAlgValues: ['ES256K'],
+      tokenEndpointAuthSigningAlgValues: ['ES256K'],
     },
     tokenEndpointAuthMethods: ['client_secret_jwt', 'client_secret_post', 'private_key_jwt'],
     response_modes_supported: ['form_post', 'jwt'],

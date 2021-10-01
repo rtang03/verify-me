@@ -113,7 +113,9 @@ export const createOidcClientRoute = (
       client.did = identifier.did;
 
       /* auto-gen client_secret */
-      client.client_secret = randomBytes(12).toString('hex');
+      client.client_secret = isRunningJest
+        ? '123456123456123456123456'
+        : randomBytes(12).toString('hex');
 
       if (clientType === 'issuer' && isCreateOidcIssuerClientArgs(body)) {
         const {
@@ -172,7 +174,8 @@ export const createOidcClientRoute = (
           id_token_signed_response_alg,
           backchannel_token_delivery_mode,
           backchannel_client_notification_endpoint,
-          backchannel_authentication_request_signing_alg,
+          // backchannel_authentication_request_signing_alg,
+          redirect_uris,
         } = body;
 
         /* grant_types */
@@ -211,10 +214,10 @@ export const createOidcClientRoute = (
             backchannel_client_notification_endpoint);
 
         /* backchannel_authentication_request_signing_alg */
-        if (!['ES256K'].includes(backchannel_authentication_request_signing_alg))
-          throw new Error('only ES245K is suppported');
-        client.backchannel_authentication_request_signing_alg =
-          (backchannel_authentication_request_signing_alg || 'ES256K') as SigningAlgorithmWithNone;
+        // if (!['ES256K'].includes(backchannel_authentication_request_signing_alg))
+        //   throw new Error('only ES245K is suppported');
+        // client.backchannel_authentication_request_signing_alg =
+        //   (backchannel_authentication_request_signing_alg || 'ES256K') as SigningAlgorithmWithNone;
 
         /* optional: backchannel_user_code_parameter */
         // typeof backchannel_user_code_parameter === 'boolean' &&
@@ -223,6 +226,12 @@ export const createOidcClientRoute = (
         if (!id_token_signed_response_alg)
           throw new Error('id_token_signed_response_alg is mandatory');
         client.id_token_signed_response_alg = id_token_signed_response_alg;
+
+        /* redirect_uris */
+        if (!redirect_uris) throw new Error('redirect_uris is mandatory');
+        client.redirect_uris = redirect_uris;
+
+        client.response_types = [];
       }
 
       const data = await clientRepo.save(client);

@@ -82,7 +82,9 @@ export const isCreateOidcVerifierClientArgs = (input: any): input is CreateOidcV
   input?.id_token_signed_response_alg !== undefined &&
   input?.application_type !== undefined &&
   input?.backchannel_token_delivery_mode !== undefined &&
-  input?.backchannel_authentication_request_signing_alg !== undefined;
+  // input?.backchannel_authentication_request_signing_alg !== undefined &&
+  input?.redirect_uris !== undefined;
+// input?.response_types !== undefined;
 
 export const isOidcVerifier = (input: any): input is OidcVerifier =>
   input?.id !== undefined && input?.claimMappings !== undefined && input?.did !== undefined;
@@ -94,4 +96,6 @@ export const isOidcVerifierClient = (input: any): input is OidcClient =>
   input?.grant_types !== undefined &&
   input?.application_type !== undefined &&
   input?.token_endpoint_auth_method !== undefined &&
-  input?.id_token_signed_response_alg !== undefined;
+  input?.id_token_signed_response_alg !== undefined &&
+  input?.redirect_uris !== undefined &&
+  input?.response_types !== undefined;
