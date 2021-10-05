@@ -1,6 +1,7 @@
 import { Credential } from '@veramo/data-store';
 import Debug from 'debug';
 import type { Configuration, JWK } from 'oidc-provider';
+import { errors as OidcProviderError } from 'oidc-provider';
 import { getConnection } from 'typeorm';
 import { createOidcAdapter } from './createOidcAdapter';
 import { ClaimMapping, getClaimMappings } from './oidcProfileClaimMappings';
@@ -157,21 +158,18 @@ export const createOidcProviderConfig = (option: {
         enabled: isCiba,
         validateRequestContext: async (ctx, requestContext) => {
           // currently, requestContext is undefined. Not knowing how it is used.
-          return;
+          debug('features.ciba.validateRequestContext: %O', requestContext);
         },
         // Helper function used to process the binding_message parameter and throw if its not following the authorization server's policy.
         validateBindingMessage: async (ctx, bindingMessage) => {
           // @param ctx - koa request context
           // @param bindingMessage - string value of the binding_message parameter, when not provided it is undefined
+          debug('features.ciba.validateBindingMessage: %s', bindingMessage);
 
-          if (bindingMessage && !/^[a-zA-Z0-9-._+/!?#]{1,20}$/.exec(bindingMessage)) {
-            throw new Error(
+          if (bindingMessage && !/^[a-zA-Z0-9-._+/!?#]{1,20}$/.exec(bindingMessage))
+            throw new OidcProviderError.InvalidBindingMessage(
               'the binding_message value, when provided, needs to be 1 - 20 characters in length and use only a basic set of characters (matching the regex: ^[a-zA-Z0-9-._+/!?#]{1,20}$ )'
             );
-            // throw new errors.InvalidBindingMessage(
-            //   'the binding_message value, when provided, needs to be 1 - 20 characters in length and use only a basic set of characters (matching the regex: ^[a-zA-Z0-9-._+/!?#]{1,20}$ )'
-            // );
-          }
         },
         // Helper function used to process the login_hint parameter and return the accountId value to use for processsing the request.
         // A hint regarding the end-user for whom authentication is being requested. The value may contain an email address, phone number,
@@ -181,7 +179,11 @@ export const createOidcProviderConfig = (option: {
           // @param ctx - koa request context
           // @param loginHint - string value of the login_hint parameter
           // auth0|6059aed4aa7803006a20d824 or DID ???
-          return 'auth0|6059aed4aa7803006a20d824';
+
+          debug('features.ciba.processLoginHint: %s', loginHint);
+
+          // return 'auth0|6059aed4aa7803006a20d824';
+          return loginHint;
         },
         // Helper function used to process the login_hint_token parameter and return the accountId value to use for processsing the request
         // processLoginHintToken: async (ctx, loginHintToken) => {
@@ -193,6 +195,8 @@ export const createOidcProviderConfig = (option: {
         verifyUserCode: async (ctx, userCode) => {
           // @param ctx - koa request context
           // @param userCode - string value of the user_code parameter, when not provided it is undefined
+
+          debug('features.ciba.verifyUserCode: %O', userCode);
 
           // userCode returns
           // { accountId: 'abcdefg', claims: [AsyncFunction: claims] }
@@ -264,7 +268,9 @@ export const createOidcProviderConfig = (option: {
           //   backchannelTokenDeliveryMode: 'poll',
           // };
 
-          // throw new Error('features.ciba.triggerAuthenticationDevice not implemented');
+          // step 1: get verifier Did
+          // step 2: create presentation request
+
           return;
           // auth_req_id is equal to jti, of signed request object
           // {

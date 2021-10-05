@@ -23,6 +23,7 @@ const types = [
   'ReplayDetection',
   'PushedAuthorizationRequest',
   'Grant',
+  'BackchannelAuthenticationRequest',
 ].reduce((map, name, i) => ({ ...map, [name]: i + 1 }), {});
 
 const getExpireAt = (expiresIn) =>
@@ -44,6 +45,11 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
     type: number;
 
     constructor(public name) {
+      debug('OidcPayload: %s', name);
+
+      if (!types[name])
+        console.warn(`unknown OidcPayload encountered, ${name}; please revisit OidcAdapter.`);
+
       this.type = types[name];
     }
 

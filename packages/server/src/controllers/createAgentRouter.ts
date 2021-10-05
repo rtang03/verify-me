@@ -1,4 +1,5 @@
 import { RequestWithAgentRouter } from '@veramo/remote-server';
+import type { ICreateSelectiveDisclosureRequestArgs } from '@veramo/selective-disclosure';
 import Debug from 'debug';
 import { Router, Request, Response, text } from 'express';
 import Status from 'http-status';
@@ -53,13 +54,14 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
   exposedMethods.forEach((method) =>
     router.post(`/agent/${method}`, async (req: RequestWithAgent, res: Response) => {
       if (!req.agent) return res.status(Status.BAD_GATEWAY).send({ error: 'agent not found' });
+
       debug('method: ', method);
       debug('body: %O', req.body);
 
       try {
         const result = await req.agent.execute(method, req.body);
 
-        debug(result);
+        debug('execute agent method, %O', result);
 
         res.status(Status.OK).json(result);
       } catch (e) {
@@ -143,6 +145,28 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
 
   // api schema
   // router.use('/open-api.json', schemaRouter);
+
+  router.post('/presentation/requests', async (req: RequestWithAgent, res) => {
+    const body = req.body;
+
+    if (!req.agent) return res.status(Status.BAD_GATEWAY).send({ error: 'agent not found' });
+
+    debug('POST /presentation/requests %O', body);
+
+    try {
+      const createSdrArgs: ICreateSelectiveDisclosureRequestArgs = {
+        data: null,
+      };
+      const result: string = await req.agent.execute(
+        'createSelectiveDisclosureRequest',
+        createSdrArgs
+      );
+
+      debug('create presentation request, %O', result);
+    } catch (e) {
+      res.status(Status.BAD_REQUEST).send({ error: e.message });
+    }
+  });
 
   return router;
 };

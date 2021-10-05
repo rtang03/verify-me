@@ -15,39 +15,39 @@ RP->RP: generate user_code
 RP-->Browser: ciba request objecct
 == CIBA request ==
 Browser->RP: submit ciba request
-activate RP
-RP->Oidc_verifier: push request to /par
-activate Oidc_verifier
-Oidc_verifier-->RP: OK
 RP->Oidc_verifier: request to /backchannel
-Oidc_verifier->Oidc_verifier: get verifier's did
-Oidc_verifier->Oidc_verifier: create pres\nreq template
-Oidc_verifier->Oidc_verifier: pack pres req\ntemplate to Jwm
+activate Oidc_verifier
+Oidc_verifier->Oidc_verifier: validateBindingMessage
+Oidc_verifier->Oidc_verifier: processLoginHint
+Oidc_verifier->Oidc_verifier: verifyUserCode (disabled)
+Oidc_verifier->Oidc_verifier: triggerAuthenticationDevice \n- get verifier's did \n- create pres req template \n- pack pres req template to Jwm 
 Oidc_verifier-->RP: auth_request_id
 RP->Oidc_verifier: get press-req-templ
 Oidc_verifier-->RP: ref to pres-req-templ
 RP-->Browser: display qr code
 == IdentityWallet Communication ==
-Browser->Wallet: scan qr code (ref to pres-req-templ)
-loop
-    RP->Oidc_verifier: "ping" /token
-    Oidc_verifier-->RP: auth pending response
+loop until timeout
+    RP->RP: wait client_notification
 end
+Browser->Wallet: scan qr code (ref to pres-req-templ)
 Wallet->Oidc_verifier: GET pres-req-templ
 Oidc_verifier-->Wallet: pres-req-templ
-Wallet->Oidc_verifier: create SDR
+Wallet->Oidc_verifier: create presentation request
 Oidc_verifier-->Wallet: SDR
-Wallet->Wallet: search VC
+Wallet->Wallet: search VC by loginHint\n with bindingMessage, \naccountId & userCode
 Wallet->User: present verify data request
 User-->Wallet: client accept request
 Wallet->Wallet: create VP/didcomm
-Wallet->Oidc_verifier: didComm send
+Wallet->Oidc_verifier: VP-Auth request
+Oidc_verifier->Oidc_verifier: Get or create Grant 
 Oidc_verifier->Oidc_verifier: map vp to idToken
+Oidc_verifier->Oidc_verifier: validate and verify VC
 Oidc_verifier->Oidc_verifier: save VP / VC
+Oidc_verifier->Oidc_verifier: finish backChannelResult 
 Oidc_verifier->RP: notify\nclient_notification_endpoint
 deactivate Oidc_verifier
 == Authenticated ==
-RP->Oidc_verifier: "ping" /token
+RP->Oidc_verifier: POST /token
 Oidc_verifier-->RP: id_token\naccess_token
 RP->Oidc_verifier: access_token to /userinfo
 Oidc_verifier-->RP: Userinfo with VP

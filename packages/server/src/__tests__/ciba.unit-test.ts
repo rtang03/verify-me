@@ -18,6 +18,7 @@ import {
 } from '../utils';
 import { holderDIDKey, holderPublicKeyJwk } from './__utils__/did-key';
 import { fakedES256KKeys } from './__utils__/fakeKeys';
+import nock from 'nock';
 
 /**
  * Tests with Issue Credential workflow
@@ -36,6 +37,7 @@ const ENV_VAR = {
   AUTH0_CLIENT_SECRET: process.env.AUTH0_SECRET,
   JEST_FIXED_OIDC_VERIFIER_ID: process.env.JEST_FIXED_OIDC_VERIFIER_ID,
   JEST_FIXED_OIDC_ClIENT_ID: process.env.JEST_FIXED_OIDC_ClIENT_ID,
+  JEST_FIXED_ACCOUNT_ID: process.env.JEST_FIXED_ACCOUNT_ID,
   // JWKS_JSON: process.env.JWKS_JSON,
 };
 const commonConnectionOptions: ConnectionOptions = {
@@ -84,11 +86,14 @@ const mapping = {
 };
 const slug = 'verifier';
 const scope = 'openid';
-const login_hint = 'I am dgPXxUz_6fWIQBD8XmiSy';
+const login_hint = ENV_VAR.JEST_FIXED_ACCOUNT_ID;
 const binding_message = 'W4SCT';
 const client_assertion_type = 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer';
-const token_endpoint_auth_method = 'client_secret_post';
-// const token_endpoint_auth_method = 'private_key_jwt';
+// client_id and client_secret in POST request body
+// const token_endpoint_auth_method = 'client_secret_post';
+const token_endpoint_auth_method = 'private_key_jwt';
+const backchannel_client_notification_endpoint =
+  'https://rp.example.com/backchannel_client_notification_endpoint';
 
 beforeAll(async () => {
   try {
@@ -210,7 +215,7 @@ describe('Authz unit test', () => {
   });
 
   it('should register oidc client', async () => {
-    // Note: test will support "poll" only; backchannel_client_notification_endpoint is not required.
+    // Note: test will support "ping" only; backchannel_client_notification_endpoint is required.
     // TODO: evaluate later, if we can figure out how to run unit test with "ping"
     const payload = <CreateOidcVerifierClientArgs>{
       client_name: 'Oidc client for wallet',
@@ -218,10 +223,11 @@ describe('Authz unit test', () => {
       token_endpoint_auth_method,
       id_token_signed_response_alg,
       application_type: 'web',
-      backchannel_token_delivery_mode: 'poll',
-      // backchannel_authentication_request_signing_alg: 'ES256K',
+      backchannel_token_delivery_mode: 'ping',
+      backchannel_authentication_request_signing_alg: 'ES256K',
       backchannel_user_code_parameter: true,
       redirect_uris: ['https://jwt.io'],
+      backchannel_client_notification_endpoint,
     };
 
     return request(express)
@@ -233,7 +239,6 @@ describe('Authz unit test', () => {
         expect(isOidcVerifierClient(body?.data)).toBeTruthy();
         expect(status).toEqual(Status.CREATED);
         clientId = body?.data?.client_id;
-        console.log(body?.data);
       });
   });
 
@@ -258,12 +263,12 @@ describe('Authz unit test', () => {
     const identifier = await identifierRepo.findOne(oidcClient.did, { relations: ['keys'] });
     const { privateKeyHex } = identifier.keys[0];
     const signer = didJWT.ES256KSigner(privateKeyHex);
-
+    const jti = generators.nonce();
     const clientAssertion = await didJWT.createJWT(
       {
         sub: clientId,
         aud: openIdConfig.token_endpoint,
-        jti: generators.nonce(),
+        jti,
         iat: ~~(Date.now() / 1000),
         nbf: ~~(Date.now() / 1000),
       },
@@ -271,6 +276,7 @@ describe('Authz unit test', () => {
       { alg }
     );
 
+    console.log('****** jti', jti);
     console.log('****** clientAssertion', clientAssertion);
 
     const signedRequest = await didJWT.createJWT(
@@ -278,34 +284,69 @@ describe('Authz unit test', () => {
         aud: openIdConfig.issuer,
         iat: ~~(Date.now() / 1000),
         nbf: ~~(Date.now() / 1000),
+        // jti need to be unique, otherwise, request will throw
+        // "replay detected (jti: cOGMd37yZEJQ_1_teRMImhmM1tUfat8_cnWPWJDfGHg)"
         jti: generators.nonce(),
         scope,
         login_hint,
         binding_message,
         claims,
-        // client_notifiication_token: ''
+        client_notification_token: '123123123',
       },
       // when expires is greater than 1hr, will return this error "Request Object 'exp' claim too far from 'nbf' claim"
       { issuer: clientId, signer, expiresIn: 3600 },
       { alg }
     );
 
-    const query = qs.stringify({
+    const requestBody = qs.stringify({
       request: signedRequest,
-      client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+      client_assertion_type,
       client_assertion: clientAssertion,
     });
 
     console.log('****** signedRequest', signedRequest);
 
-    // return request(express)
-    //   .post(`/oidc/verifiers/${verifierId}/backchannel`)
-    //   .set('host', 'verifier.example.com')
-    //   .set('Content-Type', 'application/x-www-form-urlencoded')
-    //   .set('X-Forwarded-Proto', 'https')
-    //   .send(query)
-    //   .expect((result) => {
-    //     console.log(result.body);
-    //   });
+    // const nockScope = nock(`https://rp.example.com`)
+    //   .post('/backchannel_client_notification_endpoint', (body) => {
+    //     console.log('**** notification', body);
+    //     return true;
+    //   })
+    //   .reply(200, { data: 'backchannel_client_notification_endpoint found' });
+
+    for await (const index of [2, 3, 4, 5, 6]) {
+      const jti = generators.nonce();
+      const jwt = await didJWT.createJWT(
+        {
+          sub: clientId,
+          aud: openIdConfig.token_endpoint,
+          jti,
+          iat: ~~(Date.now() / 1000),
+          nbf: ~~(Date.now() / 1000),
+        },
+        { issuer: clientId, signer, expiresIn: 86400 },
+        { alg }
+      );
+      console.log(`****** jti${index}: ${jti}`);
+      console.log(`****** clientAssertion${index}: ${jwt}`);
+    }
+
+    await request(express)
+      .post(`/oidc/verifiers/${verifierId}/backchannel`)
+      .set('host', 'verifier.example.com')
+      // .set('Content-Type', 'application/x-www-form-urlencoded')
+      .set('X-Forwarded-Proto', 'https')
+      .send(requestBody)
+      .type('form')
+      .expect(200)
+      .expect('content-type', /application\/json/)
+      .expect((result) => {
+        console.log('')
+        console.log('**** Result: ', result.body);
+      });
   });
 });
+
+// {
+//   "error": "authorization_pending",
+//   "error_description": "authorization request is still pending as the end-user hasn't yet completed the user interaction steps"
+// }
