@@ -6,7 +6,7 @@ export class OidcVerifier {
   id: string;
 
   // TODO: Not knowing if I need this field. Double check it later
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   presentationTemplateId: string;
 
   @Column({ type: 'simple-json', nullable: false })
@@ -17,6 +17,6 @@ export class OidcVerifier {
 
   // Note: intentionally, not picking OneToOne JoinColumn, because the corresponding did is created
   // using veramo agent method, instead of direct psql-insert
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   did: string;
 }

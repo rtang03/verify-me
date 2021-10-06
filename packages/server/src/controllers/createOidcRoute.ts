@@ -1,7 +1,7 @@
 import assert from 'assert';
 import { URLSearchParams } from 'url';
 import util from 'util';
-import type { IIdentifier, VerifiableCredential } from '@veramo/core';
+import type { VerifiableCredential } from '@veramo/core';
 import type { ICreateVerifiableCredentialArgs } from '@veramo/credential-w3c';
 import { Identifier } from '@veramo/data-store';
 import Debug from 'debug';
@@ -82,7 +82,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
         if (!client) return res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND' });
 
-        const identifier: IIdentifier = await identifierRepo.findOne(client.did);
+        const identifier: Identifier = await identifierRepo.findOne(client.did);
         const jwks = identifier && {
           keys: [convertKeysToJwkSecp256k1(identifier.controllerKeyId).publicKeyJwk],
         };
@@ -754,7 +754,7 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
 
         if (!client) return res.status(Status.NOT_FOUND).send({ status: 'NOT_FOUND' });
 
-        const identifier: IIdentifier = await identifierRepo.findOne(client.did);
+        const identifier: Identifier = await identifierRepo.findOne(client.did);
         const jwks = identifier && {
           keys: [convertKeysToJwkSecp256k1(identifier.controllerKeyId).publicKeyJwk],
         };

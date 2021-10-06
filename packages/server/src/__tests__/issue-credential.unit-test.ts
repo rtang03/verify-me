@@ -1,14 +1,8 @@
 require('dotenv').config({ path: './.env' });
-import fs from 'fs';
-import http from 'http';
-import https from 'https';
-import qs from 'querystring';
-import { SecureContextOptions, TlsOptions } from 'tls';
-import { Identifier } from '@veramo/data-store';
+import { Identifier, PrivateKey } from '@veramo/data-store';
 import didJWT from 'did-jwt';
 import { Express } from 'express';
 import Status from 'http-status';
-import fetch from 'node-fetch';
 import request from 'supertest';
 import { Connection, ConnectionOptions, getRepository, getConnection } from 'typeorm';
 import { Accounts, OidcClient, Sessions, Tenant, Users } from '../entities';
@@ -138,27 +132,6 @@ beforeAll(async () => {
       console.error('🚫  app is undefined');
       process.exit(1);
     }
-
-    // SHOULD REMOVE
-    // const options: TlsOptions | SecureContextOptions = {
-    //   key: fs.readFileSync('certs/host.key'),
-    //   cert: fs.readFileSync('certs/host.pem'),
-    //   minVersion: 'TLSv1.2',
-    //   rejectUnauthorized: false,
-    // };
-    // https.createServer(options, express).listen(ENV_VAR.SPORT, () => {
-    //   console.log(`🚀  rest server started at port: https://${ENV_VAR.HOST}:${ENV_VAR.SPORT}`);
-    // });
-    //
-    // http
-    //   .createServer((req, res) => {
-    //     res.writeHead(301, { Location: 'https://' + req.headers['host'] + req.url });
-    //     res.end();
-    //   })
-    //   .listen(ENV_VAR.PORT, () => {
-    //     console.log(`🚀  rest server started at port: http://${ENV_VAR.HOST}:${ENV_VAR.PORT}`);
-    //   });
-    // END SHOULD REMOVE
   } catch (e) {
     console.error(e);
     process.exit(1);
@@ -362,10 +335,14 @@ describe('Authz unit test', () => {
     const clientRepo = getConnection(tenant.id).getRepository(OidcClient);
     const oidcClient = await clientRepo.findOne(clientId);
     const identifierRepo = getConnection(tenant.id).getRepository(Identifier);
+    const privateKeyRepo = getConnection(tenant.id).getRepository(PrivateKey);
 
     // keys of Oidc-client, which signs the request object
     const identifier = await identifierRepo.findOne(oidcClient.did, { relations: ['keys'] });
-    const { privateKeyHex } = identifier.keys[0];
+    // const { privateKeyHex } = identifier.keys[0];
+    const { kid } = identifier.keys[0];
+    const { privateKeyHex } = await privateKeyRepo.findOne({ where: { alias: kid } });
+
     const signer = didJWT.ES256KSigner(privateKeyHex);
 
     // see https://github.com/decentralized-identity/did-jwt/blob/master/docs/guides/index.md

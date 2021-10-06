@@ -5,7 +5,7 @@ import type {
   IKey,
   IKeyManagerGetArgs,
 } from '@veramo/core';
-import { Entities } from '@veramo/data-store';
+import { Entities, migrations as veramoMigrations } from '@veramo/data-store';
 import Debug from 'debug';
 import includes from 'lodash/includes';
 import { Provider } from 'oidc-provider';
@@ -19,6 +19,7 @@ import {
   OidcVerifier,
   OidcPayload,
 } from '../entities';
+import { getMigrations } from '../entities/migrations';
 import type { TenantManager, TenantStatus } from '../types';
 import { convertKeysToJwkSecp256k1 } from './convertKeysToJwkSecp256k1';
 import { createOidcProviderConfig } from './createOidcProviderConfig';
@@ -36,7 +37,10 @@ const createConnOption: (tenant: Tenant) => ConnectionOptions = (tenant) => ({
   username: tenant.db_username,
   password: tenant.db_password,
   database: tenant.db_name,
-  synchronize: true,
+  // Veramo 3.0 requires typeorm migrations, https://github.com/uport-project/veramo/pull/679
+  synchronize: false,
+  migrations: getMigrations(tenant.db_name, getSchemaName(tenant.id)),
+  migrationsRun: true,
   // TODO: logging changes to configurable
   logging: process.env.NODE_ENV !== 'production',
   entities: [

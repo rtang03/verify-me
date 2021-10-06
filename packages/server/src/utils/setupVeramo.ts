@@ -15,13 +15,13 @@ import {
   DataStore,
   DataStoreORM,
   ProfileDiscoveryProvider,
+  PrivateKeyStore,
 } from '@veramo/data-store';
 import { DIDComm, DIDCommMessageHandler, IDIDComm } from '@veramo/did-comm';
 import { DIDCommHttpTransport } from '@veramo/did-comm/build/transports/transports';
 import { IDIDDiscovery, DIDDiscovery } from '@veramo/did-discovery';
 import { JwtMessageHandler } from '@veramo/did-jwt';
 import { DIDManager, AliasDiscoveryProvider } from '@veramo/did-manager';
-// import { KeyDIDProvider } from '@veramo/did-provider-key';
 import { getDidKeyResolver } from '@veramo/did-provider-key';
 import { WebDIDProvider } from '@veramo/did-provider-web';
 import { DIDResolverPlugin } from '@veramo/did-resolver';
@@ -69,14 +69,19 @@ export const setupVeramo = (connection: Promise<Connection>) =>
   >({
     plugins: [
       new KeyManager({
-        store: new KeyStore(connection, {
-          encrypt: async (message: string) => message,
-          decrypt: async (encryptedMessageHex: string) => encryptedMessageHex,
-        }),
-        kms: { local: new KeyManagementSystem() },
+        store: new KeyStore(connection as Promise<any>),
+        kms: {
+          // https://github.com/uport-project/veramo/pull/661
+          local: new KeyManagementSystem(
+            new PrivateKeyStore(connection as Promise<any>, {
+              encrypt: async (message: string) => message,
+              decrypt: async (encryptedMessageHex: string) => encryptedMessageHex,
+            })
+          ),
+        },
       }),
       new DIDManager({
-        store: new DIDStore(connection),
+        store: new DIDStore(connection as Promise<any>),
         defaultProvider: 'did:web',
         providers: {
           'did:web': new WebDIDProvider({ defaultKms: 'local' }),
@@ -99,8 +104,8 @@ export const setupVeramo = (connection: Promise<Connection>) =>
       }),
       new CredentialIssuer(),
       new DIDComm([new DIDCommHttpTransport()]),
-      new DataStore(connection),
-      new DataStoreORM(connection),
+      new DataStore(connection as Promise<any>),
+      new DataStoreORM(connection as Promise<any>),
       new SelectiveDisclosure(),
       new DIDDiscovery({
         providers: [new AliasDiscoveryProvider(), new ProfileDiscoveryProvider()],

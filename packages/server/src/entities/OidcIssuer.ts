@@ -2,19 +2,19 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from 'typeorm';
 import { OidcCredential } from './OidcCredential';
 import { OidcFederatedProvider } from './OidcFederatedProvider';
 
-@Entity()
+@Entity('oidc_issuer')
 export class OidcIssuer {
   @PrimaryColumn()
   id: string;
 
-  @OneToOne(() => OidcFederatedProvider, { cascade: true })
+  @OneToOne(() => OidcFederatedProvider, { eager: true, cascade: true, nullable: false })
   @JoinColumn()
   federatedProvider: OidcFederatedProvider;
 
   // TODO: need refactoring, OidcCredential defines type of Credential offered by this issuers
   // maybe, the "issuerDid" of OidcCredential should be equal to "did".
   // Currently, this field is NOT related to id_token issuance
-  @OneToOne(() => OidcCredential, { cascade: true })
+  @OneToOne(() => OidcCredential, { eager: true, cascade: true, nullable: true })
   @JoinColumn()
   credential: OidcCredential;
 
@@ -29,6 +29,6 @@ export class OidcIssuer {
 
   // Note: intentionally, not picking OneToOne JoinColumn, because the corresponding did is created
   // using veramo agent method, instead of direct psql-insert
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   did: string;
 }
