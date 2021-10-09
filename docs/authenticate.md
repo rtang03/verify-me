@@ -20,19 +20,17 @@ activate Oidc_verifier
 Oidc_verifier->Oidc_verifier: validateBindingMessage
 Oidc_verifier->Oidc_verifier: processLoginHint
 Oidc_verifier->Oidc_verifier: verifyUserCode (disabled)
-Oidc_verifier->Oidc_verifier: triggerAuthenticationDevice \n- get verifier's did \n- create pres req template \n- pack pres req template to Jwm 
+Oidc_verifier->Oidc_verifier: triggerAuthenticationDevice \n - get by presReqTemplateId\n - create presReq 
 Oidc_verifier-->RP: auth_request_id
-RP->Oidc_verifier: get press-req-templ
-Oidc_verifier-->RP: ref to pres-req-templ
+RP->Oidc_verifier: get presentation request
+Oidc_verifier-->RP: presentation request
 RP-->Browser: display qr code
 == IdentityWallet Communication ==
 loop until timeout
     RP->RP: wait client_notification
 end
 Browser->Wallet: scan qr code (ref to pres-req-templ)
-Wallet->Oidc_verifier: GET pres-req-templ
-Oidc_verifier-->Wallet: pres-req-templ
-Wallet->Oidc_verifier: create presentation request
+Wallet->Oidc_verifier: create SDR
 Oidc_verifier-->Wallet: SDR
 Wallet->Wallet: search VC by loginHint\n with bindingMessage, \naccountId & userCode
 Wallet->User: present verify data request

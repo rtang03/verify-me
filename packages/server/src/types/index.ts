@@ -67,6 +67,8 @@ export * from './credentialResponse';
 export * from './requestWithHost';
 export * from './createOidcVerifierArgs';
 export * from './createOidcVerifierClientArgs';
+export * from './createPresRequestArgs';
+export * from './createPresReqTemplArgs';
 
 export type PaginatedDIDDocument = Paginated<DidDocument>;
 export type GetPaginatedDidDocument = CommonResponse<Paginated<DidDocument>>;

@@ -5,7 +5,7 @@ import type {
   IKey,
   IKeyManagerGetArgs,
 } from '@veramo/core';
-import { Entities, migrations as veramoMigrations } from '@veramo/data-store';
+import { Entities } from '@veramo/data-store';
 import Debug from 'debug';
 import includes from 'lodash/includes';
 import { Provider } from 'oidc-provider';
@@ -18,6 +18,7 @@ import {
   OidcFederatedProvider,
   OidcVerifier,
   OidcPayload,
+  PresentationRequestTemplate,
 } from '../entities';
 import { getMigrations } from '../entities/migrations';
 import type { TenantManager, TenantStatus } from '../types';
@@ -51,6 +52,7 @@ const createConnOption: (tenant: Tenant) => ConnectionOptions = (tenant) => ({
     OidcFederatedProvider,
     OidcVerifier,
     OidcPayload,
+    PresentationRequestTemplate,
   ],
   schema: getSchemaName(tenant.id),
 });

@@ -3,7 +3,7 @@ import Debug from 'debug';
 import Status from 'http-status';
 import { nanoid } from 'nanoid';
 import { getConnection } from 'typeorm';
-import { OidcVerifier } from '../entities';
+import { OidcVerifier, PresentationRequestTemplate } from '../entities';
 import type { Paginated, RequestWithVhost, TenantManager } from '../types';
 import { createRestRoute, isCreateOidcVerifierArgs } from '../utils';
 
@@ -42,11 +42,12 @@ export const createOidcVerifierRoute = (tenantManger: TenantManager) =>
       const body: unknown = req.body;
       const isRunningJest = process.env.NODE_ENV === 'test';
       const id = isRunningJest ? process.env.JEST_FIXED_OIDC_VERIFIER_ID : nanoid();
+      const tenantId = req.tenantId;
 
       isRunningJest && console.log('create fixed Id for TEST purpose');
 
       if (isCreateOidcVerifierArgs(body)) {
-        const verifierRepo = getConnection(req.tenantId).getRepository(OidcVerifier);
+        const verifierRepo = getConnection(tenantId).getRepository(OidcVerifier);
 
         // Add did to new Oidc issuer
         const slug = req.vhost[0];
@@ -58,7 +59,25 @@ export const createOidcVerifierRoute = (tenantManger: TenantManager) =>
         };
         const identifier: IIdentifier = await agent.execute('didManagerGetOrCreate', agentArgs);
 
-        debug('oidc-verifier did, %O', identifier);
+        // Debug: identifier shall return
+        // const example_identifier = {
+        //   did: 'did:key:z7r8otXNsZFYRJ1e914xeRkkeSfpJRjQxFmQaTAVtULkQf9VCWVFmNg6zuQrDAqgbxCrvvtBRDVKVvC6bTvsbr7RgfkwU',
+        //   controllerKeyId:
+        //     '04fc61d4e14e361160c09c413ee59670e654cb24966d6dd0836aca939fc4adc12d439810289beafaebeda81a8c8dadd0885dddb6830a5a2063afb15654bd3609c3',
+        //   keys: [
+        //     {
+        //       type: 'Secp256k1',
+        //       kid: '04fc61d4e14e361160c09c413ee59670e654cb24966d6dd0836aca939fc4adc12d439810289beafaebeda81a8c8dadd0885dddb6830a5a2063afb15654bd3609c3',
+        //       publicKeyHex:
+        //         '04fc61d4e14e361160c09c413ee59670e654cb24966d6dd0836aca939fc4adc12d439810289beafaebeda81a8c8dadd0885dddb6830a5a2063afb15654bd3609c3',
+        //       meta: [Object],
+        //       kms: 'local',
+        //     },
+        //   ],
+        //   services: [],
+        //   provider: 'did:key',
+        //   alias: 'dgPXxUz_6fWIQBD8XmiSy',
+        // };
 
         if (!identifier)
           return res
@@ -68,8 +87,19 @@ export const createOidcVerifierRoute = (tenantManger: TenantManager) =>
         const verifier = new OidcVerifier();
         verifier.id = id;
         verifier.did = identifier.did;
+
+        // TODO: Revisit me what is the use of claimMappings
         verifier.claimMappings = body.claimMappings;
-        verifier.presentationTemplateId = body.presentationTemplateId;
+
+        const templRepo = getConnection(tenantId).getRepository(PresentationRequestTemplate);
+        const template = await templRepo.findOne({ alias: body.presentationTemplateAlias });
+
+        if (!template)
+          return res
+            .status(Status.BAD_REQUEST)
+            .send({ status: 'ERROR', error: 'presentation request template not found' });
+
+        verifier.presentationTemplate = template;
 
         const data = await verifierRepo.save(verifier);
         debug('POST /oidc/verifiers, %O', data);

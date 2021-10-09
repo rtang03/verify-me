@@ -129,6 +129,20 @@ export const createOidcTables1447159030001 = (database: string, schema: string) 
         true
       );
 
+      debug(`creating PresentationRequestTemplate table`);
+      await queryRunner.createTable(
+        new Table({
+          database,
+          schema,
+          name: 'presentation_req_template',
+          columns: [
+            { name: 'id', type: 'integer', isGenerated: true, isPrimary: true },
+            { name: 'alias', type: 'varchar', isNullable: false, isUnique: true },
+            { name: 'claims', type: 'text', isNullable: false },
+          ],
+        })
+      );
+
       debug(`creating OidcVerifier table`);
       await queryRunner.createTable(
         new Table({
@@ -137,9 +151,17 @@ export const createOidcTables1447159030001 = (database: string, schema: string) 
           name: 'oidc_verifier',
           columns: [
             { name: 'id', type: 'varchar', isPrimary: true },
-            { name: 'presentationTemplateId', type: 'varchar', isNullable: true },
+            { name: 'presentationTemplateId', type: 'integer', isNullable: true },
             { name: 'claimMappings', type: 'text', isNullable: false },
             { name: 'did', type: 'varchar', isNullable: true },
+          ],
+          foreignKeys: [
+            {
+              columnNames: ['presentationTemplateId'],
+              referencedColumnNames: ['id'],
+              referencedTableName: 'presentation_req_template',
+              onDelete: 'cascade',
+            },
           ],
         }),
         true

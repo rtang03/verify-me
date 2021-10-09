@@ -5,7 +5,7 @@ import { Router, Request, Response, text } from 'express';
 import Status from 'http-status';
 import pick from 'lodash/pick';
 import type { Connection } from 'typeorm';
-import type { TenantManager } from '../types';
+import type { CreatePresRequestArgs, TenantManager } from '../types';
 import type { TTAgent } from '../utils';
 import { createDidDocument, exposedMethods } from '../utils';
 import { createOidcRoute } from './createOidcRoute';
@@ -146,23 +146,61 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
   // api schema
   // router.use('/open-api.json', schemaRouter);
 
+  // todo: CAN REMOVE
   router.post('/presentation/requests', async (req: RequestWithAgent, res) => {
-    const body = req.body;
+    const body: CreatePresRequestArgs = req.body;
 
     if (!req.agent) return res.status(Status.BAD_GATEWAY).send({ error: 'agent not found' });
 
     debug('POST /presentation/requests %O', body);
 
+    // todo: retrieve claimType and replyUrl via body.presentationTemplateId
+    // Note: presentationTemplateId returns one claim requirement for single issuer authentication
+    // for use case other than "authentication", the presentationTemplate may contains multiple claims / issuers
+
+    // coming from presentationRequestTemplate
+    const claimType = 'DIDAuth';
+    const reason = 'authentication';
+    const essential = true;
+    const credentialType = 'Profile';
+    const replyUrl = 'oidcVerifierDomain';
+    // https://www.w3.org/TR/vc-data-model/#contexts
+    // Context for DidAuth
+    const credentialContext = 'https://www.w3.org/2018/credentials/v1';
+    // authentication requirement
+    const requiredIssuerDid = 'did:web:xxxx';
+    const requiredIssuerUrl = 'https://issuer.example.com/oidc/issuers/xxx';
+
     try {
       const createSdrArgs: ICreateSelectiveDisclosureRequestArgs = {
-        data: null,
+        data: {
+          // SIOP given by Wallet
+          issuer: body.siopDid,
+          // verifier Did, given by
+          subject: body.verifierDid,
+          // Oidc-verifier endpoint
+          replyUrl,
+          // Note: is it possible to request claim from different issuers? for a DApp
+          claims: [
+            {
+              claimType,
+              reason,
+              essential,
+              credentialType,
+              issuers: [{ did: requiredIssuerDid, url: requiredIssuerUrl }],
+              credentialContext,
+            },
+          ],
+        },
       };
-      const result: string = await req.agent.execute(
+      const data: string = await req.agent.execute(
         'createSelectiveDisclosureRequest',
         createSdrArgs
       );
 
-      debug('create presentation request, %O', result);
+      debug('create presentation request, %O', data);
+
+      res.status(Status.CREATED).send({ data });
     } catch (e) {
       res.status(Status.BAD_REQUEST).send({ error: e.message });
     }

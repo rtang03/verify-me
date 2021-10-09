@@ -22,6 +22,7 @@ import {
 import { createOidcClientRoute } from './createOidcClientRoute';
 import { createOidcIssuerRoute } from './createOidcIssuerRoute';
 import { createOidcVerifierRoute } from './createOidcVerifierRoute';
+import { createPresReqTemplRoute } from './createPresReqTemplRoute';
 
 const debug = Debug('utils:createOidcRoute');
 
@@ -805,6 +806,11 @@ export const createOidcRoute = (tenantManger: TenantManager) => {
       ? oidc.callback()(req, res)
       : res.status(Status.BAD_REQUEST).send({ status: 'ERROR', error: 'Oidc provider not found' });
   });
+
+  /*******************
+   * SECTION: PRESENTATION REQUEST
+   ******************/
+  router.use('/presentation_req_template', createPresReqTemplRoute(tenantManger));
 
   return router;
 };

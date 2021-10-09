@@ -7,7 +7,11 @@ import Status from 'http-status';
 import request from 'supertest';
 import { Connection, ConnectionOptions, getRepository, getConnection } from 'typeorm';
 import { Accounts, OidcClient, Sessions, Tenant, Users } from '../entities';
-import type { CreateOidcVerifierArgs, CreateOidcVerifierClientArgs } from '../types';
+import type {
+  CreateOidcVerifierArgs,
+  CreateOidcVerifierClientArgs,
+  CreatePresReqTemplArgs,
+} from '../types';
 import {
   createHttpServer,
   getClaimMappings,
@@ -35,6 +39,7 @@ const ENV_VAR = {
   OIDC_JWKS_PRIVATE_KEY_FILE: process.env.OIDC_JWKS_PRIVATE_KEY_FILE,
   AUTH0_CLIENT_ID: process.env.AUTH0_ID,
   AUTH0_CLIENT_SECRET: process.env.AUTH0_SECRET,
+  JEST_FIXED_OIDC_ISSUER_ID: process.env.JEST_FIXED_OIDC_ISSUER_ID,
   JEST_FIXED_OIDC_VERIFIER_ID: process.env.JEST_FIXED_OIDC_VERIFIER_ID,
   JEST_FIXED_OIDC_ClIENT_ID: process.env.JEST_FIXED_OIDC_ClIENT_ID,
   JEST_FIXED_ACCOUNT_ID: process.env.JEST_FIXED_ACCOUNT_ID,
@@ -62,6 +67,9 @@ let verifierId: string;
 let clientId: string;
 let openIdConfig: any;
 
+const presentationTemplateAlias = 'did-auth';
+const issuerDid = 'did:web:issuer.example.com';
+const issuerUrl = `https://issuer.example.com/oidc/issuers/${ENV_VAR.JEST_FIXED_OIDC_ISSUER_ID}`;
 const claims = {
   userinfo: {
     email: { essential: true },
@@ -169,83 +177,109 @@ describe('Authz unit test', () => {
 
   it('wait 5s', async () => new Promise((ok) => setTimeout(() => ok(true), 5000)));
 
-  // it('should GET /actions/tenant_summary, after activation', async () =>
-  //   request(express)
-  //     .get('/actions/tenant_summary')
-  //     .set('host', 'example.com')
-  //     .set('authorization', `Bearer`)
-  //     .expect(({ body, status }) => {
-  //       expect(status).toEqual(Status.OK);
-  //       expect(body?.data?.agentCount).toEqual(1);
-  //     }));
-  //
-  // it('should GET /actions/:tenantId/tenant_status', async () =>
-  //   request(express)
-  //     .get(`/actions/${tenant.id}/tenant_status`)
-  //     .set('host', 'example.com')
-  //     .set('authorization', `Bearer`)
-  //     .expect(({ body, status }) => {
-  //       expect(status).toEqual(Status.OK);
-  //       expect(body?.data).toEqual({ isActivated: true, isSchemaExist: true, isAgentReady: true });
-  //     }));
+  it('should GET /actions/tenant_summary, after activation', async () =>
+    request(express)
+      .get('/actions/tenant_summary')
+      .set('host', 'example.com')
+      .set('authorization', `Bearer`)
+      .expect(({ body, status }) => {
+        expect(status).toEqual(Status.OK);
+        expect(body?.data?.agentCount).toEqual(1);
+      }));
 
-  // it('should GET /is_agent_exist, after activation', async () =>
-  //   request(express)
-  //     .get('/is_agent_exist')
-  //     .set('host', 'verifier.example.com')
-  //     .set('authorization', `Bearer`)
-  //     .expect(({ body }) => expect(body).toEqual({ data: 'Agent found' })));
+  it('should GET /actions/:tenantId/tenant_status', async () =>
+    request(express)
+      .get(`/actions/${tenant.id}/tenant_status`)
+      .set('host', 'example.com')
+      .set('authorization', `Bearer`)
+      .expect(({ body, status }) => {
+        expect(status).toEqual(Status.OK);
+        expect(body?.data).toEqual({ isActivated: true, isSchemaExist: true, isAgentReady: true });
+      }));
 
-  // it('should POST /oidc/verifiers', async () => {
-  //   const payload: CreateOidcVerifierArgs = {
-  //     presentationTemplateId: '123123',
-  //     claimMappings: getClaimMappings([mapping]).mappings,
-  //   };
-  //
-  //   return request(express)
-  //     .post('/oidc/verifiers')
-  //     .set('host', 'verifier.example.com')
-  //     .set('authorization', `Bearer`)
-  //     .send(payload)
-  //     .expect(({ body, status }) => {
-  //       expect(isOidcVerifier(body?.data)).toBeTruthy();
-  //       expect(status).toEqual(Status.CREATED);
-  //       verifierId = body?.data?.id;
-  //     });
-  // });
-  //
-  // it('should register oidc client', async () => {
-  //   // Note: test will support "ping" only; backchannel_client_notification_endpoint is required.
-  //   // TODO: evaluate later, if we can figure out how to run unit test with "ping"
-  //   const payload = <CreateOidcVerifierClientArgs>{
-  //     client_name: 'Oidc client for wallet',
-  //     grant_types: ['urn:openid:params:grant-type:ciba'],
-  //     token_endpoint_auth_method,
-  //     id_token_signed_response_alg,
-  //     application_type: 'web',
-  //     backchannel_token_delivery_mode: 'ping',
-  //     backchannel_authentication_request_signing_alg: 'ES256K',
-  //     backchannel_user_code_parameter: true,
-  //     redirect_uris: ['https://jwt.io'],
-  //     backchannel_client_notification_endpoint,
-  //   };
-  //
-  //   return request(express)
-  //     .post(`/oidc/verifiers/${verifierId}/reg`)
-  //     .set('host', 'verifier.example.com')
-  //     .set('authorization', `Bearer`)
-  //     .send(payload)
-  //     .expect(({ body, status }) => {
-  //       expect(isOidcVerifierClient(body?.data)).toBeTruthy();
-  //       expect(status).toEqual(Status.CREATED);
-  //       clientId = body?.data?.client_id;
-  //     });
-  // });
+  it('should GET /is_agent_exist, after activation', async () =>
+    request(express)
+      .get('/is_agent_exist')
+      .set('host', 'verifier.example.com')
+      .set('authorization', `Bearer`)
+      .expect(({ body }) => expect(body).toEqual({ data: 'Agent found' })));
+
+  it('should POST /oidc/presentation_req_template', async () => {
+    const payload: CreatePresReqTemplArgs = {
+      claims: [
+        {
+          claimType: 'DIDAuth',
+          reason: 'authentication',
+          essential: true,
+          credentialtype: 'Profile',
+          credentialContext: 'https://www.w3.org/2018/credentials/v1',
+          issuers: [{ did: issuerDid, url: issuerUrl }],
+        },
+      ],
+      alias: presentationTemplateAlias,
+    };
+
+    return request(express)
+      .post('/oidc/presentation_req_template')
+      .set('host', 'verifier.example.com')
+      .set('authorization', `Bearer`)
+      .send(payload)
+      .expect(({ body, status }) => {
+        expect(body.status).toEqual('OK');
+        expect(body.data.alias).toEqual(presentationTemplateAlias);
+        expect(status).toEqual(Status.CREATED);
+      });
+  });
+
+  it('should POST /oidc/verifiers', async () => {
+    const payload: CreateOidcVerifierArgs = {
+      presentationTemplateAlias,
+      claimMappings: getClaimMappings([mapping]).mappings,
+    };
+
+    return request(express)
+      .post('/oidc/verifiers')
+      .set('host', 'verifier.example.com')
+      .set('authorization', `Bearer`)
+      .send(payload)
+      .expect(({ body, status }) => {
+        expect(isOidcVerifier(body?.data)).toBeTruthy();
+        expect(status).toEqual(Status.CREATED);
+        verifierId = body?.data?.id;
+      });
+  });
+
+  it('should register oidc client', async () => {
+    // Note: test will support "ping" only; backchannel_client_notification_endpoint is required.
+    // TODO: evaluate later, if we can figure out how to run unit test with "ping"
+    const payload = <CreateOidcVerifierClientArgs>{
+      client_name: 'Oidc client for wallet',
+      grant_types: ['urn:openid:params:grant-type:ciba'],
+      token_endpoint_auth_method,
+      id_token_signed_response_alg,
+      application_type: 'web',
+      backchannel_token_delivery_mode: 'ping',
+      backchannel_authentication_request_signing_alg: 'ES256K',
+      backchannel_user_code_parameter: true,
+      redirect_uris: ['https://jwt.io'],
+      backchannel_client_notification_endpoint,
+    };
+
+    return request(express)
+      .post(`/oidc/verifiers/${verifierId}/reg`)
+      .set('host', 'verifier.example.com')
+      .set('authorization', `Bearer`)
+      .send(payload)
+      .expect(({ body, status }) => {
+        expect(isOidcVerifierClient(body?.data)).toBeTruthy();
+        expect(status).toEqual(Status.CREATED);
+        clientId = body?.data?.client_id;
+      });
+  });
 
   /**
    * Part 2: Kick off interaction
    */
-  /*
   it('should GET /oidc/issuers/:id/.well-known/openid-configuration', async () =>
     request(express)
       .get(`/oidc/verifiers/${verifierId}/.well-known/openid-configuration`)
@@ -346,10 +380,9 @@ describe('Authz unit test', () => {
         console.log('**** Result: ', result.body);
       });
   });
-
-   */
 });
 
+// early /token request will throw
 // {
 //   "error": "authorization_pending",
 //   "error_description": "authorization request is still pending as the end-user hasn't yet completed the user interaction steps"

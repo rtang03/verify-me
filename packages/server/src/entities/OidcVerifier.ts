@@ -1,13 +1,17 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, PrimaryColumn, ManyToOne } from 'typeorm';
+import { PresentationRequestTemplate } from './PresentationRequestTemplate';
 
-@Entity()
+@Entity('oidc_verifier')
 export class OidcVerifier {
   @PrimaryColumn()
   id: string;
 
-  // TODO: Not knowing if I need this field. Double check it later
-  @Column({ type: 'varchar', nullable: true })
-  presentationTemplateId: string;
+  @ManyToOne(
+    () => PresentationRequestTemplate,
+    (presentationRequestTemplate) => presentationRequestTemplate.usedByVerifiers,
+    { eager: true, cascade: ['insert'], onDelete: 'CASCADE', nullable: false }
+  )
+  presentationTemplate: PresentationRequestTemplate;
 
   @Column({ type: 'simple-json', nullable: false })
   claimMappings: Array<{

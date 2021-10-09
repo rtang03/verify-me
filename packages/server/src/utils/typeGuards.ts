@@ -8,6 +8,7 @@ import type {
   CreateOidcVerifierClientArgs,
   CredentialRequestPayload,
 } from '../types';
+import { CreatePresReqTemplArgs } from '../types';
 
 export const isIdentitifer = (input: any): input is IIdentifier =>
   input.did !== undefined &&
@@ -73,7 +74,7 @@ export const isCredentialRequestPayload = (input: any): input is CredentialReque
   input?.aud !== undefined;
 
 export const isCreateOidcVerifierArgs = (input: any): input is CreateOidcVerifierArgs =>
-  input?.claimMappings !== undefined;
+  input?.presentationTemplateAlias !== undefined && input?.claimMappings !== undefined;
 
 export const isCreateOidcVerifierClientArgs = (input: any): input is CreateOidcVerifierClientArgs =>
   input?.client_name !== undefined &&
@@ -87,7 +88,10 @@ export const isCreateOidcVerifierClientArgs = (input: any): input is CreateOidcV
 // input?.response_types !== undefined;
 
 export const isOidcVerifier = (input: any): input is OidcVerifier =>
-  input?.id !== undefined && input?.claimMappings !== undefined && input?.did !== undefined;
+  input?.id !== undefined &&
+  input?.claimMappings !== undefined &&
+  input?.did !== undefined &&
+  input?.presentationTemplate?.id !== undefined;
 
 export const isOidcVerifierClient = (input: any): input is OidcClient =>
   input?.client_id !== undefined &&
@@ -99,3 +103,7 @@ export const isOidcVerifierClient = (input: any): input is OidcClient =>
   input?.id_token_signed_response_alg !== undefined &&
   input?.redirect_uris !== undefined &&
   input?.response_types !== undefined;
+
+// todo: refine the claims array validation
+export const isCreatePresReqTemplArgs = (input: any): input is CreatePresReqTemplArgs =>
+  input?.claims !== undefined && input?.alias !== undefined;
