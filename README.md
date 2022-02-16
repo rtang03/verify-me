@@ -4,6 +4,8 @@
 
 Federated OpenID Connect Provider - with w3c Decentralized Identity
 
+Please DON'T use.
+
 ### Developer Notes
 auth0 callback for Registra application when using next-auth
 `http://localhost:3000/api/auth/callback/auth0`
