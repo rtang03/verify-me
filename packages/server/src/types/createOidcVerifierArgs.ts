@@ -1,6 +1,6 @@
 export type CreateOidcVerifierArgs = {
   id?: string;
-  presentationTemplateAlias: string;
+  presentationTemplateName: string;
   claimMappings: Array<{
     jsonLdTerm: string;
     oidcClaim: string;

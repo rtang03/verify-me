@@ -67,7 +67,7 @@ let verifierId: string;
 let clientId: string;
 let openIdConfig: any;
 
-const presentationTemplateAlias = 'did-auth';
+const presentationTemplateName = 'did-auth';
 const issuerDid = 'did:web:issuer.example.com';
 const issuerUrl = `https://issuer.example.com/oidc/issuers/${ENV_VAR.JEST_FIXED_OIDC_ISSUER_ID}`;
 const claims = {
@@ -205,18 +205,25 @@ describe('Authz unit test', () => {
       .expect(({ body }) => expect(body).toEqual({ data: 'Agent found' })));
 
   it('should POST /oidc/presentation_req_template', async () => {
+    // TODO: claims may need revisit, it is not required.
     const payload: CreatePresReqTemplArgs = {
-      claims: [
+      query: [
         {
-          claimType: 'DIDAuth',
-          reason: 'authentication',
-          essential: true,
-          credentialtype: 'Profile',
-          credentialContext: 'https://www.w3.org/2018/credentials/v1',
-          issuers: [{ did: issuerDid, url: issuerUrl }],
+          type: 'did-auth',
+          credentialQuery: [
+            {
+              claimType: 'email',
+              reason: 'authentication',
+              essential: true,
+              credentialType: 'Profile',
+              credentialContext: 'https://www.w3.org/2018/credentials/v1',
+              issuers: [{ did: issuerDid, url: issuerUrl }],
+            },
+          ],
         },
       ],
-      alias: presentationTemplateAlias,
+      name: presentationTemplateName,
+      domain: 'https://verifier.example.com',
     };
 
     return request(express)
@@ -226,14 +233,14 @@ describe('Authz unit test', () => {
       .send(payload)
       .expect(({ body, status }) => {
         expect(body.status).toEqual('OK');
-        expect(body.data.alias).toEqual(presentationTemplateAlias);
+        expect(body.data.name).toEqual(presentationTemplateName);
         expect(status).toEqual(Status.CREATED);
       });
   });
 
   it('should POST /oidc/verifiers', async () => {
     const payload: CreateOidcVerifierArgs = {
-      presentationTemplateAlias,
+      presentationTemplateName,
       claimMappings: getClaimMappings([mapping]).mappings,
     };
 
@@ -249,37 +256,38 @@ describe('Authz unit test', () => {
       });
   });
 
-  it('should register oidc client', async () => {
-    // Note: test will support "ping" only; backchannel_client_notification_endpoint is required.
-    // TODO: evaluate later, if we can figure out how to run unit test with "ping"
-    const payload = <CreateOidcVerifierClientArgs>{
-      client_name: 'Oidc client for wallet',
-      grant_types: ['urn:openid:params:grant-type:ciba'],
-      token_endpoint_auth_method,
-      id_token_signed_response_alg,
-      application_type: 'web',
-      backchannel_token_delivery_mode: 'ping',
-      backchannel_authentication_request_signing_alg: 'ES256K',
-      backchannel_user_code_parameter: true,
-      redirect_uris: ['https://jwt.io'],
-      backchannel_client_notification_endpoint,
-    };
-
-    return request(express)
-      .post(`/oidc/verifiers/${verifierId}/reg`)
-      .set('host', 'verifier.example.com')
-      .set('authorization', `Bearer`)
-      .send(payload)
-      .expect(({ body, status }) => {
-        expect(isOidcVerifierClient(body?.data)).toBeTruthy();
-        expect(status).toEqual(Status.CREATED);
-        clientId = body?.data?.client_id;
-      });
-  });
+  // it('should register oidc client', async () => {
+  //   // Note: test will support "ping" only; backchannel_client_notification_endpoint is required.
+  //   // TODO: evaluate later, if we can figure out how to run unit test with "ping"
+  //   const payload = <CreateOidcVerifierClientArgs>{
+  //     client_name: 'Oidc client for wallet',
+  //     grant_types: ['urn:openid:params:grant-type:ciba'],
+  //     token_endpoint_auth_method,
+  //     id_token_signed_response_alg,
+  //     application_type: 'web',
+  //     backchannel_token_delivery_mode: 'ping',
+  //     backchannel_authentication_request_signing_alg: 'ES256K',
+  //     backchannel_user_code_parameter: true,
+  //     redirect_uris: ['https://jwt.io'],
+  //     backchannel_client_notification_endpoint,
+  //   };
+  //
+  //   return request(express)
+  //     .post(`/oidc/verifiers/${verifierId}/reg`)
+  //     .set('host', 'verifier.example.com')
+  //     .set('authorization', `Bearer`)
+  //     .send(payload)
+  //     .expect(({ body, status }) => {
+  //       expect(isOidcVerifierClient(body?.data)).toBeTruthy();
+  //       expect(status).toEqual(Status.CREATED);
+  //       clientId = body?.data?.client_id;
+  //     });
+  // });
 
   /**
    * Part 2: Kick off interaction
    */
+  /*
   it('should GET /oidc/issuers/:id/.well-known/openid-configuration', async () =>
     request(express)
       .get(`/oidc/verifiers/${verifierId}/.well-known/openid-configuration`)
@@ -324,6 +332,7 @@ describe('Authz unit test', () => {
         // jti need to be unique, otherwise, request will throw
         // "replay detected (jti: cOGMd37yZEJQ_1_teRMImhmM1tUfat8_cnWPWJDfGHg)"
         jti: generators.nonce(),
+        nonce: generators.nonce(),
         scope,
         login_hint,
         binding_message,
@@ -380,6 +389,8 @@ describe('Authz unit test', () => {
         console.log('**** Result: ', result.body);
       });
   });
+
+   */
 });
 
 // early /token request will throw

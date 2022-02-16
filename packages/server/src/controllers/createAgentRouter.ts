@@ -146,7 +146,6 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
   // api schema
   // router.use('/open-api.json', schemaRouter);
 
-  // todo: CAN REMOVE
   router.post('/presentation/requests', async (req: RequestWithAgent, res) => {
     const body: CreatePresRequestArgs = req.body;
 
@@ -159,28 +158,32 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
     // for use case other than "authentication", the presentationTemplate may contains multiple claims / issuers
 
     // coming from presentationRequestTemplate
-    const claimType = 'DIDAuth';
-    const reason = 'authentication';
-    const essential = true;
-    const credentialType = 'Profile';
-    const replyUrl = 'oidcVerifierDomain';
-    // https://www.w3.org/TR/vc-data-model/#contexts
-    // Context for DidAuth
-    const credentialContext = 'https://www.w3.org/2018/credentials/v1';
-    // authentication requirement
-    const requiredIssuerDid = 'did:web:xxxx';
-    const requiredIssuerUrl = 'https://issuer.example.com/oidc/issuers/xxx';
+    // const claimType = 'DIDAuth';
+    // const reason = 'authentication';
+    // const essential = true;
+    // const credentialType = 'Profile';
+    // const replyUrl = 'oidcVerifierDomain';
+    // // https://www.w3.org/TR/vc-data-model/#contexts
+    // // Context for DidAuth
+    // const credentialContext = 'https://www.w3.org/2018/credentials/v1';
+    // // authentication requirement
+    // const requiredIssuerDid = 'did:web:xxxx';
+    // const requiredIssuerUrl = 'https://issuer.example.com/oidc/issuers/xxx';
 
     try {
       const createSdrArgs: ICreateSelectiveDisclosureRequestArgs = {
         data: {
           // SIOP given by Wallet
           issuer: body.siopDid,
-          // verifier Did, given by
+          // verifier's client's Did, given by presentation request
+          // ❓ ❓ ❓ should it be client's Did, or accountId's Did
+          // bcAuthReq -> clientId -> client's Did
           subject: body.verifierDid,
-          // Oidc-verifier endpoint
+          // ????? Oidc-verifier or Oidc-verifier client's endpoint, or accountId's Did
+          // current endpoint + bcAuthReq -> clientId = https://tenant.example.com/oidc/verifier/xxxx/clients/xxxx
           replyUrl,
           // Note: is it possible to request claim from different issuers? for a DApp
+          // given by bcAuthReq -> transformed via presReqTempl -> SDR
           claims: [
             {
               claimType,

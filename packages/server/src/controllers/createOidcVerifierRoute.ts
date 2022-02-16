@@ -92,7 +92,7 @@ export const createOidcVerifierRoute = (tenantManger: TenantManager) =>
         verifier.claimMappings = body.claimMappings;
 
         const templRepo = getConnection(tenantId).getRepository(PresentationRequestTemplate);
-        const template = await templRepo.findOne({ alias: body.presentationTemplateAlias });
+        const template = await templRepo.findOne({ name: body.presentationTemplateName });
 
         if (!template)
           return res

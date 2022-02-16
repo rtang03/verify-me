@@ -94,7 +94,6 @@ export const createOidcTables1447159030001 = (database: string, schema: string) 
               columnNames: ['federatedProviderId'],
               referencedColumnNames: ['id'],
               referencedTableName: 'oidc_federated_provider',
-              // TODO: revisit me
               onDelete: 'cascade',
             },
             {
@@ -137,8 +136,9 @@ export const createOidcTables1447159030001 = (database: string, schema: string) 
           name: 'presentation_req_template',
           columns: [
             { name: 'id', type: 'integer', isGenerated: true, isPrimary: true },
-            { name: 'alias', type: 'varchar', isNullable: false, isUnique: true },
-            { name: 'claims', type: 'text', isNullable: false },
+            { name: 'name', type: 'varchar', isNullable: false },
+            { name: 'domain', type: 'varchar', isNullable: false },
+            { name: 'query', type: 'text', isNullable: false },
           ],
         })
       );
@@ -165,6 +165,23 @@ export const createOidcTables1447159030001 = (database: string, schema: string) 
           ],
         }),
         true
+      );
+
+      debug(`creating PresentationRequest table`);
+      await queryRunner.createTable(
+        new Table({
+          database,
+          schema,
+          name: 'presentation_request',
+          columns: [
+            { name: 'id', type: 'varchar', isPrimary: true },
+            { name: 'challenge', type: 'varchar', isNullable: false },
+            { name: 'did', type: 'varchar', isNullable: false },
+            { name: 'templateId', type: 'varchar', isNullable: false },
+            { name: 'expiresTime', type: dateTimeType, isNullable: false },
+            { name: 'callbackUrl', type: 'varchar', isNullable: false },
+          ],
+        })
       );
     }
 

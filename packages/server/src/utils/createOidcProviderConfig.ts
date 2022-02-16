@@ -5,6 +5,7 @@ import { errors as OidcProviderError } from 'oidc-provider';
 import { getConnection } from 'typeorm';
 import { createOidcAdapter } from './createOidcAdapter';
 import { ClaimMapping, getClaimMappings } from './oidcProfileClaimMappings';
+import { PresentationRequest } from '../entities/PresentationRequest';
 
 const debug = Debug('utils:createOidcProviderConfig');
 
@@ -213,6 +214,12 @@ export const createOidcProviderConfig = (option: {
           // @param account - the account object retrieved by findAccount
           // @param client - the Client instance
 
+          const presRequestRepo = getConnection(connectionName).getRepository(PresentationRequest);
+          const presRequest = new PresentationRequest();
+          presRequest.id = request.jti;
+
+          const data = await presRequestRepo.save(presRequest);
+
           // e.g.
           // const request: BackchannelAuthenticationRequest = {
           //   accountId: 'auth0|6059aed4aa7803006a20d824',
@@ -267,9 +274,6 @@ export const createOidcProviderConfig = (option: {
           //   redirectUris: ['https://jwt.io'],
           //   backchannelTokenDeliveryMode: 'poll',
           // };
-
-          // step 1: get verifier Did
-          // step 2: create presentation request
 
           return;
           // auth_req_id is equal to jti, of signed request object
