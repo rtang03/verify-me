@@ -1,9 +1,15 @@
 # verify-me
 
+(Work-In-Progress) Proof of Concept:
+
+Federated OpenID Connect Provider - with w3c Decentralized Identity
+
+### Developer Notes
 auth0 callback for Registra application when using next-auth
 `http://localhost:3000/api/auth/callback/auth0`
 
-idtoken format
+
+id_token Format
 
 ```json
 {
@@ -18,7 +24,7 @@ idtoken format
 }
 ```
 
-accesstoken
+accesstoken Format
 
 ```json
 {
@@ -70,3 +76,5 @@ openssl req -new -x509 -nodes -sha1 -days 3650 -key host.key > host.crt
 - https://github.com/hyperledger/aries-rfcs/blob/master/features/0334-jwe-envelope/README.md
 - https://medium.com/@CreatorNader/introducing-oidc-credential-provider-7845391a9881
 - https://openid.net/specs/openid-connect-self-issued-v2-1_0.html
+- http://localhost:3000/api/auth/callback/auth0
+- https://github.com/nextauthjs/next-auth-typescript-example

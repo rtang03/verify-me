@@ -1,6 +1,3 @@
-http://localhost:3000/api/auth/callback/auth0
-https://github.com/nextauthjs/next-auth-typescript-example
-
 ### DidComm Packing
 INPUT
 
