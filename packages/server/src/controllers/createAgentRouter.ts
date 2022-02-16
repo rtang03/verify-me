@@ -1,10 +1,11 @@
 import { RequestWithAgentRouter } from '@veramo/remote-server';
+import type { ICreateSelectiveDisclosureRequestArgs } from '@veramo/selective-disclosure';
 import Debug from 'debug';
 import { Router, Request, Response, text } from 'express';
 import Status from 'http-status';
 import pick from 'lodash/pick';
 import type { Connection } from 'typeorm';
-import type { TenantManager } from '../types';
+import type { CreatePresRequestArgs, TenantManager } from '../types';
 import type { TTAgent } from '../utils';
 import { createDidDocument, exposedMethods } from '../utils';
 import { createOidcRoute } from './createOidcRoute';
@@ -53,13 +54,14 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
   exposedMethods.forEach((method) =>
     router.post(`/agent/${method}`, async (req: RequestWithAgent, res: Response) => {
       if (!req.agent) return res.status(Status.BAD_GATEWAY).send({ error: 'agent not found' });
+
       debug('method: ', method);
       debug('body: %O', req.body);
 
       try {
         const result = await req.agent.execute(method, req.body);
 
-        debug(result);
+        debug('execute agent method, %O', result);
 
         res.status(Status.OK).json(result);
       } catch (e) {
@@ -143,6 +145,69 @@ export const createAgentRouter = (commonConnection: Connection, tenantManager: T
 
   // api schema
   // router.use('/open-api.json', schemaRouter);
+
+  router.post('/presentation/requests', async (req: RequestWithAgent, res) => {
+    const body: CreatePresRequestArgs = req.body;
+
+    if (!req.agent) return res.status(Status.BAD_GATEWAY).send({ error: 'agent not found' });
+
+    debug('POST /presentation/requests %O', body);
+
+    // todo: retrieve claimType and replyUrl via body.presentationTemplateId
+    // Note: presentationTemplateId returns one claim requirement for single issuer authentication
+    // for use case other than "authentication", the presentationTemplate may contains multiple claims / issuers
+
+    // coming from presentationRequestTemplate
+    // const claimType = 'DIDAuth';
+    // const reason = 'authentication';
+    // const essential = true;
+    // const credentialType = 'Profile';
+    // const replyUrl = 'oidcVerifierDomain';
+    // // https://www.w3.org/TR/vc-data-model/#contexts
+    // // Context for DidAuth
+    // const credentialContext = 'https://www.w3.org/2018/credentials/v1';
+    // // authentication requirement
+    // const requiredIssuerDid = 'did:web:xxxx';
+    // const requiredIssuerUrl = 'https://issuer.example.com/oidc/issuers/xxx';
+
+    try {
+      const createSdrArgs: ICreateSelectiveDisclosureRequestArgs = {
+        data: {
+          // SIOP given by Wallet
+          issuer: body.siopDid,
+          // verifier's client's Did, given by presentation request
+          // ❓ ❓ ❓ should it be client's Did, or accountId's Did
+          // bcAuthReq -> clientId -> client's Did
+          subject: body.verifierDid,
+          // ????? Oidc-verifier or Oidc-verifier client's endpoint, or accountId's Did
+          // current endpoint + bcAuthReq -> clientId = https://tenant.example.com/oidc/verifier/xxxx/clients/xxxx
+          replyUrl,
+          // Note: is it possible to request claim from different issuers? for a DApp
+          // given by bcAuthReq -> transformed via presReqTempl -> SDR
+          claims: [
+            {
+              claimType,
+              reason,
+              essential,
+              credentialType,
+              issuers: [{ did: requiredIssuerDid, url: requiredIssuerUrl }],
+              credentialContext,
+            },
+          ],
+        },
+      };
+      const data: string = await req.agent.execute(
+        'createSelectiveDisclosureRequest',
+        createSdrArgs
+      );
+
+      debug('create presentation request, %O', data);
+
+      res.status(Status.CREATED).send({ data });
+    } catch (e) {
+      res.status(Status.BAD_REQUEST).send({ error: e.message });
+    }
+  });
 
   return router;
 };

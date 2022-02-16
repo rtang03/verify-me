@@ -1,9 +1,12 @@
+import { Identifier } from '@veramo/data-store';
 import Debug from 'debug';
 import type { Adapter, AdapterPayload } from 'oidc-provider';
 import { getConnection } from 'typeorm';
 import { OidcClient, OidcPayload } from '../entities';
+import { convertKeysToJwkSecp256k1 } from './convertKeysToJwkSecp256k1';
 
-const debug = Debug('utils:createOidcRoute');
+const debug = Debug('utils:createOidcAdapter');
+
 const TCLIENT = 7;
 const types = [
   'Session',
@@ -19,9 +22,12 @@ const types = [
   'ReplayDetection',
   'PushedAuthorizationRequest',
   'Grant',
+  'BackchannelAuthenticationRequest',
 ].reduce((map, name, i) => ({ ...map, [name]: i + 1 }), {});
+
 const getExpireAt = (expiresIn) =>
   expiresIn ? new Date(Date.now() + expiresIn * 1000) : undefined;
+
 const parseResult: (input: OidcPayload) => OidcPayload = (data) =>
   data && {
     ...data,
@@ -32,11 +38,17 @@ const parseResult: (input: OidcPayload) => OidcPayload = (data) =>
 export const createOidcAdapter: (connectionName: string) => any = (connectionName) => {
   const oidcPayloadRepo = getConnection(connectionName).getRepository(OidcPayload);
   const oidcClientRepo = getConnection(connectionName).getRepository(OidcClient);
+  const identifierRepo = getConnection(connectionName).getRepository(Identifier);
 
   return class PsqlAdapter implements Adapter {
     type: number;
 
     constructor(public name) {
+      debug('OidcPayload: %s', name);
+
+      if (!types[name])
+        console.warn(`unknown OidcPayload encountered, ${name}; please revisit OidcAdapter.`);
+
       this.type = types[name];
     }
 
@@ -81,7 +93,7 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
      * @param {string} id Identifier of oidc-provider model
      */
     async find(id: string): Promise<AdapterPayload | undefined | void> {
-      debug('Find-id: %s', id);
+      debug('Find instance of oidc-provider model: %s', id);
 
       const repo = (
         {
@@ -90,9 +102,47 @@ export const createOidcAdapter: (connectionName: string) => any = (connectionNam
       )(id);
 
       const data = await repo;
+
+      // add keystore (public key) to each client
+      if (this.type === TCLIENT) {
+        const identifier: Identifier = await identifierRepo.findOne(data.did);
+        // Note: it adds keystore, in order for OP to sign the id_token
+        data.jwks = identifier && {
+          keys: [convertKeysToJwkSecp256k1(identifier.controllerKeyId).publicKeyJwk],
+        };
+        // Note: using JARM, response_mode is "jwt". Client metadata requires "authorization_signed_response_alg"
+        // The keystore above uses Secp256K1, provided by custom "did:key"; authorization_signed_response_alg must be "ES256K".
+        // Therefore, hardcode here. If later allowing different did key method for Client. Below code needs refactoring.
+        data.authorization_signed_response_alg = 'ES256K';
+
+        // TODO: refactor me later
+        !data.backchannel_client_notification_endpoint &&
+          delete data.backchannel_client_notification_endpoint;
+
+        !data.backchannel_authentication_request_signing_alg &&
+          delete data.backchannel_authentication_request_signing_alg;
+      }
+
       const result = this.type === TCLIENT ? data : parseResult(data as OidcPayload);
 
       debug('Find-result, %O', result);
+
+      // DEBUG: find CLIENT returns
+      // result = {
+      //   client_id: 'V1StGXR8_Z5jdHi6B-myT',
+      //   issuerId: 'ObjEGmwtFV-8Ys35WBiF5',
+      //   client_secret: '98494cb8284a08a389ee1609',
+      //   client_name: 'Oidc client for wallet',
+      //   redirect_uris: ['https://jwt.io'],
+      //   response_types: ['code'],
+      //   grant_types: ['authorization_code'],
+      //   token_endpoint_auth_method: 'client_secret_post',
+      //   id_token_signed_response_alg: 'EdDSA',
+      //   application_type: 'web',
+      //   did: 'did:key:z6Mkw3i49unLBCUxqv3bUE4ZXZzVdKwXPFAJLUaThXp4qa6j',
+      //   jwks: { keys: [[Object]] },
+      // };
+
       return result;
     }
 

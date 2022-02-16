@@ -8,6 +8,7 @@ export const CONIG = {
   ISSUER: 'issuer',
   TOKEN: 'token_endpoint',
   ME: 'userinfo_endpoint',
+  JWKS: 'jwks_uri',
 };
 
 export const fetchOpenIdConfiguration = async (url: string) => {

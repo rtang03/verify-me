@@ -1,3 +1,5 @@
+import { SecureContextOptions, TlsOptions } from 'tls';
+
 require('dotenv').config();
 import fs from 'fs';
 import http from 'http';
@@ -17,7 +19,8 @@ const ENV_VAR = {
   DB_USERNAME: process.env.TYPEORM_USERNAME,
   DB_PASSWORD: process.env.TYPEORM_PASSWORD,
   DB_NAME: process.env.TYPEORM_DATABASE,
-  OIDC_JWKS_PRIVATE_KEY_FILE: process.env.OIDC_JWKS_PRIVATE_KEY_FILE,
+  // OIDC_JWKS_PRIVATE_KEY_FILE: process.env.OIDC_JWKS_PRIVATE_KEY_FILE,
+  // JWKS_JSON: process.env.JWKS_JSON,
 };
 
 const commonConnectionOptions: ConnectionOptions = {
@@ -63,9 +66,10 @@ const commonConnectionOptions: ConnectionOptions = {
     process.exit(1);
   }
 
-  const options = {
+  const options: TlsOptions | SecureContextOptions = {
     key: fs.readFileSync('certs/host.key'),
     cert: fs.readFileSync('certs/host.pem'),
+    minVersion: 'TLSv1.2',
   };
 
   // https redirect

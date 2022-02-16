@@ -8,3 +8,4 @@ export * from './Accounts';
 export * from './Tenant';
 export * from './Users';
 export * from './OidcPayload';
+export * from './PresentationRequestTemplate';

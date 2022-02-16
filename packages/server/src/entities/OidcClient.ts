@@ -1,39 +1,65 @@
-import type { ClientAuthMethod, ResponseType, SigningAlgorithmWithNone } from 'oidc-provider';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import type {
+  CIBADeliveryMode,
+  ClientAuthMethod,
+  ResponseType,
+  SigningAlgorithmWithNone,
+} from 'oidc-provider';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 // https://openid.net/specs/openid-connect-registration-1_0.html
-@Entity()
+@Entity('oidc_client')
 export class OidcClient {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn()
   client_id: string;
 
-  // TODO: verifiy the use of this field
-  @Column({ type: 'varchar', length: 255, nullable: false })
+  @Column({ type: 'varchar', nullable: true })
   issuerId: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
+  @Column({ type: 'varchar', nullable: true })
+  verifierId: string;
+
+  @Column({ type: 'varchar', nullable: false })
   client_secret: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   client_name: string;
 
-  @Column({ type: 'simple-array', nullable: false })
-  redirect_uris: string[];
+  @Column({ type: 'simple-array', nullable: true })
+  redirect_uris?: string[];
 
-  @Column({ type: 'simple-array', nullable: false })
+  @Column({ type: 'simple-array', nullable: true })
   response_types: ResponseType[];
 
-  @Column({ type: 'simple-array', nullable: false })
+  @Column({ type: 'simple-array', nullable: true })
   grant_types: string[];
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
+  @Column({ type: 'varchar', nullable: false })
   token_endpoint_auth_method: ClientAuthMethod;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
+  @Column({ type: 'varchar', nullable: false })
   id_token_signed_response_alg: SigningAlgorithmWithNone;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
+  @Column({ type: 'varchar', nullable: false })
   application_type: 'web' | 'native';
+
+  @Column({ type: 'varchar', nullable: true })
+  did: string;
+
+  // @Column({ nullable: true })
+  // jwks_uri?: string;
+
+  // poll | ping
+  @Column({ type: 'varchar', nullable: true })
+  backchannel_token_delivery_mode?: CIBADeliveryMode;
+
+  // only used with ping mode. Poll does not require it
+  // todo: let explore which mode(s) should be enabled
+  // see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.9
+  @Column({ type: 'varchar', nullable: true })
+  backchannel_client_notification_endpoint?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  backchannel_authentication_request_signing_alg?: SigningAlgorithmWithNone;
 
   [key: string]: unknown;
 }

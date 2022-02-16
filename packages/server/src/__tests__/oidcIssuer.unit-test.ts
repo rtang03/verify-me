@@ -10,7 +10,11 @@ import type {
   CreateOidcIssuerClientArgs,
   Paginated,
 } from '../types';
-import { createHttpServer, isOidcClient, isOidcIssuer, isTenant } from '../utils';
+import { createHttpServer, isOidcIssuerClient, isOidcIssuer, isTenant } from '../utils';
+
+/**
+ * Tests with Oidc-Issuers CRUD
+ */
 
 const ENV_VAR = {
   HOST: process.env.HOST || '0.0.0.0',
@@ -45,7 +49,6 @@ let user: Users;
 let tenant: Tenant;
 let issuerId: string;
 let clientId: string;
-let openIdConfiguraiton: any;
 
 beforeAll(async () => {
   try {
@@ -158,6 +161,7 @@ describe('Oidc Issuer Tests', () => {
         expect(isTenant(body?.data)).toBeTruthy();
         expect(body?.status).toEqual('OK');
         expect(status).toEqual(Status.CREATED);
+        tenant = body?.data;
       }));
 
   // TODO: Bug here. Parameter tampering with query parameter "user_id".
@@ -169,7 +173,6 @@ describe('Oidc Issuer Tests', () => {
       .set('host', 'example.com')
       .set('authorization', `Bearer`)
       .expect(({ body, status }: { body: CommonResponse<Paginated<Tenant>>; status: number }) => {
-        tenant = body?.data?.items?.[0];
         expect(isTenant(tenant)).toBeTruthy();
         expect(body?.data?.total).toEqual(1);
         expect(status).toEqual(Status.OK);
@@ -356,7 +359,7 @@ describe('Oidc Issuer Tests', () => {
       .set('authorization', `Bearer`)
       // .set('X-Forwarded-Proto', 'https')
       .expect(({ body, status }) => {
-        expect(body?.error).toContain('invalid input syntax for uuid');
+        expect(body?.error).toContain('Invalid issuer id');
         expect(status).toEqual(Status.BAD_REQUEST);
       }));
 
@@ -372,7 +375,6 @@ describe('Oidc Issuer Tests', () => {
       .expect(({ body, status }) => {
         expect(body.subject_types_supported).toEqual(['public']);
         expect(status).toEqual(Status.OK);
-        openIdConfiguraiton = body;
       }));
 
   // OK
@@ -382,8 +384,9 @@ describe('Oidc Issuer Tests', () => {
       .set('host', 'issuer.example.com')
       .set('authorization', `Bearer`)
       .expect(({ body, status }) => {
-        expect(body?.message).toContain('invalid input syntax for uuid');
-        expect(status).toEqual(Status.BAD_REQUEST);
+        expect(body.status).toEqual('NOT_FOUND');
+        expect(body.data).toEqual(notFoundData);
+        expect(status).toEqual(Status.NOT_FOUND);
       }));
 
   // OK
@@ -420,6 +423,9 @@ describe('Oidc Issuer Tests', () => {
   //       console.log(body);
   //     }));
 
+  /**
+   * Part 3: Oidc Client tests
+   */
   it('should fail to register oidc client, missing client_name', async () =>
     request(express)
       .post(`/oidc/issuers/${issuerId}/reg`)
@@ -454,7 +460,7 @@ describe('Oidc Issuer Tests', () => {
         application_type: 'web',
       })
       .expect(({ body, status }) => {
-        expect(isOidcClient(body?.data)).toBeTruthy();
+        expect(isOidcIssuerClient(body?.data)).toBeTruthy();
         expect(status).toEqual(Status.CREATED);
         clientId = body?.data?.client_id;
       }));
@@ -477,8 +483,9 @@ describe('Oidc Issuer Tests', () => {
       .set('host', 'issuer.example.com')
       .set('authorization', `Bearer`)
       .expect(({ body, status }) => {
-        expect(body?.message).toContain('invalid input syntax for uuid');
-        expect(status).toEqual(Status.BAD_REQUEST);
+        expect(body.status).toEqual('NOT_FOUND');
+        expect(body.data).toEqual(notFoundData);
+        expect(status).toEqual(Status.NOT_FOUND);
       }));
 
   // OK
@@ -489,7 +496,7 @@ describe('Oidc Issuer Tests', () => {
       .set('authorization', `Bearer`)
       .expect(({ body, status }) => {
         expect(body?.data?.total).toEqual(1);
-        expect(isOidcClient(body?.data?.items?.[0])).toBeTruthy();
+        expect(isOidcIssuerClient(body?.data?.items?.[0])).toBeTruthy();
         expect(body?.data?.items?.[0].client_id).toEqual(clientId);
         expect(status).toEqual(Status.OK);
       }));
@@ -513,7 +520,7 @@ describe('Oidc Issuer Tests', () => {
       .set('authorization', `Bearer`)
       .expect(({ body, status }) => {
         expect(body?.data?.total).toEqual(1);
-        expect(isOidcClient(body?.data?.items?.[0])).toBeTruthy();
+        expect(isOidcIssuerClient(body?.data?.items?.[0])).toBeTruthy();
         expect(body?.data?.items?.[0].client_id).toEqual(clientId);
         expect(status).toEqual(Status.OK);
       }));

@@ -1,19 +1,26 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryColumn, ManyToOne } from 'typeorm';
+import { PresentationRequestTemplate } from './PresentationRequestTemplate';
 
-@Entity()
+@Entity('oidc_verifier')
 export class OidcVerifier {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn()
   id: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
-  verifierDid: string;
-
-  @Column({ type: 'varchar', length: 255, nullable: false })
-  presentationTemplateId: string;
+  @ManyToOne(
+    () => PresentationRequestTemplate,
+    (presentationRequestTemplate) => presentationRequestTemplate.usedByVerifiers,
+    { eager: true, cascade: ['insert'], onDelete: 'CASCADE', nullable: false }
+  )
+  presentationTemplate: PresentationRequestTemplate;
 
   @Column({ type: 'simple-json', nullable: false })
   claimMappings: Array<{
     jsonLdTerm: string;
     oidcClaim: string;
   }>;
+
+  // Note: intentionally, not picking OneToOne JoinColumn, because the corresponding did is created
+  // using veramo agent method, instead of direct psql-insert
+  @Column({ type: 'varchar', nullable: true })
+  did: string;
 }

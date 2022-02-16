@@ -1,8 +1,14 @@
 import util from 'util';
+import type {
+  IDIDManagerGetOrCreateArgs,
+  IIdentifier,
+  IKey,
+  IKeyManagerGetArgs,
+} from '@veramo/core';
 import { Entities } from '@veramo/data-store';
 import Debug from 'debug';
 import includes from 'lodash/includes';
-import { JWK, Provider } from 'oidc-provider';
+import { Provider } from 'oidc-provider';
 import { Connection, ConnectionOptions, createConnection, getConnection } from 'typeorm';
 import {
   Tenant,
@@ -12,9 +18,13 @@ import {
   OidcFederatedProvider,
   OidcVerifier,
   OidcPayload,
+  PresentationRequestTemplate,
 } from '../entities';
+import { getMigrations } from '../entities/migrations';
 import type { TenantManager, TenantStatus } from '../types';
+import { convertKeysToJwkSecp256k1 } from './convertKeysToJwkSecp256k1';
 import { createOidcProviderConfig } from './createOidcProviderConfig';
+import type { ClaimMapping } from './oidcProfileClaimMappings';
 import type { TTAgent } from './setupVeramo';
 import { setupVeramo } from './setupVeramo';
 
@@ -28,7 +38,10 @@ const createConnOption: (tenant: Tenant) => ConnectionOptions = (tenant) => ({
   username: tenant.db_username,
   password: tenant.db_password,
   database: tenant.db_name,
-  synchronize: true,
+  // Veramo 3.0 requires typeorm migrations, https://github.com/uport-project/veramo/pull/679
+  synchronize: false,
+  migrations: getMigrations(tenant.db_name, getSchemaName(tenant.id)),
+  migrationsRun: true,
   // TODO: logging changes to configurable
   logging: process.env.NODE_ENV !== 'production',
   entities: [
@@ -39,31 +52,89 @@ const createConnOption: (tenant: Tenant) => ConnectionOptions = (tenant) => ({
     OidcFederatedProvider,
     OidcVerifier,
     OidcPayload,
+    PresentationRequestTemplate,
   ],
   schema: getSchemaName(tenant.id),
 });
 
 const debug = Debug('utils:createTenantManager');
 
-export const createTenantManager: (
-  commonConnection: Connection,
-  jwks: { keys: JWK[] }
-) => TenantManager = (commonConnection, jwks) => {
+export const createTenantManager: (commonConnection: Connection) => TenantManager = (
+  commonConnection
+) => {
   // connectionPromises' key is "tenantId"
   let connectionPromises: Record<string, Promise<Connection>>;
+
   // agents' key is "slug"
   const agents: Record<string, TTAgent> = {};
+
   // oidcProvider's key is "tenantId"
   const oidcProivders: Record<string, Provider> = {};
   const tenantRepo = getConnection('default').getRepository(Tenant);
 
   return {
-    createOrGetOidcProvider: (hostname, tenantId, issuerId) => {
-      const uri = `https://${hostname}/oidc/issuers/${issuerId}`;
-      oidcProivders[tenantId] ??= new Provider(
-        uri,
-        createOidcProviderConfig(tenantId, issuerId, jwks)
-      );
+    createOrGetOidcProvider: async ({
+      hostname,
+      tenantId,
+      issuerId,
+      verifierId,
+      isIssuerOrVerifier,
+    }) => {
+      // step 1: Add did to new Tenant; which generate key pair, for use by Oidc provider's jwks_uri
+      const slug = hostname.split('.')[0];
+      const agent = agents[slug];
+      const agentArgs: IDIDManagerGetOrCreateArgs = {
+        alias: tenantId,
+        provider: 'did:key',
+        // Ed22519 is the required key for did:key
+        // options: { keyType: 'Ed25519' },
+        kms: 'local',
+      };
+      const identifier: IIdentifier = await agent.execute('didManagerGetOrCreate', agentArgs);
+
+      if (!identifier) throw new Error('fail to create did');
+
+      // step 2: retrieve keys
+      const getKeyArgs: IKeyManagerGetArgs = { kid: identifier.controllerKeyId };
+      const key: IKey = await agent.execute('keyManagerGet', getKeyArgs);
+
+      if (!key) throw new Error('fail to retrieve key');
+
+      // Veramo's did:key is in format of publicKeyHex and privateKeyHex
+      const keyJwk = convertKeysToJwkSecp256k1(key.publicKeyHex, key.privateKeyHex);
+      const jwks = { keys: [keyJwk.privateKeyJwk] };
+
+      // step 3: get or create Provider
+      const path = `${isIssuerOrVerifier}s`;
+      const uri =
+        isIssuerOrVerifier === 'issuer'
+          ? `https://${hostname}/oidc/${path}/${issuerId}`
+          : `https://${hostname}/oidc/${path}/${verifierId}`;
+
+      // New code: will fetch Oidc-issuer's claimMappings. And, will assign new provider
+      let claimMappings: ClaimMapping[] = [];
+      try {
+        const issuerRepo = getConnection(tenantId).getRepository(OidcIssuer);
+        const verifierRepo = getConnection(tenantId).getRepository(OidcVerifier);
+        const result =
+          isIssuerOrVerifier === 'issuer'
+            ? await issuerRepo.findOne(issuerId)
+            : await verifierRepo.findOne(verifierId);
+        claimMappings &&= result.claimMappings;
+      } catch (err) {
+        console.error(err);
+        console.warn('no claims are mapped');
+      }
+
+      // TODO: not 100% sure, if there is no memory leaked, for creating provider each time
+      // it hanndles situtation: after claimMapping is updated, openid-configuration is reflected.
+      const baseOption = { connectionName: tenantId, jwks, claimMappings, isIssuerOrVerifier };
+      const providerOption =
+        isIssuerOrVerifier === 'issuer'
+          ? { ...baseOption, issuerId }
+          : { ...baseOption, verifierId };
+
+      oidcProivders[tenantId] = new Provider(uri, createOidcProviderConfig(providerOption));
 
       // see https://github.com/panva/node-oidc-provider/tree/main/docs#trusting-tls-offloading-proxies
       oidcProivders[tenantId].proxy = true;

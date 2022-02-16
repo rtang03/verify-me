@@ -1,0 +1,21 @@
+{
+  "name": "t_xxxxxxxx",
+  "type": "postgres",
+  "host": "localhost",
+  "port": 5432,
+  "username": "postgres",
+  "password": "docker",
+  "database": "auth_db",
+  "entities": [
+    "src/entities/OidcClient.ts",
+    "src/entities/OidcCredential.ts",
+    "src/entities/OidcFederatedProvider.ts",
+    "src/entities/OidcIssuer.ts",
+    "src/entities/OidcPayload.ts",
+    "src/entities/OidcVerifier.ts"
+  ],
+  "migrations": ["src/entities/migrations/1.createOidcTables.ts"],
+  "cli": {
+    "migrationsDir": "src/migrations"
+  }
+}
